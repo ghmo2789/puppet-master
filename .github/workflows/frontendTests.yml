@@ -1,0 +1,18 @@
+name: frontend_flake8_and_test
+
+on: [push]
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout out repository
+        uses: actions/checkout@v2
+      - name: Set up Python env
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - run: pip install flake8
+      - run: pip install -r web-server/requirements.txt
+      - run: python web-server/django_web_server/manage.py test
+      - run: flake8 web-server/*.py
