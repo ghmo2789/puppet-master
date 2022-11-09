@@ -158,3 +158,34 @@ coverage.xml
 *.exe
 *.out
 *.app
+
+# vscode
+.vscode
+
+# Python virtual environment
+control-server/venv
+web-server/venv
+
+### Django ###
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+.env
+control-server/.env
+web-server/.env
+
+### Flask ###
+.flaskenv
+*.pyc
+*.pyo
+dist/
+build/
+*.egg
+*.egg-info/
+.tox/
+.cache/
+.pytest_cache/
+.idea/
+docs/_build/
