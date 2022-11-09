@@ -1,3 +1,8 @@
 from django.test import TestCase
 
-# Create your tests here.
+
+class TestGitActionTest(TestCase):
+
+    def test_git_actions(self):
+        self.assertIs(True, True)
+
