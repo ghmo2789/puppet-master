@@ -163,7 +163,7 @@ coverage.xml
 .vscode
 
 # Python virtual environment
-control-server/venv
+control_server/venv
 web-server/venv
 
 ### Django ###
@@ -173,7 +173,7 @@ web-server/venv
 __pycache__/
 local_settings.py
 .env
-control-server/.env
+control_server/src/.env
 web-server/.env
 
 ### Flask ###
