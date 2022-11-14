@@ -1,0 +1,22 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+        <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
+    </head>
+    <body>
+        <table class="table table-dark table-striped table-hover">
+            <td>Client ID</td>
+            <td>OS</td>
+            <td>Status</td>
+            {% for i in data%}
+            
+            <tr>
+                <td>{{i.id}}</td>
+                <td>{{i.os}}</td>
+                <td>{{i.status}}</td>
+            </tr>
+
+            {% endfor %}
+        </table>
+    </body> 
+</html>
