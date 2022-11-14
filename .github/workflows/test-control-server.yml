@@ -37,7 +37,7 @@ jobs:
         working-directory: ./control_server
         run: |
           echo "PREFIX=/control" >> .env
-          echo "MOCK_DB=" >> .env
+          echo "MOCK_DB=True" >> .env
           echo "MONGO_HOST=" >> .env
           echo "MONGO_PORT=" >> .env
           echo "MONGO_USER=" >> .env
