@@ -1,4 +1,3 @@
-from pymongo import MongoClient
 
 from control_server.src.data.client_data import ClientData
 from control_server.src.database.database import Database
@@ -8,6 +7,8 @@ from control_server.src.database.database_credentials import DatabaseCredentials
 class MongoDatabase(Database):
     def __init__(self):
         super().__init__()
+        from pymongo import MongoClient
+
         self._credentials = DatabaseCredentials().read()
         self._client = MongoClient(
             self._credentials.mongo_host,

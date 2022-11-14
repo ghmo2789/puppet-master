@@ -6,12 +6,18 @@ from control_server.src.data_class import DataClass
 class WebSettings(DataClass):
     def __init__(self):
         super().__init__()
-        self._prefix = None
-        self._mock_db = None
+        self._prefix = ''
+        self._mock_db = False
 
     def read(self):
-        self.load_from(lambda prop:
-                       config(prop.lstrip("_").upper()))
+        self.load_from_with_types(
+            lambda prop, prop_type:
+            config(
+                prop.lstrip("_").upper(),
+                cast=prop_type
+            )
+        )
+
         return self
 
     @property
