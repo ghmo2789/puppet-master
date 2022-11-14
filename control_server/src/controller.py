@@ -1,6 +1,7 @@
 from flask import Flask
 
-from control_server.src.db import Database
+from control_server.src.database.db import Database
+from control_server.src.database.mongo_database import MongoDatabase
 from control_server.src.web_settings import WebSettings
 
 
@@ -9,7 +10,7 @@ class Controller:
         self._settings = WebSettings().read()
         self._app = Flask(__name__)
         self.app.debug = True
-        self._db = Database()
+        self._db = Database.create(self._settings.mock_db)
 
     @property
     def app(self):

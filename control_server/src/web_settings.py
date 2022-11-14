@@ -7,6 +7,7 @@ class WebSettings(DataClass):
     def __init__(self):
         super().__init__()
         self._prefix = None
+        self._mock_db = None
 
     def read(self):
         self.load_from(lambda prop:
@@ -14,9 +15,17 @@ class WebSettings(DataClass):
         return self
 
     @property
-    def prefix(self):
+    def prefix(self) -> str:
         return self._prefix
 
     @prefix.setter
-    def prefix(self, value):
+    def prefix(self, value: str):
         self._prefix = value
+
+    @property
+    def mock_db(self) -> bool:
+        return self._mock_db
+
+    @prefix.setter
+    def set_mock_db(self, value: bool):
+        self._mock_db = value
