@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 
 from control_server.src.data.client_data import ClientData
-from control_server.src.database.db import Database
+from control_server.src.database.database import Database
 from control_server.src.database.database_credentials import DatabaseCredentials
 
 
@@ -23,3 +23,6 @@ class MongoDatabase(Database):
 
     def set_user(self, user_id: str, user: ClientData):
         self._db[self._user_collection_name].insert_one(user.__dict__)
+
+    def get_user(self, user_id: str) -> ClientData:
+        raise NotImplementedError
