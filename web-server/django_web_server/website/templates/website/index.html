@@ -6,22 +6,44 @@
         <link rel="stylesheet" href="{% static 'w3/w3.css' %}">
     </head>
     <body class="bg-dark text-white">
-
-        <div class="w3-container">
-            <table class="table table-dark table-striped table-hover">
-                <td>Client ID</td>
-                <td>OS</td>
-                <td>Status</td>
-                {% for i in data%}
-                
-                <tr>
-                    <td>{{i.id}}</td>
-                    <td>{{i.os}}</td>
-                    <td>{{i.status}}</td>
-                </tr>
-
-                {% endfor %}
-            </table>
+      <nav class="navbar navbar-dark navbar-expand-lg" style="background-color: black;" >
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Navbar</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="#">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Features</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Pricing</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link disabled">Disabled</a>
+              </li>
+            </ul>
+          </div>
         </div>
+      </nav>
+      <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
+        <table class="table table-dark table-striped table-hover mb-0">
+            <td>Client ID</td>
+            <td>OS</td>
+            <td>Status</td>
+          {% for i in data%}
+            <tr>
+                <td>{{i.id}}</td>
+                <td>{{i.os}}</td>
+                <td>{{i.status}}</td>
+            </tr>
+
+            {% endfor %}
+        </table>
+      </div>
     </body> 
 </html>
