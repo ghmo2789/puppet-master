@@ -44,6 +44,7 @@ jobs:
           echo "MONGO_PASSWORD=" >> .env
           echo "MONGO_DATABASE=" >> .env
           echo "MONGO_AUTH_MECHANISM=" >> .env
+          echo "DEBUG=False" >> .env
       - name: Test with pytest
         working-directory: ./control_server
         run: |
