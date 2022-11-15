@@ -5,6 +5,9 @@ from control_server.src.database.database_credentials import DatabaseCredentials
 
 
 class MongoDatabase(Database):
+    """
+    Instance of the database class representing a MongoDB database
+    """
     def __init__(self):
         super().__init__()
         from pymongo import MongoClient

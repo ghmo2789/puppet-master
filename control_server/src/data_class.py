@@ -3,10 +3,20 @@ from abc import ABC
 
 
 class DataClass(ABC):
+    """
+    Abstract class that provides functionality to load settings, currently
+    using decouple.
+    """
+
     def __init__(self):
         pass
 
     def __str__(self):
+        """
+        Generate a string representation of the class, mainly used for
+        debugging purposes.
+        :return: A string representation of the class.
+        """
         outputs = []
         for property_name in self.get_properties():
             outputs.append(
@@ -15,12 +25,31 @@ class DataClass(ABC):
         return ", ".join(outputs)
 
     def get_properties(self):
+        """
+        Get a list of properties in the class.
+        :return: A list of tuples, where each tuple contains the name of the
+        property, and its type.
+        """
         return [(key, type(value)) for (key, value) in vars(self).items()]
 
-    def _load_data(self,
-                   data_reader: Callable[[str, type], Any],
-                   validate_types: bool = False,
-                   raise_error: bool = True):
+    def _load_data(
+            self,
+            data_reader: Callable[[str, type], Any],
+            validate_types: bool = False,
+            raise_error: bool = True
+    ):
+        """
+        Load data from a data reader, and set the properties of the class
+        accordingly.
+        :param data_reader: The data reader to use. The data reader should
+        provide a value for a given property name and type.
+        :param validate_types: Whether to validate that the types of the
+        properties matches the types of the values retrieved by the data reader.
+        :param raise_error: Whether to raise an error if a property is missing,
+        or if types mismatch. Useful to prevent errors from generating when
+        handling web requests
+        :return: Whether the data was loaded successfully.
+        """
         for property_name, property_type in self.get_properties():
             prop_value = data_reader(property_name, property_type)
 
@@ -51,7 +80,17 @@ class DataClass(ABC):
     def load_from_with_types(
             self,
             data_reader: Callable[[str, type], Any],
-            raise_error: bool = True):
+            raise_error: bool = True
+    ):
+        """
+        Load data from a data reader that utilizes both property name and type,
+        and set the properties of the class accordingly.
+        :param data_reader: The data reader to use. The data reader should have
+        two arguments: the property name and the property type.
+        :param raise_error: Whether to raise an error if a property is missing,
+        or if types mismatch.
+        :return: Whether the data was loaded successfully.
+        """
         return self._load_data(
             data_reader,
             validate_types=True,
@@ -61,7 +100,16 @@ class DataClass(ABC):
     def load_from(
             self,
             data_reader: Callable[[str], Any],
-            raise_error: bool = True):
+            raise_error: bool = True
+    ):
+        """
+        Load data from a data reader that only utilizes property name, and set
+        the properties of the class accordingly.
+        :param data_reader: The data reeader to use. The data reader should
+        only have one argument: the property name.
+        :param raise_error: Whether to raise an error if a property is missing.
+        :return: Whether the data was loaded successfully.
+        """
         return self._load_data(
             (lambda prop, prop_type: data_reader(prop)),
             validate_types=False,

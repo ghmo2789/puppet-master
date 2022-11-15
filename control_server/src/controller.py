@@ -5,6 +5,10 @@ from control_server.src.web_settings import WebSettings
 
 
 class Controller:
+    """
+    A data class containing useful classes for the endpoints to use, such as the
+    database, settings, etc.
+    """
     def __init__(self):
         self._settings = WebSettings().read()
         self._db = DatabaseBuilder()\
@@ -27,9 +31,14 @@ class Controller:
         return self._db
 
 
+# Initialize controller and prefix once:
 controller = Controller()
 prefix = controller.url_prefix
 
 
 def get_controller():
+    """
+    Gets the already initialized instance of the controller
+    :return: The already initialized instance of the controller
+    """
     return controller

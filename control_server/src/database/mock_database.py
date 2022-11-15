@@ -3,6 +3,9 @@ from control_server.src.database.database import Database
 
 
 class MockDatabase(Database):
+    """
+    Instance of the database class representing a mock database
+    """
     def __init__(self):
         super().__init__()
         self._users = {}

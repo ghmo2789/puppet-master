@@ -12,6 +12,11 @@ def app():
 
 
 def test_init(client):
+    """
+    Test the client init endpoint with a valid request using test data.
+    :param client:
+    :return:
+    """
     response = client.post(f"{get_prefix()}/client/init", json={
         "os_name": "1",
         "os_version": "1",
@@ -24,6 +29,11 @@ def test_init(client):
 
 
 def test_task_invalid_id(client):
+    """
+    Test the client task endpoint with an invalid client id/Authorization header
+    :param client:
+    :return:
+    """
     response = client.get(f"{get_prefix()}/client/task", headers={
 
     })
@@ -32,6 +42,11 @@ def test_task_invalid_id(client):
 
 
 def test_task(client):
+    """
+    Test the client task endpoint with a valid client id/Authorization header
+    :param client:
+    :return:
+    """
     response = client.get(f"{get_prefix()}/client/task", headers={
         "Authorization": "1969283-b9b8-4502-a431-6bc39046481f"
     })

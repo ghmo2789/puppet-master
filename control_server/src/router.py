@@ -7,6 +7,11 @@ from control_server.src.endpoints import client
 
 
 class RouteDestination:
+    """
+    Data class used to store information about each route destination.
+    Currently, a handler for a route and a list of allowed methods is stored.
+    Class is used to set up routing in Router class.
+    """
     def __init__(self, handler: Callable, methods: List[str]):
         self.name = handler.__name__
         self.handler = handler
@@ -14,6 +19,11 @@ class RouteDestination:
 
 
 class Router:
+    """
+    Class used to set up the routing for the Flask app, and the Flask app
+    itself.
+    """
+
     def __init__(self):
         self._app = Flask(__name__)
         self._controller = Controller()

@@ -6,6 +6,9 @@ from control_server.src.data_class import DataClass
 
 
 class DatabaseCredentials(DataClass):
+    """
+    Data class containing the credentials for the database
+    """
     def __init__(self):
         super().__init__()
         self.mongo_host = None

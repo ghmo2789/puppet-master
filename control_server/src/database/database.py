@@ -6,6 +6,10 @@ from control_server.src.data.client_data import ClientData
 
 
 class Database(ABC):
+    """
+    An abstract database class, useful for abstracting how the database is
+    implemented, and how the data is stored.
+    """
     def __init__(self):
         pass
 

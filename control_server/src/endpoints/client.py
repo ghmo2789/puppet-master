@@ -7,6 +7,11 @@ from control_server.src.data.task import Task
 
 
 def init():
+    """
+    Endpoint handling the client init request
+    :return: A generated client id and a status code representing whether
+    the request was successful or not, and why it may have been unsuccessful
+    """
     data = ClientData()
 
     if not data.load_from(
@@ -23,6 +28,11 @@ def init():
 
 
 def task():
+    """
+    Endpoint handing the client task request
+    :return: A list of tasks, if any, and a status code representing whether
+    the request was successful or not, and why it may have been unsuccessful
+    """
     client_id = ClientIdentifier()
 
     if not client_id.load_from(

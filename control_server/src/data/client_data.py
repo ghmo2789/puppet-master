@@ -2,6 +2,9 @@ from control_server.src.data_class import DataClass
 
 
 class ClientData(DataClass):
+    """
+    A data class containing client data.
+    """
     def __init__(self):
         super().__init__()
         self.os_name = None

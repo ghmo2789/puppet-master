@@ -37,6 +37,6 @@ class WebSettings(DataClass):
     def debug(self) -> bool:
         return self._debug
 
-    @prefix.setter
-    def set_mock_db(self, value: bool):
+    @mock_db.setter
+    def mock_db(self, value: bool):
         self._mock_db = value
