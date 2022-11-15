@@ -24,7 +24,10 @@
       </nav>
       <div id="website-info">
         <div class="website-info-box text-bg-dark p-3" id="website-statistics">
-          <h2>Statistics</h2>
+          <h2>Welcome to Puppet Master!</h2>
+          <p>Numer of connected clients: {{statistics.num_clients}}</p>
+          <p>Top os: {{statistics.top_os}}</p>
+          <p>Encountered errors: {{statistics.errors}}</p>
         </div>
         <div class="website-info-box text-bg-dark p-3" id="website-map">
           <h2>Map</h2>
@@ -41,7 +44,6 @@
                 <td>{{i.os}}</td>
                 <td>{{i.status}}</td>
             </tr>
-
             {% endfor %}
         </table>
       </div>

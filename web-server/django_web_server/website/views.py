@@ -27,6 +27,10 @@ def index(request):
                  {'id': 2, 'os': 'windows', 'status': 'ok'},
                  {'id': 2, 'os': 'windows', 'status': 'ok'}]
 
-    context = {'data': dummyData}
+    dummyStatistics = {'num_clients': 23,
+                       'top_os': 'windows',
+                       'errors': 0}
+
+    context = {'data': dummyData,
+               'statistics': dummyStatistics}
     return render(request, 'website/index.html',context)
-    #return HttpResponse("Hello world!")
