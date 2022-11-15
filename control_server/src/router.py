@@ -36,5 +36,6 @@ class Router:
     def app(self):
         return self._app
 
+
 router = Router()
 app = router.app

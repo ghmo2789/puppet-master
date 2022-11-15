@@ -22,12 +22,14 @@ def test_init(client):
 
     assert response.status_code == 200
 
+
 def test_task_invalid_id(client):
     response = client.get(f"{get_prefix()}/client/task", headers={
 
     })
 
     assert response.status_code == 400
+
 
 def test_task(client):
     response = client.get(f"{get_prefix()}/client/task", headers={
