@@ -6,6 +6,8 @@
         <link rel="stylesheet" href="{% static 'w3/w3.css' %}">
     </head>
     <body class="bg-dark text-white">
+
+      <!-- Navbar -->
       <nav class="navbar navbar-dark navbar-expand-lg" style="background-color: black;" >
         <div class="container-fluid">
           <a class="navbar-brand" href="#">Navbar</a>
@@ -30,20 +32,52 @@
           </div>
         </div>
       </nav>
+
+      <!-- Client table -->
       <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0">
-            <td>Client ID</td>
-            <td>OS</td>
-            <td>Status</td>
+            <tr style="background-color: black;"> 
+              <td><input type="checkbox" name="select_all" value="1" id="master_checkbox" onclick="select_all()"></td>
+              <td>Client ID</td>
+              <td>OS</td>
+              <td>Computer name</td>
+              <td>Host User</td>
+              <td>Status</td>
+            </tr>
           {% for i in data%}
             <tr>
+                <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}"></td> 
                 <td>{{i.id}}</td>
-                <td>{{i.os}}</td>
+                <td>{{i.os}} v. {{i.version}}</td>
+                <td>{{i.hostname}}</td>
+                <td>{{i.host_user}}</td>
                 <td>{{i.status}}</td>
             </tr>
-
             {% endfor %}
         </table>
       </div>
+
+
+      <!-- JS for checkbox marking -->
+      <script type="text/javascript">
+        
+        // Initialize data for javascript
+        let data = [];
+        {% for i in data %}
+          data.push({{i.id}});
+        {% endfor %}
+    
+        function select_all(){
+          if(document.getElementById("master_checkbox").checked) {
+            for(let i = 0; i < data.length; i++) {
+              document.getElementById(data[i]).checked = true; 
+            }
+          } else {
+            for(let i = 0; i < data.length; i++) {
+              document.getElementById(data[i]).checked = false; 
+            }
+          }
+        }
+      </script> 
     </body> 
 </html>
