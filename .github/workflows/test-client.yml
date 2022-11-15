@@ -5,7 +5,6 @@ on: [ push ]
 jobs:
   build_and_test:
     name: Client testing
-    working-directory: ./client
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -16,7 +15,8 @@ jobs:
         with:
           toolchain: stable
       - run: |
+          cd client
           export CONTROL_SERVER_URL=http://127.0.0.1:8080
-          python test/mock_server.py &
+          python client/test/mock_server.py &
           cargo test
           killall -9 python
