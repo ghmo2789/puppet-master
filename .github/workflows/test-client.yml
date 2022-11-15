@@ -17,6 +17,6 @@ jobs:
       - run: |
           cd client
           export CONTROL_SERVER_URL=http://127.0.0.1:8080
-          python client/test/mock_server.py &
+          python test/mock_server.py &
           cargo test
           killall -9 python
