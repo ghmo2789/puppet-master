@@ -2,6 +2,7 @@ from flask import Flask
 
 from control_server.src.database.database import Database
 from control_server.src.database.database_builder import DatabaseBuilder
+from control_server.src.database.mock_database import MockDatabase
 from control_server.src.database.mongo_database import MongoDatabase
 from control_server.src.web_settings import WebSettings
 
@@ -14,6 +15,9 @@ class Controller:
         self._db = DatabaseBuilder()\
             .set_mock(self._settings.mock_db)\
             .build()
+
+        if isinstance(self._db, MockDatabase):
+            print("Using mock database")
 
     @property
     def app(self):
