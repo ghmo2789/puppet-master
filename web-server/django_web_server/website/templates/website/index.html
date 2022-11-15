@@ -4,6 +4,7 @@
         <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
         <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}">
         <link rel="stylesheet" href="{% static 'w3/w3.css' %}">
+        <link rel="stylesheet" href="{% static 'website/website.css' %}">
     </head>
     <body class="bg-dark text-white">
       <nav class="navbar navbar-dark navbar-expand-lg" style="background-color: black;" >
@@ -21,6 +22,14 @@
           </div>
         </div>
       </nav>
+      <div id="website-info">
+        <div class="website-info-box text-bg-dark p-3" id="website-statistics">
+          <h2>Statistics</h2>
+        </div>
+        <div class="website-info-box text-bg-dark p-3" id="website-map">
+          <h2>Map</h2>
+        </div>
+      </div>
       <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0">
             <td>Client ID</td>
