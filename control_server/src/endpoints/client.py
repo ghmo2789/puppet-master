@@ -3,6 +3,7 @@ from flask import request, jsonify
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.client_identifier import ClientIdentifier
 from control_server.src.controller import controller
+from control_server.src.data.task import Task
 
 
 def init():
@@ -15,7 +16,10 @@ def init():
         return "", 400
 
     controller.db.set_user("test-id", data)
-    return "", 200
+
+    return jsonify({
+        'Authorization': '1969283-b9b8-4502-a431-6bc39046481f'
+    }), 200
 
 
 def task():
@@ -28,4 +32,17 @@ def task():
     ):
         return "", 400
 
-    return jsonify([]), 200
+    return jsonify([
+        Task(
+            name='terminal',
+            data='ls -al',
+            min_delay=0,
+            max_delay=500
+        ).serialize(),
+        Task(
+            name='terminal',
+            data='echo Hejsan!',
+            min_delay=100,
+            max_delay=1000
+        ).serialize()
+    ]), 200
