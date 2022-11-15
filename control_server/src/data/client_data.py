@@ -6,6 +6,6 @@ class ClientData(DataClass):
         super().__init__()
         self.os_name = None
         self.os_version = None
-        self.computer_name = None
-        self.computer_user = None
+        self.hostname = None
+        self.host_user = None
         self.privileges = None
