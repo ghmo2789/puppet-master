@@ -9,7 +9,7 @@ use serde::{
 };
 
 
-const TIMEOUT: Duration = Duration::from_secs(5);
+const TIMEOUT: Duration = Duration::from_secs(2);
 const INIT_ENDPOINT: &'static str = "/control/client/init";
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -60,10 +60,19 @@ mod tests {
         "privileges": "test" });
         match send_identity(id.to_string(), url).await {
             Ok(val) => {
-                println!("{}", val);
                 assert_eq!(val, String::from("12345"));
             },
             Err(_) => assert!(false)
+        };
+    }
+
+    #[actix_rt::test]
+    async fn test_send_identity_invalid_url() {
+        let url = "https://1.2.3.4";
+        let id = "test";
+        match send_identity(id.to_string(), url).await {
+            Ok(_val) => assert!(false),
+            Err(_) => assert!(true)
         };
     }
 }
