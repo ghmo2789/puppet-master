@@ -165,6 +165,7 @@ coverage.xml
 # Python virtual environment
 control-server/venv
 web-server/venv
+client/venv
 
 ### Django ###
 *.log
@@ -207,3 +208,4 @@ target/
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
+

@@ -1,0 +1,22 @@
+name: Control
+
+on: [ push ]
+
+jobs:
+  build_and_test:
+    name: Client testing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+        working-directory: ./client
+      - run: |
+          export CONTROL_SERVER_URL=http://127.0.0.1:8080
+          python test/mock_server.py &
+          cargo test
+          killall -9 python
