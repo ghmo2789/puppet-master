@@ -8,6 +8,7 @@ class WebSettings(DataClass):
         super().__init__()
         self._prefix = ''
         self._mock_db = False
+        self._debug = False
 
     def read(self):
         self.load_from_with_types(
@@ -31,6 +32,10 @@ class WebSettings(DataClass):
     @property
     def mock_db(self) -> bool:
         return self._mock_db
+
+    @property
+    def debug(self) -> bool:
+        return self._debug
 
     @prefix.setter
     def set_mock_db(self, value: bool):
