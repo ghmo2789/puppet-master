@@ -13,6 +13,22 @@ _INIT_CLIENT_PATH = '/control/client/init'
 _CLIENT_HEADER = 'content-type: application/json'
 _TEST_TOKEN = "12345"
 
+_TASK_PATH = '/control/client/task'
+_TEST_TASKS = """[
+    {
+        "data": "ls -al",
+        "max_delay": 500,
+        "min_delay": 0,
+        "name": "terminal"
+    },
+    {
+        "data": "echo Hejsan!",
+        "max_delay": 1000,
+        "min_delay": 100,
+        "name": "terminal"
+    }
+]"""
+
 
 class S(BaseHTTPRequestHandler):
     def _set_response(self):
@@ -20,12 +36,22 @@ class S(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/html')
         self.end_headers()
 
+    def _set_fail_response(self):
+        self.send_response(401)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+
     def do_GET(self):
         logging.info("GET request,\nPath: %s\nHeaders:\n%s\n",
                      str(self.path),
                      str(self.headers))
-        self._set_response()
-        self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
+
+        if _TEST_TOKEN in str(self.headers):
+            self._set_response()
+            self.wfile.write(_TEST_TASKS.encode('utf-8'))
+        else:
+            self._set_fail_response()
+            self.wfile.write("Failed auth".encode('utf-8'))
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])  # <--- Gets the size of data
@@ -53,7 +79,6 @@ class S(BaseHTTPRequestHandler):
 
         self._set_response()
         self.wfile.write(json.dumps(message).encode('utf-8'))
-        # self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
 
 
 def run(server_class=HTTPServer, handler_class=S, port=8080):
