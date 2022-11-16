@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, Callable
 from abc import ABC
 
@@ -31,6 +32,48 @@ class DataClass(ABC):
         property, and its type.
         """
         return [(key, type(value)) for (key, value) in vars(self).items()]
+
+    @staticmethod
+    def _load_from_dict(
+            instance: DataClass,
+            data_dict: dict,
+            raise_error: bool = True):
+        """
+        Load data from a dictionary, and set the properties of the class
+        accordingly.
+        :param instance: An instance of the data class to load the data into.
+        :param data_dict: The dictionary to load data from.
+        :param raise_error: Whether to raise an error if a property is missing,
+        or if types mismatch.
+        :return: Whether the data was loaded successfully.
+        """
+        return instance.load_from(
+                lambda prop: data_dict[prop] if prop in data_dict else None,
+                raise_error=raise_error
+        )
+
+    @staticmethod
+    def _try_load_from_dict(
+            instance: DataClass,
+            data_dict: dict,
+            raise_error: bool = True
+    ):
+        """
+        Try to load data from a dictionary, and set the properties of the class
+        accordingly. If an error occurs, None is returned.
+        :param instance: An instance of the data class to load the data into.
+        :param data_dict: The dictionary to load data from.
+        :param raise_error: Whether to raise an error if a property is missing.
+        :return: The class instance if it was loaded successfully, or None
+        otherwise.
+        """
+        return instance if \
+            DataClass._load_from_dict(
+                instance,
+                data_dict,
+                raise_error=raise_error
+            ) \
+            else None
 
     def _load_data(
             self,

@@ -3,7 +3,10 @@ from flask import request, jsonify
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.client_identifier import ClientIdentifier
 from control_server.src.controller import controller
+from control_server.src.data.identifying_client_data import \
+    IdentifyingClientData
 from control_server.src.data.task import Task
+from control_server.src.utils.request_utils import get_ip
 
 
 def init():
@@ -12,18 +15,35 @@ def init():
     :return: A generated client id and a status code representing whether
     the request was successful or not, and why it may have been unsuccessful
     """
-    data = ClientData()
+    data = ClientData.load_from_dict(request.json, raise_error=False)
 
-    if not data.load_from(
-            lambda prop: request.json[prop] if prop in request.json else None,
-            raise_error=False
-    ):
-        return "", 400
+    # Try to load client data from the body of the received POST request
+    if data is None:
+        return "", 400  # If unsuccessful, return 400 Bad Request
 
-    controller.db.set_user("test-id", data)
+    # Generate a client id from the client data
+    client_ip = get_ip(request)
+    identifying_client_data = IdentifyingClientData(
+        client_data=data,
+        ip=client_ip
+    )
+
+    client_id = controller.client_id_generator.generate(identifying_client_data)
+
+    if client_id is None:
+        print(f"Failed to generate client id for client with IP "
+              f"{request.remote_addr}.")
+        return "", 500  # If unsuccessful, return 500 Internal Server Error
+
+    client_id = str(client_id)
+
+    controller.db.set_user(
+        user_id=client_id,
+        user=identifying_client_data,
+        overwrite=True)
 
     return jsonify({
-        'Authorization': '1969283-b9b8-4502-a431-6bc39046481f'
+        'Authorization': client_id
     }), 200
 
 

@@ -8,7 +8,10 @@ from control_server.src import router
 
 @pytest.fixture
 def app():
-    return router.app
+    yield router.app
+
+    if not router.router.controller.settings.mock_db:
+        router.router.controller.db.clear()
 
 
 def test_init(client):

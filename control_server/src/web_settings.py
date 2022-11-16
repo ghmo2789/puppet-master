@@ -9,6 +9,8 @@ class WebSettings(DataClass):
         self._prefix = ''
         self._mock_db = False
         self._debug = False
+        self._behind_proxy = True
+        self._id_key = ''
 
     def read(self):
         self.load_from_with_types(
@@ -24,6 +26,14 @@ class WebSettings(DataClass):
     @property
     def prefix(self) -> str:
         return self._prefix
+
+    @property
+    def behind_proxy(self) -> bool:
+        return self._behind_proxy
+
+    @property
+    def id_key(self) -> str:
+        return self._id_key
 
     @prefix.setter
     def prefix(self, value: str):
