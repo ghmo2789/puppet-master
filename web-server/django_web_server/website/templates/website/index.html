@@ -55,6 +55,7 @@
             {% endfor %}
         </table>
       </div>
-      <script src="{% static 'website/website.js' %}"></script> 
+      <div style="display: none" id="jsonData" data-json="{{ locations }}"></div>
+      <script src="{% static 'website/website.js' %}"></script>
     </body> 
 </html>
