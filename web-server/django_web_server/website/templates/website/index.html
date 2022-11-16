@@ -5,6 +5,13 @@
         <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}">
         <link rel="stylesheet" href="{% static 'w3/w3.css' %}">
         <link rel="stylesheet" href="{% static 'website/website.css' %}">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.2/dist/leaflet.css"
+          integrity="sha256-sA+zWATbFveLLNqWO2gtiw3HL/lh1giY/Inf1BJ0z14="
+          crossorigin=""/>
+        <!-- Make sure you put this AFTER Leaflet's CSS -->
+        <script src="https://unpkg.com/leaflet@1.9.2/dist/leaflet.js"
+          integrity="sha256-o9N1jGDZrf5tS+Ft4gbIK7mYMipq9lqpVJ91xHSyKhg="
+          crossorigin=""></script>
     </head>
     <body class="bg-dark text-white">
       <nav class="navbar navbar-dark navbar-expand-lg" style="background-color: black;" >
@@ -31,6 +38,7 @@
         </div>
         <div class="website-info-box text-bg-dark p-3" id="website-map">
           <h2>Map</h2>
+          <div id="mapid" style='height: 200px'></div>
         </div>
       </div>
       <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
@@ -47,5 +55,6 @@
             {% endfor %}
         </table>
       </div>
+      <script src="{% static 'website/website.js' %}"></script> 
     </body> 
 </html>
