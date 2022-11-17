@@ -43,7 +43,7 @@ class MongoDatabase(Database):
         complete_entry_dict = entry_dict | entry_id_dict
 
         if overwrite:
-            self._db[collection.value] \
+            self._db[collection.get_name()] \
                 .update_one(
                 entry_id_dict,
                 {
@@ -52,10 +52,10 @@ class MongoDatabase(Database):
                 upsert=overwrite
             )
         else:
-            self._db[collection.value].insert_one(complete_entry_dict)
+            self._db[collection.get_name()].insert_one(complete_entry_dict)
 
     def delete(self, collection: DatabaseCollection, entry_id: str) -> bool:
-        result = self._db[collection.value].delete_one(
+        result = self._db[collection.get_name()].delete_one(
             {
                 "_id": entry_id
             })
@@ -67,7 +67,7 @@ class MongoDatabase(Database):
             collection: DatabaseCollection,
             entry_id: str,
             entry_instance: Deserializable) -> Deserializable | None:
-        document = self._db[collection.value].find_one(
+        document = self._db[collection.get_name()].find_one(
             {
                 "_id": entry_id
             })
