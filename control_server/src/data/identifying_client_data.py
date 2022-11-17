@@ -1,10 +1,11 @@
 from typing import Dict
 
 from control_server.src.data.client_data import ClientData
+from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.serializable import Serializable
 
 
-class IdentifyingClientData(Serializable):
+class IdentifyingClientData(Serializable, Deserializable):
     """
     A class containing all data required to identify a client. This includes
     the client's IP address and the client's data.

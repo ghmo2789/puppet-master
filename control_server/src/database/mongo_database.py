@@ -1,8 +1,10 @@
 import json
 
 from control_server.src.data.client_data import ClientData
+from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
+from control_server.src.data.serializable import Serializable
 from control_server.src.database.database import Database
 from control_server.src.database.database_credentials import DatabaseCredentials
 
@@ -29,53 +31,75 @@ class MongoDatabase(Database):
         self._db = self._client[self._credentials.mongo_database]
         self._user_collection_name = "clients"
 
-    def set_user(
+    def set(
             self,
-            user_id: str,
-            user: IdentifyingClientData,
+            collection: str,
+            entry_id: str,
+            entry: Serializable,
             overwrite: bool = False):
-        user_dict = user.serialize()
-
-        user_id_dict = {
-            "_id": user_id
+        entry_dict = entry.serialize()
+        entry_id_dict = {
+            "_id": entry_id
         }
 
-        complete_user_dict = {
-            **user_dict,
-            **user_id_dict
-        }
+        complete_entry_dict = entry_dict | entry_id_dict
 
         if overwrite:
-            self._db[self._user_collection_name] \
+            self._db[collection] \
                 .update_one(
-                    user_id_dict,
-                    {
-                        "$set": complete_user_dict
-                    },
-                    upsert=overwrite
-                )
+                entry_id_dict,
+                {
+                    "$set": complete_entry_dict
+                },
+                upsert=overwrite
+            )
         else:
-            self._db[self._user_collection_name].insert_one(user_dict)
+            self._db[collection].insert_one(complete_entry_dict)
 
-    def delete_user(self, user_id: str) -> bool:
-        result = self._db[self._user_collection_name].delete_one(
+    def delete(self, collection: str, entry_id: str) -> bool:
+        result = self._db[collection].delete_one(
             {
-                "_id": user_id
+                "_id": entry_id
             })
 
         return result.deleted_count > 0
 
-    def get_user(self, user_id: str) -> IdentifyingClientData | None:
-        document = self._db[self._user_collection_name].find_one(
+    def get_one(
+            self,
+            collection: str,
+            entry_id: str,
+            entry_instance: Deserializable) -> Deserializable | None:
+        document = self._db[collection].find_one(
             {
-                "_id": user_id
+                "_id": entry_id
             })
 
         if document is None:
             return None
 
-        return IdentifyingClientData(
-            data_dict=dict(document)
+        entry_instance.deserialize(dict(document))
+        return entry_instance
+
+    def set_user(
+            self,
+            user_id: str,
+            user: IdentifyingClientData,
+            overwrite: bool = False):
+        self.set(
+            collection=self._user_collection_name,
+            entry_id=user_id,
+            entry=user,
+            overwrite=overwrite
+        )
+
+    def delete_user(self, user_id: str) -> bool:
+        return self.delete(self._user_collection_name, user_id)
+
+    def get_user(self, user_id: str) -> IdentifyingClientData | None:
+        return self.get_one(
+            self._user_collection_name,
+            user_id,
+            IdentifyingClientData()
         )
 
     def clear(self):

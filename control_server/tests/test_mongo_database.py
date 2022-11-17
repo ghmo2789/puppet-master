@@ -10,13 +10,12 @@ from control_server.src.database.database_builder import DatabaseBuilder
 from control_server.src.web_settings import WebSettings
 
 
-class MongoTestData:
+class DatabaseTestData:
     def __init__(self):
         self.settings: WebSettings = WebSettings().read()
-        self.do_test: bool = not self.settings.mock_db
-        self.mongo_db: Database = DatabaseBuilder() \
-            .set_mock(False) \
-            .build() if self.do_test else None
+        self.db: Database = DatabaseBuilder() \
+            .set_mock(self.settings.mock_db) \
+            .build()
 
         self.sample_user_data: Dict = {
             "os_name": "test os",
@@ -57,22 +56,17 @@ def assert_are_equal(*args: IdentifyingClientData):
 
 @pytest.fixture
 def mongo_test_data():
-    data = MongoTestData()
-    data.mongo_db.clear()
+    data = DatabaseTestData()
+    data.db.clear()
     yield data
-    data.mongo_db.clear()
+    data.db.clear()
 
 
-def test_set_delete_user(mongo_test_data: MongoTestData):
+def test_set_delete_user(mongo_test_data: DatabaseTestData):
     """
     Tests that the set_user method works as expected without raising errors
     """
-    # Dont test mongo_database if set to use mock db
-    if not mongo_test_data.do_test:
-        print("Skipping test_set_delete_user because mock db is being used.")
-        return
-
-    db = mongo_test_data.mongo_db
+    db = mongo_test_data.db
     user = IdentifyingClientData(
         client_data=ClientData.load_from_dict(mongo_test_data.sample_user_data),
         ip=mongo_test_data.sample_ip
@@ -89,18 +83,12 @@ def test_set_delete_user(mongo_test_data: MongoTestData):
     )
 
 
-def test_set_get_delete_get_user(mongo_test_data: MongoTestData):
+def test_set_get_delete_get_user(mongo_test_data: DatabaseTestData):
     """
     Tests that the set_user method works as expected without raising errors,
     and that a set user can be retrieved
     """
-    # Dont test mongo_database if set to use mock db
-    if not mongo_test_data.do_test:
-        print("Skipping test_set_get_delete_get_user because mock db is "
-              "being used.")
-        return
-
-    db = mongo_test_data.mongo_db
+    db = mongo_test_data.db
     user = IdentifyingClientData(
         client_data=ClientData.load_from_dict(mongo_test_data.sample_user_data),
         ip=mongo_test_data.sample_ip
