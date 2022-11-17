@@ -1,5 +1,6 @@
 use whoami;
 use serde_json::json;
+use sysinfo;
 
 /// Returns the current clients identifying characteristics
 pub fn get_host_identify() -> String {
