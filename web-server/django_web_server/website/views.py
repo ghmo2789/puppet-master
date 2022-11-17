@@ -38,3 +38,7 @@ def index(request):
                'statistics': dummyStatistics,
                'locations' : json.dumps(dummyLocations)}
     return render(request, 'website/index.html',context)
+
+def tasks(request):
+    context = {'data': 'hello tasks'}
+    return render(request, 'website/tasks.html', context)
