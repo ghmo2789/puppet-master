@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+import json
 
 
 def index(request):
@@ -27,6 +28,13 @@ def index(request):
                  {'id': 22, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
                  {'id': 23, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'}]
 
-    context = {'data': dummyData}
+    dummyStatistics = {'num_clients': 23,
+                       'top_os': 'windows',
+                       'errors': 0}
+
+    dummyLocations = {'locations': [[0, 0], [51.5, -0.09], [-0.09, 51.5]]}
+
+    context = {'data': dummyData,
+               'statistics': dummyStatistics,
+               'locations' : json.dumps(dummyLocations)}
     return render(request, 'website/index.html',context)
-    #return HttpResponse("Hello world!")

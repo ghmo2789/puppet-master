@@ -1,0 +1,22 @@
+
+#website-info {
+  padding: 40px 0 40px 0;
+  overflow: auto;
+}
+
+#website-statistics {
+  margin: 0 5% 0 10%;
+}
+
+#website-map {
+  margin: 0 10% 0 5%;
+}
+
+.website-info-box {
+  width: 35%;
+  float: left;
+  height: 300px;
+  border: 1px #111111;
+  border-radius: 2px;
+  background-color: #212529;
+}
