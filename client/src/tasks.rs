@@ -91,8 +91,7 @@ pub fn spread() {
         .collect::<Vec<Ipv4Addr>>()
         .into_iter()
         .map(|ip| NetworkHost { ip: ip.to_string(), open_ports: Vec::new() })
-        //
-        .map(|host| scan_ports(host, &ports))
+        .map(|host| scan_ports(host, ports.clone()))
         .filter(|host| !host.open_ports.is_empty())
         .collect::<Vec<NetworkHost>>();
 
