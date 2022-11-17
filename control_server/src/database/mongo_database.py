@@ -1,11 +1,9 @@
-import json
-
-from control_server.src.data.client_data import ClientData
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
 from control_server.src.data.serializable import Serializable
 from control_server.src.database.database import Database
+from control_server.src.database.database_collection import DatabaseCollection
 from control_server.src.database.database_credentials import DatabaseCredentials
 
 
@@ -33,7 +31,7 @@ class MongoDatabase(Database):
 
     def set(
             self,
-            collection: str,
+            collection: DatabaseCollection,
             entry_id: str,
             entry: Serializable,
             overwrite: bool = False):
@@ -45,7 +43,7 @@ class MongoDatabase(Database):
         complete_entry_dict = entry_dict | entry_id_dict
 
         if overwrite:
-            self._db[collection] \
+            self._db[collection.value] \
                 .update_one(
                 entry_id_dict,
                 {
@@ -54,10 +52,10 @@ class MongoDatabase(Database):
                 upsert=overwrite
             )
         else:
-            self._db[collection].insert_one(complete_entry_dict)
+            self._db[collection.value].insert_one(complete_entry_dict)
 
-    def delete(self, collection: str, entry_id: str) -> bool:
-        result = self._db[collection].delete_one(
+    def delete(self, collection: DatabaseCollection, entry_id: str) -> bool:
+        result = self._db[collection.value].delete_one(
             {
                 "_id": entry_id
             })
@@ -66,10 +64,10 @@ class MongoDatabase(Database):
 
     def get_one(
             self,
-            collection: str,
+            collection: DatabaseCollection,
             entry_id: str,
             entry_instance: Deserializable) -> Deserializable | None:
-        document = self._db[collection].find_one(
+        document = self._db[collection.value].find_one(
             {
                 "_id": entry_id
             })
@@ -86,21 +84,24 @@ class MongoDatabase(Database):
             user: IdentifyingClientData,
             overwrite: bool = False):
         self.set(
-            collection=self._user_collection_name,
+            collection=DatabaseCollection.USERS,
             entry_id=user_id,
             entry=user,
             overwrite=overwrite
         )
 
     def delete_user(self, user_id: str) -> bool:
-        return self.delete(self._user_collection_name, user_id)
+        return self.delete(
+            DatabaseCollection.USERS,
+            user_id
+        )
 
     def get_user(self, user_id: str) -> IdentifyingClientData | None:
         return self.get_one(
-            self._user_collection_name,
+            DatabaseCollection.USERS,
             user_id,
             IdentifyingClientData()
         )
 
     def clear(self):
-        self._db[self._user_collection_name].drop()
+        self._db[DatabaseCollection.USERS.value].drop()

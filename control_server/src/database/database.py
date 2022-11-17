@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Iterable
 
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
 from control_server.src.data.serializable import Serializable
+from control_server.src.database.database_collection import DatabaseCollection
 
 
 class Database(ABC):
@@ -20,7 +22,7 @@ class Database(ABC):
     @abstractmethod
     def set(
             self,
-            collection: str,
+            collection: DatabaseCollection,
             entry_id: str,
             entry: Serializable,
             overwrite: bool = False):
@@ -35,10 +37,11 @@ class Database(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def delete(self, collection: str, entry_id: str) -> bool:
+    def delete(self, collection: DatabaseCollection, entry_id: str) -> bool:
         """
         Deletes the entry with the given ID from the specified database
         collection.
+        :param collection: Collection to delete from
         :param entry_id: The entry ID of the entry to delete
         :return: Whether the entry was deleted from the database.
         """
@@ -47,7 +50,7 @@ class Database(ABC):
     @abstractmethod
     def get_one(
             self,
-            collection: str,
+            collection: DatabaseCollection,
             entry_id: str,
             entry_instance: Deserializable) -> Deserializable | None:
         """
