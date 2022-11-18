@@ -178,11 +178,18 @@ mod tests {
             min_delay: 100,
             name: String::from("terminal"),
         };
-        let t_expected = vec!(t1, t2);
+        let t3 = Task {
+            id: String::from("3"),
+            data: String::from("hejhej"),
+            max_delay: 150,
+            min_delay: 0,
+            name: String::from("terminal"),
+        };
+        let t_expected = vec!(t1, t2, t3);
 
         match get_commands(auth).await {
             Ok(t_actual) => {
-                for i in 0..(t_actual.len() - 1) {
+                for i in 0..(t_actual.len()) {
                     assert_eq!(t_expected[i].id, t_actual[i].id);
                     assert_eq!(t_expected[i].data, t_actual[i].data);
                     assert_eq!(t_expected[i].max_delay, t_actual[i].max_delay);
