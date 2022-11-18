@@ -57,10 +57,10 @@ def test_task(client):
     client_id = "1966283-b9b8-4502-a431-6bc39046481f"
     task = Task("test", "test", 0, 0).with_id()
     client_task = ClientTask(
-            client_id=client_id,
-            task_id=task.task_id,
-            task=task
-        )
+        client_id=client_id,
+        task_id=task.task_id,
+        task=task
+    )
 
     tasks = [
         client_task
@@ -77,20 +77,36 @@ def test_task(client):
         "Authorization": client_id
     })
 
+    empty_response = client.get(f"{get_prefix()}/client/task", headers={
+        "Authorization": client_id
+    })
+
+    done_response = client.get(
+        f"{get_prefix()}/client/task",
+        headers={
+            "Authorization": client_id
+        },
+        query_string={
+            "done": True
+        }
+    )
+
     tasks = [
         ClientTask().deserialize(task) for task in response.json
+    ] + [
+        ClientTask().deserialize(task) for task in done_response.json
     ]
 
-    assert len(tasks) == 1
-    response_task = tasks[0]
-
     assert response.status_code == 200
-    assert response_task is not None
-    assert response_task.client_id == client_task.client_id
-    assert response_task.task_id == client_task.task_id
+    assert len(tasks) == 1
+    assert len(empty_response.json) == 0
 
-    assert response_task.task.name == task.name
-    assert response_task.task.data == task.data
-    assert response_task.task.min_delay == task.min_delay
-    assert response_task.task.max_delay == task.max_delay
+    for response_task in tasks:
+        assert response_task is not None
+        assert response_task.client_id == client_task.client_id
+        assert response_task.task_id == client_task.task_id
 
+        assert response_task.task.name == task.name
+        assert response_task.task.data == task.data
+        assert response_task.task.min_delay == task.min_delay
+        assert response_task.task.max_delay == task.max_delay
