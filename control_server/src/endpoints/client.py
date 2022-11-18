@@ -1,14 +1,14 @@
-from typing import cast
+from typing import cast, List
 
 from flask import request, jsonify
 
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.client_identifier import ClientIdentifier
 from control_server.src.controller import controller
-from control_server.src.data.client_task_collection import ClientTaskCollection
+from control_server.src.data.client_task import ClientTask
+from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
-from control_server.src.data.task import Task
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.src.utils.request_utils import get_ip
 
@@ -67,14 +67,16 @@ def task():
         return "", 400
 
     tasks = cast(
-        ClientTaskCollection,
-        controller.db.get_one(
+        List[ClientTask],
+        list(controller.db.get_all(
             DatabaseCollection.USER_TASKS,
-            client_id.authorization,
-            ClientTaskCollection()
-        )
+            identifier={
+                "client_id": client_id.authorization
+            },
+            entry_instance_creator=lambda: cast(Deserializable, ClientTask())
+        ))
     )
 
     return jsonify(
-        tasks.serialize()
+        [found_task.serialize() for found_task in tasks]
     ), 200

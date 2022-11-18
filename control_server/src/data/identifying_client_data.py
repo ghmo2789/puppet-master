@@ -22,5 +22,10 @@ class IdentifyingClientData(Serializable, Deserializable):
         if data_dict is not None:
             self.__dict__ = data_dict
 
+    @property
+    def id(self):
+        return self._id
+
     def set_id(self, new_id: str):
         self._id = new_id
+        return self

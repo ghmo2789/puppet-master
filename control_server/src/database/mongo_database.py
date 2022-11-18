@@ -1,3 +1,7 @@
+from typing import List, Dict, Callable
+
+import pymongo
+
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
@@ -28,6 +32,15 @@ class MongoDatabase(Database):
 
         self._db = self._client[self._credentials.mongo_database]
         self._user_collection_name = "clients"
+
+        self._db[DatabaseCollection.USER_TASKS].create_index(
+            [
+                ('client_id', pymongo.TEXT),
+                ('task_id', pymongo.TEXT),
+            ],
+            name='search_index',
+            default_language='english'
+        )
 
     def set(
             self,
@@ -77,6 +90,21 @@ class MongoDatabase(Database):
 
         entry_instance.deserialize(dict(document))
         return entry_instance
+
+    def get_all(
+            self,
+            collection: DatabaseCollection,
+            identifier: Dict[str, str],
+            entry_instance_creator: Callable[[], Deserializable]
+    ) -> List[Deserializable]:
+        documents = self._db[collection.get_name()].find(identifier)
+
+        for document in documents:
+            if document is None:
+                continue
+
+            instance = entry_instance_creator()
+            yield instance.deserialize(dict(document))
 
     def set_user(
             self,
