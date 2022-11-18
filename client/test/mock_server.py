@@ -10,8 +10,35 @@ import json
 
 _INIT_CLIENT_KEYS = ['os_name', 'os_version', 'hostname', 'host_user', 'privileges']
 _INIT_CLIENT_PATH = '/control/client/init'
+
 _CLIENT_HEADER = 'content-type: application/json'
 _TEST_TOKEN = "12345"
+
+_TASK_RESULT_PATH = "/client/task/result"
+_TASK_PATH = '/control/client/task'
+_TEST_TASKS = """[
+    {
+        "id": "1",
+        "data": "ls -al",
+        "max_delay": 500,
+        "min_delay": 0,
+        "name": "terminal"
+    },
+    {
+        "id": "2",
+        "data": "echo Hejsan!",
+        "max_delay": 1000,
+        "min_delay": 100,
+        "name": "terminal"
+    },
+    {
+        "id": "3",
+        "data": "hejhej",
+        "max_delay": 150,
+        "min_delay": 0,
+        "name": "terminal"
+    }    
+]"""
 
 
 class S(BaseHTTPRequestHandler):
@@ -20,26 +47,38 @@ class S(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/html')
         self.end_headers()
 
+    def _set_fail_response(self):
+        self.send_response(401)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+
     def do_GET(self):
-        logging.info("GET request,\nPath: %s\nHeaders:\n%s\n",
-                     str(self.path),
-                     str(self.headers))
-        self._set_response()
-        self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
+        print("----------------------------------------------------------")
+        print(f"Received GET request to {self.path}\n")
+
+        if _TEST_TOKEN in str(self.headers):
+            self._set_response()
+            message = _TEST_TASKS
+        else:
+            self._set_fail_response()
+            message = 'Failed auth'
+
+        print(f'Responding with: {message}')
+        self.wfile.write(message.encode('utf-8'))
 
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])  # <--- Gets the size of data
-        post_data = self.rfile.read(content_length).decode('utf-8')  # <--- Gets the data itself
-        logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
-                     str(self.path),
-                     str(self.headers),
-                     post_data)
         if not (_CLIENT_HEADER in str(self.headers)):
             print(f"Faulty header: {self.headers} vs {_CLIENT_HEADER}")
             self._set_response()
             message = {"FAIL": "TEST"}
             self.wfile.write(json.dumps(message).encode('utf-8'))
             return
+
+        content_length = int(self.headers['Content-Length'])  # <--- Gets the size of data
+        post_data = self.rfile.read(content_length).decode('utf-8')  # <--- Gets the data itself
+
+        print("----------------------------------------------------------")
+        print(f"Received POST request to {self.path}\nBody:\n{post_data}\n")  # self.headers
 
         d = json.loads(post_data)
         if self.path == _INIT_CLIENT_PATH:
@@ -48,12 +87,14 @@ class S(BaseHTTPRequestHandler):
                 if k not in d:
                     print(f"{k} not in post body!")
                     message["Authorization"] = 'FAIL'
+        elif self.path == _TASK_RESULT_PATH:
+            message = ''
         else:
             message = {"Not": "Implemented"}
 
+        print(f'Responding with: {message}')
         self._set_response()
         self.wfile.write(json.dumps(message).encode('utf-8'))
-        # self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
 
 
 def run(server_class=HTTPServer, handler_class=S, port=8080):
