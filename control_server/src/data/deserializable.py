@@ -18,3 +18,4 @@ class Deserializable(ABC):
             else:
                 setattr(self, key, value)
         self.__dict__ = data_dict
+        return self

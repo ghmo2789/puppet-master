@@ -1,11 +1,15 @@
+from typing import cast
+
 from flask import request, jsonify
 
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.client_identifier import ClientIdentifier
 from control_server.src.controller import controller
+from control_server.src.data.client_task_collection import ClientTaskCollection
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
 from control_server.src.data.task import Task
+from control_server.src.database.database_collection import DatabaseCollection
 from control_server.src.utils.request_utils import get_ip
 
 
@@ -62,17 +66,15 @@ def task():
     ):
         return "", 400
 
-    return jsonify([
-        Task(
-            name='terminal',
-            data='ls -al',
-            min_delay=0,
-            max_delay=500
-        ).serialize(),
-        Task(
-            name='terminal',
-            data='echo Hejsan!',
-            min_delay=100,
-            max_delay=1000
-        ).serialize()
-    ]), 200
+    tasks = cast(
+        ClientTaskCollection,
+        controller.db.get_one(
+            DatabaseCollection.USER_TASKS,
+            client_id.authorization,
+            ClientTaskCollection()
+        )
+    )
+
+    return jsonify(
+        tasks.serialize()
+    ), 200

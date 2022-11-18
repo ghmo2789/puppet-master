@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import Iterable, TypeVar
 
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.deserializable import Deserializable
@@ -9,7 +9,6 @@ from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
 from control_server.src.data.serializable import Serializable
 from control_server.src.database.database_collection import DatabaseCollection
-
 
 class Database(ABC):
     """

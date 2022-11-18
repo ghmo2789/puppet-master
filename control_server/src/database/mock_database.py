@@ -1,10 +1,12 @@
-from typing import Dict, cast
+from typing import Dict, cast, TypeVar
 
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
 from control_server.src.database.database import Database
 from control_server.src.database.database_collection import DatabaseCollection
+
+T = TypeVar("T")
 
 
 class MockDatabase(Database):
@@ -45,7 +47,7 @@ class MockDatabase(Database):
             self,
             collection: DatabaseCollection,
             entry_id: str,
-            entry_instance: Deserializable) -> Deserializable | None:
+            entry_instance: T) -> T | None:
         collection = self._collections[collection]
         return collection[entry_id] if entry_id in collection else None
 

@@ -104,4 +104,5 @@ class MongoDatabase(Database):
         )
 
     def clear(self):
-        self._db[DatabaseCollection.USERS.value].drop()
+        for collection_name in DatabaseCollection:
+            self._db[collection_name].drop()
