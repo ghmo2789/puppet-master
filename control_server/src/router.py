@@ -4,6 +4,7 @@ from flask import Flask
 
 from control_server.src.controller import Controller
 from control_server.src.endpoints import client
+from control_server.src.endpoints import admin
 
 
 class RouteDestination:
@@ -32,7 +33,8 @@ class Router:
         pref = self._controller.url_prefix
         self.route_map = {
             f'{pref}/client/init': RouteDestination(client.init, ['POST']),
-            f'{pref}/client/task': RouteDestination(client.task, ['GET'])
+            f'{pref}/client/task': RouteDestination(client.task, ['GET']),
+            f'{pref}/admin/client': RouteDestination(admin.client, ['GET']),
         }
 
         for route, destination in self.route_map.items():
