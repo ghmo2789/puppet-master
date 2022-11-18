@@ -182,7 +182,7 @@ mod tests {
 
         match get_commands(auth).await {
             Ok(t_actual) => {
-                for i in 0..t_actual.len() {
+                for i in 0..(t_actual.len() - 1) {
                     assert_eq!(t_expected[i].id, t_actual[i].id);
                     assert_eq!(t_expected[i].data, t_actual[i].data);
                     assert_eq!(t_expected[i].max_delay, t_actual[i].max_delay);
