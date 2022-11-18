@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Iterable, TypeVar, List, Dict, Callable, Any
+from typing import List, Dict, Callable, Any
 
-from control_server.src.data.client_data import ClientData
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData

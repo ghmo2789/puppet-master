@@ -7,6 +7,9 @@ from control_server.src.data_class import DataClass
 
 
 class ClientTask(DataClass, Serializable, Deserializable):
+    """
+    Data class representing a task assigned to a client
+    """
     def __init__(
             self,
             client_id: str = None,

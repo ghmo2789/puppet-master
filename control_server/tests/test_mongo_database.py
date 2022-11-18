@@ -58,6 +58,10 @@ def assert_are_equal(*args: IdentifyingClientData):
 
 @pytest.fixture
 def mongo_test_data():
+    """
+    Set up testing data, and tear down afterwards
+    :return: Nothing.
+    """
     data = DatabaseTestData()
     data.db.clear()
     yield data

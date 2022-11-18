@@ -2,7 +2,9 @@ from enum import StrEnum
 
 
 class DatabaseCollection(StrEnum):
-    """Database collections"""
+    """
+    Enum representing the different database collections
+    """
     USERS = "users"
     USER_TASKS = "user_tasks"
     USER_DONE_TASKS = "user_done_tasks"
