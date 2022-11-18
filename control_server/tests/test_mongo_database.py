@@ -1,12 +1,14 @@
-from typing import Dict
+from typing import Dict, cast
 
 import pytest
 
 from control_server.src.data.client_data import ClientData
+from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
 from control_server.src.database.database import Database
 from control_server.src.database.database_builder import DatabaseBuilder
+from control_server.src.database.database_collection import DatabaseCollection
 from control_server.src.web_settings import WebSettings
 
 
@@ -56,6 +58,10 @@ def assert_are_equal(*args: IdentifyingClientData):
 
 @pytest.fixture
 def mongo_test_data():
+    """
+    Set up testing data, and tear down afterwards
+    :return: Nothing.
+    """
     data = DatabaseTestData()
     data.db.clear()
     yield data
@@ -81,6 +87,45 @@ def test_set_delete_user(mongo_test_data: DatabaseTestData):
     db.delete_user(
         mongo_test_data.sample_id
     )
+
+
+def test_set_get_all(mongo_test_data: DatabaseTestData):
+    """
+    Tests that the set_user method works as expected without raising errors,
+    and that a set user can be retrieved
+    """
+    db = mongo_test_data.db
+    users = [
+        IdentifyingClientData(
+            client_data=ClientData.load_from_dict(
+                mongo_test_data.sample_user_data),
+            ip=mongo_test_data.sample_ip
+        ).set_id(mongo_test_data.sample_id + "1"),
+        IdentifyingClientData(
+            client_data=ClientData.load_from_dict(
+                mongo_test_data.sample_user_data),
+            ip=mongo_test_data.sample_ip + "2"
+        ).set_id(mongo_test_data.sample_id + "2")
+    ]
+
+    for user in users:
+        db.set_user(
+            user.id,
+            user,
+            overwrite=True
+        )
+
+    retrieved_users = list(db.get_all(
+        DatabaseCollection.USERS,
+        {
+            "client_data.os_name": mongo_test_data.sample_user_data["os_name"]
+        },
+        lambda: cast(Deserializable, IdentifyingClientData())
+    ))
+
+    assert len(retrieved_users) == len(users)
+    assert all([user.id == retrieved_user.id for (user, retrieved_user) in
+                zip(users, retrieved_users)])
 
 
 def test_set_get_delete_get_user(mongo_test_data: DatabaseTestData):

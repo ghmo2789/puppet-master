@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Iterable, TypeVar
+from typing import List, Dict, Callable, Any
 
-from control_server.src.data.client_data import ClientData
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
 from control_server.src.data.serializable import Serializable
 from control_server.src.database.database_collection import DatabaseCollection
 
+
 class Database(ABC):
     """
     An abstract database class, useful for abstracting how the database is
     implemented, and how the data is stored.
     """
+
     def __init__(self):
         pass
 
@@ -59,6 +60,24 @@ class Database(ABC):
         :param entry_instance: An instance of the entry to load data into.
         :return: The entry instance, if data was retrieved from the database.
         None otherwise.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_all(
+            self,
+            collection: DatabaseCollection,
+            identifier: Dict[str, Any],
+            entry_instance_creator: Callable[[], Deserializable]
+    ) -> List[Deserializable]:
+        """
+        Retrieves all entries with a given identifier from a specified
+        database collection.
+        :param collection: The collection of the database to get an entry from.
+        :param identifier: The identifier to search for.
+        :param entry_instance_creator: A function to create instances of the
+        type of entry to retrieve
+        :return: The entries retrieved from the database.
         """
         raise NotImplementedError
 

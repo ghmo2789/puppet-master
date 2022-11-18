@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from control_server.src.data.client_task_collection import ClientTaskCollection
+from control_server.src.data.client_task import ClientTask
 from control_server.src.data.task import Task
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.tests.utils import get_prefix
@@ -55,17 +55,21 @@ def test_task(client):
     :return:
     """
     client_id = "1966283-b9b8-4502-a431-6bc39046481f"
+    task = Task("test", "test", 0, 0).with_id()
+    client_task = ClientTask(
+        client_id=client_id,
+        task_id=task.task_id,
+        task=task
+    )
+
     tasks = [
-        Task("test", "test", 0, 0).with_id()
+        client_task
     ]
 
     controller.db.set(
         DatabaseCollection.USER_TASKS,
-        client_id,
-        ClientTaskCollection(
-            client_id=client_id,
-            tasks=tasks
-        ),
+        client_task.id,
+        client_task,
         overwrite=True
     )
 
@@ -73,17 +77,36 @@ def test_task(client):
         "Authorization": client_id
     })
 
-    response_task_collection = ClientTaskCollection()
-    response_task_collection.deserialize(response.json)
+    empty_response = client.get(f"{get_prefix()}/client/task", headers={
+        "Authorization": client_id
+    })
+
+    done_response = client.get(
+        f"{get_prefix()}/client/task",
+        headers={
+            "Authorization": client_id
+        },
+        query_string={
+            "done": True
+        }
+    )
+
+    tasks = [
+        ClientTask().deserialize(task) for task in response.json
+    ] + [
+        ClientTask().deserialize(task) for task in done_response.json
+    ]
 
     assert response.status_code == 200
-    assert response_task_collection is not None
-    assert response_task_collection.client_id == client_id
-    received_task = response_task_collection.tasks[0]
-    assert len(response_task_collection.tasks) == len(tasks)
+    assert len(tasks) == 1
+    assert len(empty_response.json) == 0
 
-    assert response_task_collection.tasks[0].name == tasks[0].name
-    assert response_task_collection.tasks[0].data == tasks[0].data
-    assert response_task_collection.tasks[0].min_delay == tasks[0].min_delay
-    assert response_task_collection.tasks[0].max_delay == tasks[0].max_delay
+    for response_task in tasks:
+        assert response_task is not None
+        assert response_task.client_id == client_task.client_id
+        assert response_task.task_id == client_task.task_id
 
+        assert response_task.task.name == task.name
+        assert response_task.task.data == task.data
+        assert response_task.task.min_delay == task.min_delay
+        assert response_task.task.max_delay == task.max_delay

@@ -1,4 +1,4 @@
-from typing import Dict, cast, TypeVar
+from typing import Dict, cast, TypeVar, List, Any, Callable
 
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
@@ -19,7 +19,7 @@ class MockDatabase(Database):
         self._collections: \
             Dict[DatabaseCollection, Dict[str, Deserializable]] = \
             {
-                DatabaseCollection.USERS: {}
+
             }
 
     def set(
@@ -28,6 +28,9 @@ class MockDatabase(Database):
             entry_id: str,
             entry: IdentifyingClientData,
             overwrite: bool = False):
+        if not collection in self._collections:
+            self._collections[collection] = {}
+
         collection = self._collections[collection]
         exists = entry_id in collection
         if overwrite or not exists:
@@ -50,6 +53,30 @@ class MockDatabase(Database):
             entry_instance: T) -> T | None:
         collection = self._collections[collection]
         return collection[entry_id] if entry_id in collection else None
+
+    @staticmethod
+    def _get_attribute(value: Any, attribute: str):
+        sub_attributes = attribute.split(".")
+        current_value = value
+        for sub_attribute in sub_attributes:
+            if isinstance(current_value, dict):
+                current_value = current_value[sub_attribute]
+            else:
+                current_value = getattr(current_value, sub_attribute)
+
+        return current_value
+
+    def get_all(
+            self,
+            collection: DatabaseCollection,
+            identifier: Dict[str, str],
+            entry_instance_creator: Callable[[], Deserializable]
+    ) -> List[Deserializable]:
+        return [entry for entry in self._collections[collection].values() if
+                all(
+                    identifier[key] == MockDatabase._get_attribute(entry, key)
+                    for key in identifier
+                )]
 
     def set_user(
             self,
