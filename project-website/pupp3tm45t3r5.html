@@ -80,7 +80,7 @@ In other words, the tool that is going to be built during this project can be se
             </h3>
             <p class="w3-large">
                 Project leader / Scrum master <br>
-                Developer
+                Backend Developer
             </p>
         </div>
     </div>
@@ -94,7 +94,7 @@ In other words, the tool that is going to be built during this project can be se
             </h3>
             <p class="w3-large">
                 In charge of Report <br>
-                Developer
+                Frontend Developer
             </p>
         </div>
     </div>
@@ -109,7 +109,7 @@ In other words, the tool that is going to be built during this project can be se
                 Johan Lövgren
             </h3>
             <p class="w3-large">
-                Grandmaster Developer
+                Backend Developer - Client
             </p>
         </div>
     </div>
@@ -124,7 +124,7 @@ In other words, the tool that is going to be built during this project can be se
                 Simon Petterson
             </h3>
             <p class="w3-large">
-                Master Developer
+                Backend Developer - Control server
             </p>
         </div>
     </div>
@@ -151,15 +151,36 @@ In other words, the tool that is going to be built during this project can be se
   <div class="w3-white" id="progress">
     <div class="w3-container w3-content w3-center" style="max-width:800px" id="links">
         <h2 class="w3-wide">Current Progress</h2>
+        <p>With the first proper sprint completed, the project is starting to take form.</p> 
+        <h3 class="w3-wide">GUI</h3> 
         <p class="w3-large w3-justify">
-          The group is currently in the planning stage, creating a project plan in order to structure the work for the upcoming weeks. More updates coming soon! 
+          Below you can see part of our GUI. This will display the current connected clients and enable the user
+          to select clients and a task for them to perform. We are still using dummy-data for this, and the current sprint
+          will be used to connect these to the server. 
         </p>
-        <div class="mySlides w3-display-container w3-center">
-          <img src="images/group_picture.png" style="width:100%">
-          <div class="w3-display-bottommiddle w3-container w3-text-white w3-padding-32 w3-hide-small">
-            <h3>PUPP3T M45T3R5</h3>  
-          </div>
-        </div>       
+        <div class="w3-half w3-display-container w3-center">
+          <img src="images/status_view.png" style="width:100%">
+        </div>
+        <div class="w3-half w3-display-container w3-center">
+          <img src="images/map_view.png" style="width:100%">
+        </div>
+        <div class="w3-display-container w3-center">
+          <img src="images/client_view.png" style="width:100%">
+        </div>
+        <br>
+        <h3 class="w3-wide">Client</h3>
+        <p class="w3-large w3-justify">
+          The initial plan for this week was to decide what framework to use for the client and implement 
+          a first version of the client that "calls home" to the control server by polling. 
+          The choice of framework landed on Rust, as this language allowed us to have the same code 
+          base for the application that will build and run on Linux, MacOS, and Windows. 
+          Regarding the implementation of the first version of the client we managed to implement the planned functionality, 
+          but we also managed to implement the functionality that was planned for the next sprint. 
+          This functionality is that the client can receive terminal tasks from the control server, 
+          run these commands and return the result to the control server. However, 
+          the current implementation do not allow the control server to send terminal tasks that is a blocking task, 
+          i.e. a task that do not end until user input is received.
+        </p> 
     </div>
   </div>
   
@@ -212,7 +233,7 @@ function carousel() {
   myIndex++;
   if (myIndex > x.length) {myIndex = 1}    
   x[myIndex-1].style.display = "block";  
-  setTimeout(carousel, 4000);    
+  setTimeout(carousel, 6000);    
 }
 
 // Used to toggle the menu on small screens when clicking on the menu button
