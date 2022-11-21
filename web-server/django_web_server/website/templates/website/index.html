@@ -55,8 +55,24 @@
             {% endfor %}
         </table>
       </div>
+      <div class="w3-container w3-padding-16" action="/website/" method="sendTask">
+        <div class="w3-container w3-half w3-center">
+          <select class="w3-select" name="option">
+            <option value="" disabled selected>Choose task</option>
+          {% for task in tasks %}
+            <option value=""> {{task.name}} </option>  
+          {% endfor %}
+          </select> 
+        </div>
+        <div class="w3-container w3-half w3-center ">
+          <input class ="w3-button w3-block w3-black", type="submit", value="Submit", onclick="sendTask()"> 
+        </div>
+      </div>
+
       <div style="display: none" id="jsonData" data-json="{{ locations }}"></div>
       <script src="{% static 'website/website.js' %}"></script>
+      
+      
       <!-- JS for checkbox marking -->
       <script type="text/javascript">
   

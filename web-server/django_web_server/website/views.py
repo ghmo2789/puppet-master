@@ -50,6 +50,8 @@ def index(request):
                  {'id': 23, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
                  'host_user': 'Alfred', 'status': 'ok'}]
 
+    dummyTasks = [{'name': 'write command'}, {'name': 'open browser'}, {'name': 'other task'}]
+
     dummyStatistics = {'num_clients': 23,
                        'top_os': 'windows',
                        'errors': 0}
@@ -58,7 +60,8 @@ def index(request):
 
     context = {'data': dummyData,
                'statistics': dummyStatistics,
-               'locations': json.dumps(dummyLocations)}
+               'locations': json.dumps(dummyLocations),
+               'tasks': dummyTasks}
     return render(request, 'website/index.html', context)
 
 
