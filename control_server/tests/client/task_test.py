@@ -1,38 +1,8 @@
-from typing import List
-
-import pytest
-
+from control_server.src.controller import controller
 from control_server.src.data.client_task import ClientTask
 from control_server.src.data.task import Task
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.tests.utils import get_prefix
-from control_server.src import router
-from control_server.src.controller import controller
-
-
-@pytest.fixture
-def app():
-    yield router.app
-
-    if not router.router.controller.settings.mock_db:
-        router.router.controller.db.clear()
-
-
-def test_init(client):
-    """
-    Test the client init endpoint with a valid request using test data.
-    :param client:
-    :return:
-    """
-    response = client.post(f"{get_prefix()}/client/init", json={
-        "os_name": "1",
-        "os_version": "1",
-        "hostname": "1",
-        "host_user": "1",
-        "privileges": "1"
-    })
-
-    assert response.status_code == 200
 
 
 def test_task_invalid_id(client):
@@ -62,14 +32,10 @@ def test_task(client):
         task=task
     )
 
-    tasks = [
-        client_task
-    ]
-
     controller.db.set(
-        DatabaseCollection.USER_TASKS,
-        client_task.id,
-        client_task,
+        collection=DatabaseCollection.USER_TASKS,
+        entry_id=client_task.id,
+        entry=client_task,
         overwrite=True
     )
 
@@ -92,10 +58,10 @@ def test_task(client):
     )
 
     tasks = [
-        ClientTask().deserialize(task) for task in response.json
-    ] + [
-        ClientTask().deserialize(task) for task in done_response.json
-    ]
+                ClientTask().deserialize(task) for task in response.json
+            ] + [
+                ClientTask().deserialize(task) for task in done_response.json
+            ]
 
     assert response.status_code == 200
     assert len(tasks) == 1

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Dict, cast, TypeVar, List, Any, Callable
 
 from control_server.src.data.deserializable import Deserializable
@@ -5,6 +6,7 @@ from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
 from control_server.src.database.database import Database
 from control_server.src.database.database_collection import DatabaseCollection
+from control_server.tests.hashable_dict import HashableDict
 
 T = TypeVar("T")
 
@@ -17,31 +19,47 @@ class MockDatabase(Database):
     def __init__(self):
         super().__init__()
         self._collections: \
-            Dict[DatabaseCollection, Dict[str, Deserializable]] = \
+            Dict[
+                DatabaseCollection,
+                OrderedDict[str | HashableDict, Deserializable]
+            ] = \
             {
-
+                DatabaseCollection.USERS: OrderedDict(),
+                DatabaseCollection.USER_TASKS: OrderedDict(),
+                DatabaseCollection.USER_TASK_RESPONSES: OrderedDict()
             }
 
     def set(
             self,
             collection: DatabaseCollection,
-            entry_id: str,
             entry: IdentifyingClientData,
+            entry_id: str = None,
+            identifier: dict[str, Any] = None,
             overwrite: bool = False):
-        if not collection in self._collections:
-            self._collections[collection] = {}
+        Database._verify_identifier_entry_id(entry_id, identifier)
+
+        if collection not in self._collections:
+            self._collections[collection] = OrderedDict()
 
         collection = self._collections[collection]
-        exists = entry_id in collection
+        key = HashableDict(identifier) if identifier is not None else entry_id
+        exists = key in collection
+
         if overwrite or not exists:
-            collection[entry_id] = entry
+            collection[key] = entry
         elif not overwrite and exists:
             raise ValueError("Entry already exists")
 
-    def delete(self, collection: DatabaseCollection, entry_id: str) -> bool:
+    def delete(
+            self,
+            collection: DatabaseCollection,
+            entry_id: str = None,
+            identifier: dict[str, Any] = None) -> bool:
         collection = self._collections[collection]
-        if entry_id in collection:
-            del collection[entry_id]
+        key = HashableDict(identifier) if identifier is not None else entry_id
+
+        if key in collection:
+            del collection[key]
             return True
 
         return False
@@ -49,10 +67,23 @@ class MockDatabase(Database):
     def get_one(
             self,
             collection: DatabaseCollection,
-            entry_id: str,
-            entry_instance: T) -> T | None:
+            entry_id: str = None,
+            identifier: dict[str, Any] = None,
+            entry_instance: Deserializable = None) -> Deserializable | None:
+        Database._verify_identifier_entry_id(entry_id, identifier)
         collection = self._collections[collection]
-        return collection[entry_id] if entry_id in collection else None
+
+        if entry_id is not None:
+            return collection[entry_id] if entry_id in collection else None
+        else:
+            return next(
+                (entry for entry in collection.values() if
+                 all(
+                     identifier[key] == MockDatabase._get_attribute(entry, key)
+                     for key in identifier
+                 )),
+                None
+            )
 
     @staticmethod
     def _get_attribute(value: Any, attribute: str):
@@ -85,21 +116,24 @@ class MockDatabase(Database):
             overwrite: bool = False):
         self.set(
             DatabaseCollection.USERS,
-            user_id,
-            user,
-            overwrite
+            entry_id=user_id,
+            entry=user,
+            overwrite=overwrite
         )
 
     def delete_user(self, user_id: str) -> bool:
-        return self.delete(DatabaseCollection.USERS, user_id)
+        return self.delete(
+            collection=DatabaseCollection.USERS,
+            entry_id=user_id
+        )
 
     def get_user(self, user_id: str) -> IdentifyingClientData:
         return cast(
             IdentifyingClientData,
             self.get_one(
-                DatabaseCollection.USERS,
-                user_id,
-                IdentifyingClientData()
+                collection=DatabaseCollection.USERS,
+                entry_id=user_id,
+                entry_instance=IdentifyingClientData()
             )
         )
 
