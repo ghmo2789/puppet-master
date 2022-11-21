@@ -74,8 +74,7 @@ def test_task_response(client):
 
     response = client.post(
         f"{get_prefix()}/client/task/response",
-        headers=
-        {
+        headers={
             "Authorization": client_id
         },
         json=task_response.serialize()
@@ -112,8 +111,7 @@ def test_task_two_responses(client):
     for current_response in task_responses:
         response = client.post(
             f"{get_prefix()}/client/task/response",
-            headers=
-            {
+            headers={
                 "Authorization": client_id
             },
             json=current_response.serialize()

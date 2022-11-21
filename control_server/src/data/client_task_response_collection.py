@@ -2,7 +2,6 @@ from typing import Any, cast
 
 from control_server.src.data.anonymous_client_task_response import \
     AnonymousClientTaskResponse
-from control_server.src.data.client_task_response import ClientTaskResponse
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.serializable import Serializable
 from control_server.src.data_class import DataClass

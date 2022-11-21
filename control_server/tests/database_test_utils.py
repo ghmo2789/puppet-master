@@ -1,7 +1,5 @@
 from typing import Dict, cast
 
-import pytest
-
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \

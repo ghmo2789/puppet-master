@@ -1,4 +1,4 @@
-from typing import List, Dict, cast
+from typing import Dict, cast
 
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.serializable import Serializable

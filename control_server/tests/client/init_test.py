@@ -16,6 +16,3 @@ def test_init(client):
     })
 
     assert response.status_code == 200
-
-
-
