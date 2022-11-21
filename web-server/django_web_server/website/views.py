@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 import json
 
 
@@ -40,5 +40,35 @@ def index(request):
     return render(request, 'website/index.html',context)
 
 def tasks(request):
-    context = {'data': 'hello tasks'}
+    dummyTasks = [{'taskId': 1, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 2, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 3, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 4, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 5, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 6, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 7, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 8, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 9, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 10, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 11, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 12, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 13, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 14, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 15, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 16, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  {'taskId': 17, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
+                  ]
+    
+    formStatus = 'Button not pressed'
+
+    if request.method == 'POST':
+        formStatus = 'Button was pressed!'
+
+    context = {'data': dummyTasks,
+               'formStatus': formStatus}
     return render(request, 'website/tasks.html', context)
+    
+    return tasks(request)
+
+def kill_task(request):
+    return tasks(request)
