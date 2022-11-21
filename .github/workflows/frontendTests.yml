@@ -13,7 +13,7 @@ jobs:
         with:
           python-version: "3.9"
       - run: pip install -r web-server/requirements.txt
-      - run: python web-server/django_web_server/manage.py test
+      - run: python web-server/django_web_server/manage.py test web-server
       - name: Run flake8
         uses: py-actions/flake8@v2
         with: 
