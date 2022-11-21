@@ -1,7 +1,6 @@
 from django.shortcuts import render
-from django.http import HttpResponse
-import json
-
+from django.http import HttpResponse, HttpResponseRedirect
+from .forms import clientForm
 
 def index(request):
     dummyData = [{'id': 1, 'os': 'linux', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
@@ -11,7 +10,7 @@ def index(request):
                  {'id': 5, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
                  {'id': 6, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
                  {'id': 7, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 8, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
+                 {'id': 8, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},  
                  {'id': 9, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
                  {'id': 10, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
                  {'id': 11, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
@@ -27,14 +26,18 @@ def index(request):
                  {'id': 21, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
                  {'id': 22, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
                  {'id': 23, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'}]
+    
+    tasks = [{'name': "Write command"}, {'name': "Open browser"}, {'name': "Other task"}]
+    
+    if request.method == 'POST':
+        print(request.POST)
+        form = clientForm(request.POST)
+        if form.is_valid():
+            print("hej")
+    else:
+        form = clientForm()
+        print("nej")    
 
-    dummyStatistics = {'num_clients': 23,
-                       'top_os': 'windows',
-                       'errors': 0}
-
-    dummyLocations = {'locations': [[0, 0], [51.5, -0.09], [-0.09, 51.5]]}
-
-    context = {'data': dummyData,
-               'statistics': dummyStatistics,
-               'locations' : json.dumps(dummyLocations)}
-    return render(request, 'website/index.html',context)
+    context = {'data': dummyData, 'tasks': tasks, 'form': form}
+    return render(request, 'website/index.html', context, )
+    #return HttpResponse("Hello world!")
