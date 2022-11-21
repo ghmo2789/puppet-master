@@ -16,7 +16,7 @@ class DatabaseTestData:
     def __init__(self, use_mock: bool):
         self.settings: WebSettings = WebSettings().read()
         self.db: Database = DatabaseBuilder() \
-            .set_mock(use_mock) \
+            .set_mock(use_mock if not self.settings.mock_db else True) \
             .build()
 
         self.sample_user_data: Dict = {
