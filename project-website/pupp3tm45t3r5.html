@@ -168,6 +168,18 @@ In other words, the tool that is going to be built during this project can be se
           <img src="images/client_view.png" style="width:100%">
         </div>
         <br>
+        <h3 class="w3-wide">Control Server</h3>
+        <p class="w3-large w3-justify">
+          During this sprint, the code for the control server was refactored to make it easier to handle HTTP requests 
+          both from the clients and the web server. 
+          The database layout was also changed to make it easier to store the necessary information.
+          Further on CRUD functions for the database were implemented. The endpoint for storing clients is 
+          created where a unique identification string is created for each client based on their IP 
+          address and together with the clients' other information such as the operating system is stored in the database. 
+          The endpoint for sending tasks to the clients from the control server is also created. 
+          The supported Python version was changed from supporting both 3.9 and 3.11 to supporting only 3.11, 
+          this also led to refactoring the whole control server code base.
+        </p>
         <h3 class="w3-wide">Client</h3>
         <p class="w3-large w3-justify">
           The initial plan for this week was to decide what framework to use for the client and implement 
