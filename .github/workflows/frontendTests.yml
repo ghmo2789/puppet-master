@@ -1,0 +1,21 @@
+name: frontend_test
+
+on: [push]
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout out repository
+        uses: actions/checkout@v2
+      - name: Set up Python env
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - run: pip install -r web-server/requirements.txt
+      - run: python web-server/django_web_server/manage.py test web-server
+      - name: Run flake8
+        uses: py-actions/flake8@v2
+        with: 
+          args: "--max-line-length=120"
+          path: "web-server"
