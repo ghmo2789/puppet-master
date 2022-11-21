@@ -46,8 +46,8 @@
       </div>
       
       <!-- Client table -->
-      <form method="post">
-      {% csrf_token %}
+      
+      
       <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0">
             <tr style="background-color: black;"> 
@@ -58,29 +58,34 @@
               <td>Host User</td>
               <td>Status</td>
             </tr>
-          {% for i in data%}
+            <form method="post">
+            {% csrf_token %}
+          {% for client in clients %}
             <tr>
-                <td>{{form.selected_clients}}</td>
-                <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}"></td> 
-                <td>{{i.id}}</td>
-                <td>{{i.os}} v. {{i.version}}</td>
-                <td>{{i.hostname}}</td>
-                <td>{{i.host_user}}</td>
-                <td>{{i.status}}</td>
+                <td><input type="checkbox" name="select" value='{{client.client_id}}' id="{{client.client_id}}"></td> 
+                <td>{{client.client_id}}</td>
+                <td>{{client.os}} v. {{client.version}}</td>
+                <td>{{client.host_name}}</td>
+                <td>{{client.host_user}}</td>
+                <td>{{client.status}}</td>
             </tr>
             {% endfor %}
         </table>
       </div>
       <div class="w3-container w3-padding-16" action="/website/" method="sendTask">
         <div class="w3-container w3-half w3-center">
-          {{form.task}}
-          
+          <select class="w3-select" name="option">
+            <option value="" disabled selected>Choose task</option>
+            {% for task in tasks %}
+            <option value="{{task.name}}">{{task.name}}</option>
+            {% endfor %}
+          </select>   
         </div>
         <div class="w3-container w3-half w3-center ">
-          <input class ="w3-button w3-block w3-black", type="submit", value="Submit", onclick="sendTask()"> 
+          <input class ="w3-button w3-block w3-black", type="submit", value="Submit"> 
         </div>
       </div>
-      </form>
+            </form>
       
    
 
@@ -91,12 +96,12 @@
 
       <!-- JS for data collection -->
       <script type="text/javascript">
-  
+        console.log("hej :)");
         // Initialize data for javascript
         let data = [];
-        {% for i in data %}
-          data.push({{i.id}});
-        {% endfor %}
+      {% for i in clients %}
+        data.push({{i.client_id}});
+      {% endfor %}
     
         function selectAll(){
           if(document.getElementById("master_checkbox").checked) {
@@ -108,20 +113,6 @@
               document.getElementById(data[i]).checked = false; 
             }
           }
-        }
-        // Send clients and task
-        function sendTask(){
-          let select = document.getElementById("tasks"); 
-          let task = select.options[select.selectedIndex].value; 
-
-          clients = [];
-          for(let i = 0; i < data.length; i++) {
-            if(document.getElementById(data[i]).checked) {
-              clients.push(data[i]);
-            } 
-          }
-          
-          console.log(clients); 
         }
 
         
