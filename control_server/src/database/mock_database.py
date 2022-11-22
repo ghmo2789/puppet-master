@@ -6,7 +6,7 @@ from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
 from control_server.src.database.database import Database
 from control_server.src.database.database_collection import DatabaseCollection
-from control_server.tests.hashable_dict import HashableDict
+from control_server.tests.utils.hashable_dict import HashableDict
 
 T = TypeVar("T")
 

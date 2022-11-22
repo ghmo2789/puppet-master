@@ -2,7 +2,7 @@ from control_server.src.controller import controller
 from control_server.src.data.client_task import ClientTask
 from control_server.src.data.task import Task
 from control_server.src.database.database_collection import DatabaseCollection
-from control_server.tests.utils import get_prefix
+from control_server.tests.utils.generic_test_utils import get_prefix
 
 
 def test_task_invalid_id(client):

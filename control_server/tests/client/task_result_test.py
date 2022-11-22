@@ -7,7 +7,7 @@ from control_server.src.data.client_task_response_collection import \
     ClientTaskResponseCollection
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.database.database_collection import DatabaseCollection
-from control_server.tests.utils import get_prefix
+from control_server.tests.utils.generic_test_utils import get_prefix
 
 client_id = "1966283-b9b8-4503-a431-6bc39046481f"
 task_id = "1966284-b9b8-4543-a431-6bc39046481f"
