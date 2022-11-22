@@ -3,7 +3,8 @@ from typing import cast, List
 from flask import request, jsonify
 from control_server.src.controller import controller
 from control_server.src.database.database_collection import DatabaseCollection
-from control_server.src.data.identifying_client_data import IdentifyingClientData
+from control_server.src.data.identifying_client_data import \
+    IdentifyingClientData
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.serializable import Serializable
@@ -41,13 +42,18 @@ def allclients():
         identifier[key] = value
 
     all_clients = cast(
-        List[ClientData],
-        list(controller.db.get_all(collection=DatabaseCollection.USERS,
-                                   identifier=identifier,
-                                   entry_instance_creator=lambda: cast(Deserializable,
-                                                                       ClientData()))
-             ))
+        List[IdentifyingClientData],
+        list(controller.db.get_all(
+            collection=DatabaseCollection.USERS,
+            identifier=identifier,
+            entry_instance_creator=lambda: cast(
+                Deserializable,
+                IdentifyingClientData()
+            )
+        ))
+    )
+
     print(all_clients)
     return jsonify({
-        'all_clients': all_clients
+        'all_clients': [current_client.serialize() for current_client in all_clients]
     }), 200
