@@ -46,6 +46,10 @@ class Router:
     def app(self):
         return self._app
 
+    @property
+    def controller(self):
+        return self._controller
 
-router = Router()
-app = router.app
+
+router: Router = Router()
+app: Flask = router.app
