@@ -5,9 +5,7 @@ from control_server.src.controller import controller
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
-from control_server.src.data.client_data import ClientData
 from control_server.src.data.deserializable import Deserializable
-from control_server.src.data.serializable import Serializable
 
 
 def client():
@@ -37,15 +35,12 @@ def allclients():
     Endpoint handling all the clients information request from admin GUI
     :return:
     """
-    identifier = {}
-    for key, value in request.args.items():
-        identifier[key] = value
 
     all_clients = cast(
         List[IdentifyingClientData],
         list(controller.db.get_all(
             collection=DatabaseCollection.USERS,
-            identifier=identifier,
+            identifier={},
             entry_instance_creator=lambda: cast(
                 Deserializable,
                 IdentifyingClientData()
@@ -53,7 +48,10 @@ def allclients():
         ))
     )
 
-    print(all_clients)
+    # No client exists
+    if len(all_clients) == 0:
+        return '', 404
+
     return jsonify({
         'all_clients': [current_client.serialize() for current_client in all_clients]
     }), 200

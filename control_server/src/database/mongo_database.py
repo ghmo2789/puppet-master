@@ -1,4 +1,4 @@
-from typing import List, Dict, Callable
+from typing import List, Dict, Callable, Any
 
 import pymongo
 
@@ -45,13 +45,16 @@ class MongoDatabase(Database):
     def set(
             self,
             collection: DatabaseCollection,
-            entry_id: str,
             entry: Serializable,
+            entry_id: str = None,
+            identifier: dict[str, Any] = None,
             overwrite: bool = False):
+        Database._verify_identifier_entry_id(entry_id, identifier)
+
         entry_dict = entry.serialize()
         entry_id_dict = {
             "_id": entry_id
-        }
+        } if identifier is None else identifier
 
         complete_entry_dict = entry_dict | entry_id_dict
 
@@ -67,23 +70,32 @@ class MongoDatabase(Database):
         else:
             self._db[collection.get_name()].insert_one(complete_entry_dict)
 
-    def delete(self, collection: DatabaseCollection, entry_id: str) -> bool:
-        result = self._db[collection.get_name()].delete_one(
-            {
-                "_id": entry_id
-            })
+    def delete(
+            self,
+            collection: DatabaseCollection,
+            entry_id: str = None,
+            identifier: dict[str, Any] = None) -> bool:
+        Database._verify_identifier_entry_id(entry_id, identifier)
+        id_dict = {
+            "_id": entry_id
+        } if identifier is None else identifier
+
+        result = self._db[collection.get_name()].delete_one(id_dict)
 
         return result.deleted_count > 0
 
     def get_one(
             self,
             collection: DatabaseCollection,
-            entry_id: str,
-            entry_instance: Deserializable) -> Deserializable | None:
-        document = self._db[collection.get_name()].find_one(
-            {
-                "_id": entry_id
-            })
+            entry_id: str = None,
+            identifier: dict[str, Any] = None,
+            entry_instance: Deserializable = None) -> Deserializable | None:
+        Database._verify_identifier_entry_id(entry_id, identifier)
+
+        key = {
+            "_id": entry_id
+        } if entry_id is not None else identifier
+        document = self._db[collection.get_name()].find_one(key)
 
         if document is None:
             return None
@@ -104,7 +116,7 @@ class MongoDatabase(Database):
                 continue
 
             instance = entry_instance_creator()
-            yield instance.deserialize(dict(document))
+            yield instance.deserialize(data_dict=dict(document))
 
     def set_user(
             self,
@@ -120,15 +132,15 @@ class MongoDatabase(Database):
 
     def delete_user(self, user_id: str) -> bool:
         return self.delete(
-            DatabaseCollection.USERS,
-            user_id
+            collection=DatabaseCollection.USERS,
+            entry_id=user_id
         )
 
     def get_user(self, user_id: str) -> IdentifyingClientData | None:
         return self.get_one(
-            DatabaseCollection.USERS,
-            user_id,
-            IdentifyingClientData()
+            collection=DatabaseCollection.USERS,
+            entry_id=user_id,
+            entry_instance=IdentifyingClientData()
         )
 
     def clear(self):

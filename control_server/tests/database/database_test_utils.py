@@ -1,7 +1,5 @@
 from typing import Dict, cast
 
-import pytest
-
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
@@ -13,10 +11,16 @@ from control_server.src.web_settings import WebSettings
 
 
 class DatabaseTestData:
-    def __init__(self):
+    """
+    Test class for database tests, containing useful dependencies, such as the
+    database, settings and some sample data. The contents of the class are
+    not mutated during the tests, so it can be reused (except for the databases
+    contents).
+    """
+    def __init__(self, use_mock: bool):
         self.settings: WebSettings = WebSettings().read()
         self.db: Database = DatabaseBuilder() \
-            .set_mock(self.settings.mock_db) \
+            .set_mock(use_mock if not self.settings.mock_db else True) \
             .build()
 
         self.sample_user_data: Dict = {
@@ -56,56 +60,44 @@ def assert_are_equal(*args: IdentifyingClientData):
                 assert current_dict[key] == value
 
 
-@pytest.fixture
-def mongo_test_data():
-    """
-    Set up testing data, and tear down afterwards
-    :return: Nothing.
-    """
-    data = DatabaseTestData()
-    data.db.clear()
-    yield data
-    data.db.clear()
-
-
-def test_set_delete_user(mongo_test_data: DatabaseTestData):
+def test_set_delete_user(test_data: DatabaseTestData):
     """
     Tests that the set_user method works as expected without raising errors
     """
-    db = mongo_test_data.db
+    db = test_data.db
     user = IdentifyingClientData(
-        client_data=ClientData.load_from_dict(mongo_test_data.sample_user_data),
-        ip=mongo_test_data.sample_ip
+        client_data=ClientData.load_from_dict(test_data.sample_user_data),
+        ip=test_data.sample_ip
     )
 
     db.set_user(
-        mongo_test_data.sample_id,
+        test_data.sample_id,
         user,
         overwrite=True
     )
 
     db.delete_user(
-        mongo_test_data.sample_id
+        test_data.sample_id
     )
 
 
-def test_set_get_all(mongo_test_data: DatabaseTestData):
+def test_set_get_all(test_data: DatabaseTestData):
     """
     Tests that the set_user method works as expected without raising errors,
     and that a set user can be retrieved
     """
-    db = mongo_test_data.db
+    db = test_data.db
     users = [
         IdentifyingClientData(
             client_data=ClientData.load_from_dict(
-                mongo_test_data.sample_user_data),
-            ip=mongo_test_data.sample_ip
-        ).set_id(mongo_test_data.sample_id + "1"),
+                test_data.sample_user_data),
+            ip=test_data.sample_ip
+        ).set_id(test_data.sample_id + "1"),
         IdentifyingClientData(
             client_data=ClientData.load_from_dict(
-                mongo_test_data.sample_user_data),
-            ip=mongo_test_data.sample_ip + "2"
-        ).set_id(mongo_test_data.sample_id + "2")
+                test_data.sample_user_data),
+            ip=test_data.sample_ip + "2"
+        ).set_id(test_data.sample_id + "2")
     ]
 
     for user in users:
@@ -118,7 +110,7 @@ def test_set_get_all(mongo_test_data: DatabaseTestData):
     retrieved_users = list(db.get_all(
         DatabaseCollection.USERS,
         {
-            "client_data.os_name": mongo_test_data.sample_user_data["os_name"]
+            "client_data.os_name": test_data.sample_user_data["os_name"]
         },
         lambda: cast(Deserializable, IdentifyingClientData())
     ))
@@ -128,37 +120,37 @@ def test_set_get_all(mongo_test_data: DatabaseTestData):
                 zip(users, retrieved_users)])
 
 
-def test_set_get_delete_get_user(mongo_test_data: DatabaseTestData):
+def test_set_get_delete_get_user(test_data: DatabaseTestData):
     """
     Tests that the set_user method works as expected without raising errors,
     and that a set user can be retrieved
     """
-    db = mongo_test_data.db
+    db = test_data.db
     user = IdentifyingClientData(
-        client_data=ClientData.load_from_dict(mongo_test_data.sample_user_data),
-        ip=mongo_test_data.sample_ip
+        client_data=ClientData.load_from_dict(test_data.sample_user_data),
+        ip=test_data.sample_ip
     )
 
     db.set_user(
-        mongo_test_data.sample_id,
+        test_data.sample_id,
         user,
         overwrite=True
     )
 
     retrieved_user = db.get_user(
-        mongo_test_data.sample_id
+        test_data.sample_id
     )
 
     assert retrieved_user is not None
-    user.set_id(mongo_test_data.sample_id)
+    user.set_id(test_data.sample_id)
     assert_are_equal(user, retrieved_user)
 
     db.delete_user(
-        mongo_test_data.sample_id
+        test_data.sample_id
     )
 
     retrieved_user = db.get_user(
-        mongo_test_data.sample_id
+        test_data.sample_id
     )
 
     assert retrieved_user is None
