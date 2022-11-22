@@ -12,6 +12,10 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: "3.9"
+      - name: Setup .env file with testing settings
+        working-directory: ./web-server/django_web_server
+        run: |
+          echo "SECRET_KEY=f178b51cb26d16fd5756b46bd21673c060e1090b993a825081" >> .env
       - run: pip install -r web-server/requirements.txt
       - run: python web-server/django_web_server/manage.py test
       - name: Run flake8
