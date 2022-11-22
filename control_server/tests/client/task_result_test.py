@@ -14,12 +14,23 @@ task_id = "1966284-b9b8-4543-a431-6bc39046481f"
 
 
 def randomize_ids():
+    """
+    Randomizes the client and task IDs. Useful to prevent key collisions in
+    database during testing. UUIDs are 128-bits, so the chance of collision by
+    generating the same IDs twice is negligible.
+    :return:
+    """
     global client_id, task_id
     client_id = str(uuid.uuid4())
     task_id = str(uuid.uuid4())
 
 
 def get_task_response():
+    """
+    Instantiates a task response with the current client and task IDs, used as
+    a sample for testing
+    :return:
+    """
     return ClientTaskResponse(
         task_id=task_id,
         result="success",
@@ -28,6 +39,11 @@ def get_task_response():
 
 
 def assert_no_responses():
+    """
+    Assert that there are no responses in the database with the current client
+    and task IDs
+    :return: Nothing.
+    """
     existing = list(controller.db.get_all(
         collection=DatabaseCollection.USER_TASK_RESPONSES,
         identifier={
@@ -45,6 +61,11 @@ def assert_no_responses():
 
 
 def get_responses() -> ClientTaskResponseCollection:
+    """
+    Get all task responses from the database, with the current client and task
+    IDs
+    :return:
+    """
     return cast(
         ClientTaskResponseCollection,
         controller.db.get_one(

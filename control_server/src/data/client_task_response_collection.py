@@ -8,6 +8,9 @@ from control_server.src.data_class import DataClass
 
 
 class ClientTaskResponseCollection(DataClass, Deserializable, Serializable):
+    """
+    A collection data class of a specific clients responses to a specific task
+    """
     def __init__(
             self,
             client_id: str = None,

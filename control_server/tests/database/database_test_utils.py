@@ -11,6 +11,12 @@ from control_server.src.web_settings import WebSettings
 
 
 class DatabaseTestData:
+    """
+    Test class for database tests, containing useful dependencies, such as the
+    database, settings and some sample data. The contents of the class are
+    not mutated during the tests, so it can be reused (except for the databases
+    contents).
+    """
     def __init__(self, use_mock: bool):
         self.settings: WebSettings = WebSettings().read()
         self.db: Database = DatabaseBuilder() \
