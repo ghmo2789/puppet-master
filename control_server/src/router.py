@@ -35,6 +35,7 @@ class Router:
             f'{pref}/client/init': RouteDestination(client.init, ['POST']),
             f'{pref}/client/task': RouteDestination(client.task, ['GET']),
             f'{pref}/admin/client': RouteDestination(admin.client, ['GET']),
+            f'{pref}/admin/allclients': RouteDestination(admin.allclients, ['GET']),
         }
 
         for route, destination in self.route_map.items():
