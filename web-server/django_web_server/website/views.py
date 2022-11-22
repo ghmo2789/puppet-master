@@ -3,6 +3,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from .forms import clientForm
 from .models import Client
 from .models import SentTask
+import json
 import time
 
 def create_task(c_id, task_t):
@@ -36,6 +37,12 @@ def index(request):
     else:
         form = clientForm()
 
-    context = {'clients': Client.objects.all(), 'tasks': tasks, 'form': form}
+    dummyLocations = {'locations': [[0, 0], [51.5, -0.09], [-0.09, 51.5]]}
+
+    context = {'clients': Client.objects.all(), 
+               'tasks': tasks, 
+               'form': form,
+               'locations': json.dumps(dummyLocations),}
+
     return render(request, 'website/index.html', context, )
-    #return HttpResponse("Hello world!")
+
