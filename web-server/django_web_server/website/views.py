@@ -2,7 +2,21 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from .forms import clientForm
 from .models import Client
-from .models import SentTask 
+from .models import SentTask
+import time
+
+def create_task(c_id, task_t):
+    client = Client.objects.get(client_id = c_id)
+    t = time.localtime()
+    asc_t = time.asctime(t)
+    task = client.senttask_set.create(start_time=asc_t, finish_time='-', task_type=task_t, task_info="description")
+
+def send_tasks(request):
+    client_ids = request.POST.getlist('select')
+    task_t = request.POST.getlist('option')[0]
+    for c_id in client_ids:
+        create_task(c_id, task_t)
+    return
 
 def index(request):
     for i in range(1, 23):
@@ -17,8 +31,8 @@ def index(request):
     
     if request.method == 'POST':
         form = clientForm(request.POST)
-        if form.is_valid():
-            print(request.POST)
+        if form.is_valid(): 
+            send_tasks(request)
     else:
         form = clientForm()
 
