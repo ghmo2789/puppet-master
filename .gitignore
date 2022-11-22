@@ -176,6 +176,7 @@ local_settings.py
 .env
 control_server/src/.env
 web-server/.env
+web-server/django_web_server/.env
 db.sqlite3
 
 ### Flask ###
