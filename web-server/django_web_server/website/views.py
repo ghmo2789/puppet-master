@@ -1,71 +1,64 @@
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
+from .forms import clientForm
+from .models import Client, SentTask
 import json
+import time
+
+
+def create_task(c_id, task_t):
+    client = Client.objects.get(client_id=c_id)
+    t = time.localtime()
+    asc_t = time.asctime(t)
+    client.senttask_set.create(start_time=asc_t, finish_time='-', task_type=task_t, task_info="description")
+
+
+def send_tasks(request):
+    client_ids = request.POST.getlist('select')
+    task_t = request.POST.getlist('option')[0]
+    for c_id in client_ids:
+        create_task(c_id, task_t)
+    # TODO: Send to control server
+    return
+
+
+def kill_task(request):
+    # TODO: Send to control server
+    return
 
 
 def index(request):
-    dummyData = [{'id': 1, 'os': 'linux', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 2, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 3, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 4, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 5, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 6, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 7, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 8, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 9, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 10, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 11, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 12, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 13, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 14, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 15, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 16, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 17, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 18, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 19, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 20, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 21, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 22, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 23, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator', 'host_user': 'Alfred', 'status': 'ok'}]
+    for i in range(1, 23):
+        current_client = Client(client_id=i, os="linux", version=510, host_name="dator", host_user="user", status=True)
+        current_client.save()
+
+    tasks = [{'name': "Write command"}, {'name': "Open browser"}, {'name': "Other task"}]
+
+    if request.method == 'POST':
+        form = clientForm(request.POST)
+        if form.is_valid():
+            send_tasks(request)
+    else:
+        form = clientForm()
 
     dummyStatistics = {'num_clients': 23,
                        'top_os': 'windows',
                        'errors': 0}
-
     dummyLocations = {'locations': [[0, 0], [51.5, -0.09], [-0.09, 51.5]]}
 
-    context = {'data': dummyData,
+    context = {'clients': Client.objects.all(),
+               'tasks': tasks,
+               'form': form,
                'statistics': dummyStatistics,
-               'locations' : json.dumps(dummyLocations)}
-    return render(request, 'website/index.html',context)
+               'locations': json.dumps(dummyLocations)}
+
+    return render(request, 'website/index.html', context, )
+
 
 def tasks(request):
-    dummyTasks = [{'taskId': 1, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 2, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 3, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 4, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 5, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 6, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 7, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 8, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 9, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 10, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 11, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 12, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 13, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 14, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 15, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 16, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  {'taskId': 17, 'clientId': 1, 'start': 1230, 'finish': 1259, 'status': 'finished', 'taskType': 'bash', 'taskInfo': 'echo hello'},
-                  ]
-    
-    formStatus = 'Button not pressed'
-
     if request.method == 'POST':
-        formStatus = 'Button was pressed!'
+        kill_task(request)
 
-    context = {'data': dummyTasks,
-               'formStatus': formStatus}
+    context = {'tasks': SentTask.objects.all()[:200]}
     return render(request, 'website/tasks.html', context)
     
     return tasks(request)
