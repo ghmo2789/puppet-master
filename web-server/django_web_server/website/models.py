@@ -23,7 +23,7 @@ class SentTask(models.Model):
     task_info = models.CharField(max_length=100)
 
     def finished(self, time):
-      self.finish_time = time
+        self.finish_time = time
 
     def __str__(self):
         return ("task id = " + str(self.id) + " client id = " + str(self.client_id))

@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from .forms import clientForm
 from .models import Client, SentTask
+from .filters import ClientFilter
 import json
 import time
 
@@ -31,6 +32,9 @@ def index(request):
         current_client = Client(client_id=i, os="linux", version=510, host_name="dator", host_user="user", status=True)
         current_client.save()
 
+    new_client = Client(client_id=40, os="mac", version=510, host_name="dator", host_user="user", status=True)
+    new_client.save()
+
     tasks = [{'name': "Write command"}, {'name': "Open browser"}, {'name': "Other task"}]
 
     if request.method == 'POST':
@@ -49,7 +53,8 @@ def index(request):
                'tasks': tasks,
                'form': form,
                'statistics': dummyStatistics,
-               'locations': json.dumps(dummyLocations)}
+               'locations': json.dumps(dummyLocations),
+               'filter': ClientFilter(request.GET, queryset=Client.objects.all())}
 
     return render(request, 'website/index.html', context, )
 
@@ -60,5 +65,3 @@ def tasks(request):
 
     context = {'tasks': SentTask.objects.all()[:200]}
     return render(request, 'website/tasks.html', context)
-    
-    return tasks(request)

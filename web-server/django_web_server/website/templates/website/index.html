@@ -33,10 +33,15 @@
       </div>
       
       <!-- Client table -->
-      
+      <div class="w3-container">
+        <form method="GET">
+          {{ filter.form.os }}
+          <button class="w3-button w3-black" type="submit">Test Filter</button>
+        </form>
+      </div>
       
       <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
-        <table class="table table-dark table-striped table-hover mb-0">
+        <table class="table table-dark table-striped table-hover mb-0" id="client_table">
             <tr style="background-color: black;"> 
               <td><input type="checkbox" name="selectAll" value="1" id="master_checkbox" onclick="selectAll()"></td>
               <td>Client ID</td>
@@ -47,7 +52,8 @@
             </tr>
             <form method="post">
             {% csrf_token %}
-          {% for client in clients %}
+             
+          {% for client in filter.qs %}
             <tr>
                 <td><input type="checkbox" name="select" value='{{client.client_id}}' id="{{client.client_id}}"></td> 
                 <td>{{client.client_id}}</td>
@@ -57,6 +63,7 @@
                 <td>{{client.status}}</td>
             </tr>
             {% endfor %}
+            </div>
         </table>
       </div>
       <div class="w3-container w3-padding-16" action="/website/" method="sendTask">
@@ -84,7 +91,7 @@
       <script type="text/javascript">
         // Initialize data for javascript
         let data = [];
-      {% for i in clients %}
+      {% for i in filter.qs %}
         data.push({{i.client_id}});
       {% endfor %}
     
@@ -98,7 +105,7 @@
               document.getElementById(data[i]).checked = false; 
             }
           }
-        }
+        }      
 
         
       </script> 
