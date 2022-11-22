@@ -1,2 +1,3 @@
 Django
-
+django-leaflet==0.28.3
+python-decouple==3.6
