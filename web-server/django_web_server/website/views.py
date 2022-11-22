@@ -62,6 +62,3 @@ def tasks(request):
     return render(request, 'website/tasks.html', context)
     
     return tasks(request)
-
-def kill_task(request):
-    return tasks(request)
