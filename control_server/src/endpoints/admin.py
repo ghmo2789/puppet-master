@@ -9,14 +9,18 @@ from control_server.src.data.deserializable import Deserializable
 
 
 def client():
-    # TODO: Add authorization check
     """
     Endpoint handing the client information request from admin GUI
     :return: Clients information and a status code for representing the request was successful
      or not and why it may have been unsuccessful, if clients id is missing or
     """
+
+    auth = request.headers.get('authorization')
+    print(auth)
+    if auth != controller.settings.admin_key or auth is None:
+        return '', 401
+
     client_id = request.args.get('id')
-    print(client_id)
     if client_id is None or len(client_id) == 0:
         return 'Missing client id', 400
 
@@ -30,11 +34,15 @@ def client():
 
 
 def allclients():
-    # TODO: Add authorization check
     """
     Endpoint handling all the clients information request from admin GUI
-    :return:
+    :return: A list of all the clients in the database
     """
+
+    auth = request.headers.get('authorization')
+    print(auth)
+    if auth != controller.settings.admin_key or auth is None:
+        return '', 401
 
     all_clients = cast(
         List[IdentifyingClientData],

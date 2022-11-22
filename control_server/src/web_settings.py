@@ -11,6 +11,7 @@ class WebSettings(DataClass):
         self._debug = False
         self._behind_proxy = True
         self._id_key = ''
+        self._admin_key = ''
 
     def read(self):
         self.load_from_with_types(
@@ -34,6 +35,10 @@ class WebSettings(DataClass):
     @property
     def id_key(self) -> str:
         return self._id_key
+
+    @property
+    def admin_key(self) -> str:
+        return self._admin_key
 
     @prefix.setter
     def prefix(self, value: str):
