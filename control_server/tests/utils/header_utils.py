@@ -32,8 +32,9 @@ class HeaderUtils:
                 f'provided convertible class instances serialized properties.'
 
             assert convertible.read_prop(prop) == data[prop_name], \
-                f'Property {prop_name} has value {prop.read()}, but expected ' \
-                f'value {data[prop_name]}.'
+                f'Property {prop_name} has value ' \
+                f'{convertible.read_prop(prop)}' \
+                f', but expected value {data[prop_name]}.'
 
     def assert_read(
             self,
