@@ -1,7 +1,7 @@
-from .models import Client, SentTask
+from .models import Client
 from decouple import config
 import requests
-import json
+
 
 class ControlServerHandler():
     url = ""
@@ -9,37 +9,30 @@ class ControlServerHandler():
     authorization = ""
 
     def __init__(self):
-        # url = config("CONTROL_SERVER_URL")
-        # prefix = config("CONTROL_SERVER_PREFIX")
-        # authorization = config("CONTROL_SERVER_AUTHORIZATION")
+        self.url = config("CONTROL_SERVER_URL")
+        self.prefix = config("CONTROL_SERVER_PREFIX")
+        self.authorization = config("CONTROL_SERVER_AUTHORIZATION")
 
-        self.url = "1dl650.rickebo.com"
-        self.prefix = "/control"
-        self.authorization = "2aa3a0d9be45175b1628d5ec8c487da81f9df6432b0b5429a1d73e4e3b84b459"
-    
     def __save_clients(self, clients):
         # TODO: Old clients will still be visible even if they are not connected
         # Client.objects.all().delete()
         for client in clients:
-            if not(Client.objects.filter(client_id = client['_id']).exists()):
+            if not(Client.objects.filter(client_id=client['_id']).exists()):
                 client_data = client['client_data']
-                c = Client(client_id = client['_id'],
-                          ip = client['ip'],
-                          os_name = client_data['os_name'],
-                          os_version = client_data['os_version'],
-                          hostname = client_data['hostname'],
-                          host_user = client_data['host_user'],
-                          privileges = client_data['privileges'])
+                c = Client(client_id=client['_id'],
+                           ip=client['ip'],
+                           os_name=client_data['os_name'],
+                           os_version=client_data['os_version'],
+                           hostname=client_data['hostname'],
+                           host_user=client_data['host_user'],
+                           privileges=client_data['privileges'])
                 c.save()
-
 
     def getClients(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
         requestHeaders = {'Authorization': self.authorization}
-        r = requests.get(url = requestUrl, headers = requestHeaders)
+        r = requests.get(url=requestUrl, headers=requestHeaders)
         clients = r.json()['all_clients']
         self.__save_clients(clients)
 
         return clients
-
-      

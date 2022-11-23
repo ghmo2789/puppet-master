@@ -30,7 +30,7 @@ def kill_task(request):
 
 def index(request):
     controlServer = ControlServerHandler()
-    allClients = controlServer.getClients()
+    controlServer.getClients()
 
     tasks = [{'name': "Write command"}, {'name': "Open browser"}, {'name': "Other task"}]
 
