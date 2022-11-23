@@ -36,9 +36,11 @@ class Router:
             f'{pref}/client/init': RouteDestination(client.init, ['POST']),
             f'{pref}/client/task': RouteDestination(client.task, ['GET']),
             f'{pref}/admin/client': RouteDestination(admin.client, ['GET']),
-            f'{pref}/admin/allclients': RouteDestination(admin.allclients, ['GET']),
+            f'{pref}/admin/allclients': RouteDestination(admin.all_clients, ['GET']),
             f'{pref}/client/task/response':
-                RouteDestination(client.task_response, ['POST'])
+                RouteDestination(client.task_response, ['POST']),
+            f'{pref}/admin/task': RouteDestination(admin.task(), ['GET', 'POST']),
+            f'{pref}/admin/alltasks': RouteDestination(admin.all_tasks(), ['GET']),
         }
 
         for route, destination in self.route_map.items():
