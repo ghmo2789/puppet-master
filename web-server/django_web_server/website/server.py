@@ -17,7 +17,7 @@ class ControlServerHandler():
         # TODO: Old clients will still be visible even if they are not connected
         # Client.objects.all().delete()
         for client in clients:
-            if not(Client.objects.filter(client_id=client['_id']).exists()):
+            if not (Client.objects.filter(client_id=client['_id']).exists()):
                 client_data = client['client_data']
                 c = Client(client_id=client['_id'],
                            ip=client['ip'],
