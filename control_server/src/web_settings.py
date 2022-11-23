@@ -18,7 +18,7 @@ class WebSettings(DataClass):
     def read(self):
         self.load_from_with_types(
             lambda prop, prop_type:
-            config(ls
+            config(
                 prop.lstrip("_").upper(),
                 cast=prop_type
             )
