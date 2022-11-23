@@ -3,7 +3,7 @@ from django.db import models
 
 # Create your models here.
 class Client(models.Model):
-    id = models.AutoField(primary_key=True, default=0)
+    id = models.AutoField(primary_key=True)
     client_id = models.CharField(max_length=50, default="")
     ip = models.CharField(max_length=50, default="")
     os_name = models.CharField(max_length=7, default="")

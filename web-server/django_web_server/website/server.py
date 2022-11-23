@@ -18,16 +18,19 @@ class ControlServerHandler():
         self.authorization = "2aa3a0d9be45175b1628d5ec8c487da81f9df6432b0b5429a1d73e4e3b84b459"
     
     def __save_clients(self, clients):
+        # TODO: Old clients will still be visible even if they are not connected
+        # Client.objects.all().delete()
         for client in clients:
-            client_data = client['client_data']
-            c = Client(_id = client['_id'],
-                       ip = client['ip'],
-                       os_name = client_data['os_name'],
-                       os_version = client_data['os_version'],
-                       hostname = client_data['hostname'],
-                       host_user = client_data['host_user'],
-                       privileges = client_data['privileges'])
-            c.save()
+            if not(Client.objects.filter(client_id = client['_id']).exists()):
+                client_data = client['client_data']
+                c = Client(client_id = client['_id'],
+                          ip = client['ip'],
+                          os_name = client_data['os_name'],
+                          os_version = client_data['os_version'],
+                          hostname = client_data['hostname'],
+                          host_user = client_data['host_user'],
+                          privileges = client_data['privileges'])
+                c.save()
 
 
     def getClients(self):
@@ -35,7 +38,6 @@ class ControlServerHandler():
         requestHeaders = {'Authorization': self.authorization}
         r = requests.get(url = requestUrl, headers = requestHeaders)
         clients = r.json()['all_clients']
-        #clients = json.load(clientsJson)
         self.__save_clients(clients)
 
         return clients

@@ -35,7 +35,7 @@
       <!-- Client table -->
       <div class="w3-container">
         <form method="GET">
-          {{ filter.form.os }}
+          {{ filter.form.os_name }}
           <button class="w3-button w3-black" type="submit">Test Filter</button>
         </form>
       </div>
@@ -55,7 +55,7 @@
              
           {% for client in filter.qs %}
             <tr>
-                <td><input type="checkbox" name="select" value='{{client.client_id}}' id="{{client.client_id}}"></td> 
+                <td><input type="checkbox" name="select" value='{{client.client_id}}' id="{{client.id}}"></td> 
                 <td>{{client.ip}}</td>
                 <td>{{client.os_name}} v. {{client.os_version}}</td>
                 <td>{{client.hostname}}</td>
@@ -92,7 +92,7 @@
         // Initialize data for javascript
         let data = [];
       {% for i in filter.qs %}
-        data.push({{i.client_id}});
+        data.push({{i.id}});
       {% endfor %}
     
         function selectAll(){

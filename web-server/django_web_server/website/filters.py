@@ -10,8 +10,8 @@ class ClientFilter(django_filters.FilterSet):
         ('linux', 'linux'),
     )
 
-    os = django_filters.ChoiceFilter(choices=CHOICES, empty_label="Select OS")
+    os_name = django_filters.ChoiceFilter(choices=CHOICES, empty_label="Select OS")
 
     class Meta:
         model = Client
-        fields = ('os',)
+        fields = ('os_name',)
