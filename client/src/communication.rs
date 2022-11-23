@@ -115,8 +115,8 @@ pub async fn get_commands(token: &String) -> Result<Vec<Task>, anyhow::Error> {
     Ok(tasks)
 }
 
-pub async fn send_task_result(tr: TaskResult, auth_token: &String) -> Result<(), anyhow::Error> {
-    post_request(serde_json::to_string(&tr).unwrap(),
+pub async fn send_task_result(tr: &TaskResult, auth_token: &String) -> Result<(), anyhow::Error> {
+    post_request(serde_json::to_string(tr).unwrap(),
                  URL,
                  RESULT_ENDPOINT,
                  auth_token).await?;

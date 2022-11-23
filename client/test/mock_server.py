@@ -37,9 +37,26 @@ _TEST_TASKS = """[
         "max_delay": 150,
         "min_delay": 0,
         "name": "terminal"
-    }    
+    },
+    {
+        "id": "4",
+        "data": "ping 127.0.0.1",
+        "max_delay": 150,
+        "min_delay": 0,
+        "name": "terminal"
+    }        
+]"""
+_TEST_TASKS_2 = """[
+    {
+        "id": "5",
+        "data": "",
+        "max_delay": 0,
+        "min_delay": 0,
+        "name": "abort"
+    }        
 ]"""
 
+n_gets = 0
 
 class S(BaseHTTPRequestHandler):
     def _set_response(self):
@@ -53,18 +70,19 @@ class S(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        global n_gets
         print("----------------------------------------------------------")
         print(f"Received GET request to {self.path}\n")
-
         if _TEST_TOKEN in str(self.headers):
             self._set_response()
-            message = _TEST_TASKS
+            message = _TEST_TASKS if n_gets % 2 == 0 else _TEST_TASKS_2
         else:
             self._set_fail_response()
             message = 'Failed auth'
 
         print(f'Responding with: {message}')
         self.wfile.write(message.encode('utf-8'))
+        n_gets += 1
 
     def do_POST(self):
         if not (_CLIENT_HEADER in str(self.headers)):

