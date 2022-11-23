@@ -21,3 +21,4 @@ jobs:
         uses: py-actions/flake8@v2
         with: 
           args: "--max-line-length=120"
+          path: "web-server"

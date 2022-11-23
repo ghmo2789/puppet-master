@@ -1,3 +1,4 @@
+from control_server.src.crypto.client_id_generator import ClientIdGenerator
 from control_server.src.database.database import Database
 from control_server.src.database.database_builder import DatabaseBuilder
 from control_server.src.database.mock_database import MockDatabase
@@ -14,6 +15,9 @@ class Controller:
         self._db = DatabaseBuilder()\
             .set_mock(self._settings.mock_db)\
             .build()
+        self._client_id_generator = ClientIdGenerator(
+            self._settings.id_key
+        )
 
         if isinstance(self._db, MockDatabase):
             print("Using mock database")
@@ -21,6 +25,10 @@ class Controller:
     @property
     def settings(self) -> WebSettings:
         return self._settings
+
+    @property
+    def client_id_generator(self) -> ClientIdGenerator:
+        return self._client_id_generator
 
     @property
     def url_prefix(self) -> str:
