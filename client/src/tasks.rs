@@ -20,7 +20,68 @@ const DEFAULT_MIN_WAIT: u32 = 0;
 const DEFAULT_MAX_WAIT: u32 = 500;
 
 lazy_static! {
-    static ref RUNNING_TASKS: Mutex<Vec<RunningTask>> = Mutex::new(vec![]);
+    static ref RUNNING_TASKS: Mutex<RunningTasks> = Mutex::new(RunningTasks{ running_tasks: vec![]});
+}
+
+/// Struct containing all running tasks
+struct RunningTasks {
+    running_tasks: Vec<RunningTask>,
+}
+
+/// Implementation of RunningTasks methods
+impl RunningTasks {
+    /// Used to add a running task
+    pub fn add_task(&mut self, running_task: RunningTask) {
+        self.running_tasks.push(running_task);
+    }
+
+    /// Used to check and get the running tasks who are completed
+    ///
+    /// # Returns
+    /// Vector containing TaskResult from the completed tasks
+    fn get_completed_tasks(&mut self) -> Vec<TaskResult> {
+        #[cfg(debug_assertions)]
+        println!("\nChecking completed\n");
+
+        let mut removed = 0;
+        let mut complete_tasks: Vec<TaskResult> = vec![];
+
+        for i in 0..self.running_tasks.len() {
+            let t = self.running_tasks.get_mut(i - removed).unwrap();
+            if t.is_complete() {
+                let tr = t.get_result().unwrap();
+                #[cfg(debug_assertions)] {
+                    println!("#{} complete. Resulting output:", t.id);
+                    println!("{}", tr.result);
+                }
+                complete_tasks.push(tr);
+
+                self.running_tasks.remove(i - removed);
+                removed += 1;
+            } else {
+                #[cfg(debug_assertions)]
+                println!("Task #{} is not complete", t.id);
+            }
+        }
+        complete_tasks
+    }
+
+    /// Aborts all running tasks
+    fn abort_all(&mut self) {
+        for t in self.running_tasks.iter_mut() {
+            t.abort_task();
+        }
+    }
+
+    /// Aborts a single running task, if id exists
+    fn abort_task(&mut self, id: String) {
+        for t in self.running_tasks.iter_mut() {
+            if t.id == id {
+                t.abort_task();
+                break;
+            }
+        }
+    }
 }
 
 /// Struct representing ta running task
@@ -87,6 +148,7 @@ impl RunningTask {
         })
     }
 
+    /// Kills the running task by killing the child process
     pub fn abort_task(&mut self) {
         #[cfg(debug_assertions)]
         println!("Killing task #{}", self.id);
@@ -95,36 +157,13 @@ impl RunningTask {
     }
 }
 
+
 /// Used to check and get the running tasks who are completed
 ///
 /// # Returns
 /// Vector containing TaskResult from the completed tasks
 pub fn check_completed() -> Vec<TaskResult> {
-    #[cfg(debug_assertions)]
-    println!("\nChecking completed\n");
-
-    let mut tasks = RUNNING_TASKS.lock().unwrap();
-    let mut removed = 0;
-    let mut complete_tasks: Vec<TaskResult> = vec![];
-
-    for i in 0..tasks.len() {
-        let t = tasks.get_mut(i - removed).unwrap();
-        if t.is_complete() {
-            let tr = t.get_result().unwrap();
-            #[cfg(debug_assertions)] {
-                println!("#{} complete. Resulting output:", t.id);
-                println!("{}", tr.result);
-            }
-            complete_tasks.push(tr);
-
-            tasks.remove(i - removed);
-            removed += 1;
-        } else {
-            #[cfg(debug_assertions)]
-            println!("Task #{} is not complete", t.id);
-        }
-    }
-    complete_tasks
+    RUNNING_TASKS.lock().unwrap().get_completed_tasks()
 }
 
 /// Run a task received from the control server
@@ -140,6 +179,8 @@ pub fn run_task(task: Task) {
 
     let wait = if task.min_delay < task.max_delay {
         rand::thread_rng().gen_range(task.min_delay, task.max_delay)
+    } else if task.min_delay == task.max_delay {
+        0
     } else {
         rand::thread_rng().gen_range(DEFAULT_MIN_WAIT, DEFAULT_MAX_WAIT)
     };
@@ -156,20 +197,19 @@ pub fn run_task(task: Task) {
             };
             RUNNING_TASKS.lock()
                 .unwrap()
-                .push(rt);
+                .add_task(rt);
         },
         ABORT_CMD => {
-            abort_tasks();
+            let mut rts = RUNNING_TASKS.lock().unwrap();
+            if task.data.is_empty() {
+                rts.abort_all();
+            } else {
+                for id in task.data.split(',') {
+                    rts.abort_task(id.to_string());
+                }
+            }
         },
         _ => {}
-    }
-}
-
-/// Aborts all running tasks
-fn abort_tasks() {
-    let mut running_tasks = RUNNING_TASKS.lock().unwrap();
-    for t in running_tasks.iter_mut() {
-        t.abort_task();
     }
 }
 
