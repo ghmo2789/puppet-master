@@ -59,37 +59,3 @@ def test_write(utils: HeaderUtils):
 def test_read_write(utils: HeaderUtils):
     for _, data_dict in datasets:
         utils.assert_read_write(data=data_dict)
-
-# def test_message_header_parse():
-#     # Format:        H       B   H       H       H
-#     sample_bytes = b'\x00\x01\x02\x00\x03\x00\x04\x00\x05'
-#     header = MessageHeader(data=sample_bytes)
-#     assert header.message_length == 1
-#     assert header.status_code == 2
-#     assert header.url_length == 3
-#     assert header.body_length == 4
-#     assert header.headers_length == 5
-#
-#
-# def test_message_header_parse():
-#     # Format:        H       B   H       H       H
-#     sample_bytes = b'\x00\x01\x02\x00\x03\x00\x04\x00\x05'
-#     header = MessageHeader()
-#     header.message_length = 1
-#     header.status_code = 2
-#     header.url_length = 3
-#     header.body_length = 4
-#     header.headers_length = 5
-#     assert header.to_bytes() == sample_bytes
-#
-#
-# def test_message_header_parse():
-#     # Format:        H       B   H       H       H
-#     sample_bytes = b'\x00\x01\x02\x00\x03\x00\x04\x00\x05'
-#     header = MessageHeader()
-#     header.message_length = 1
-#     header.status_code = 2
-#     header.url_length = 3
-#     header.body_length = 4
-#     header.headers_length = 5
-#     assert header.to_bytes() == sample_bytes
