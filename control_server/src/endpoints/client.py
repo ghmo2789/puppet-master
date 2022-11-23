@@ -2,10 +2,15 @@ from typing import cast, List
 
 from flask import request, jsonify
 
+from control_server.src.data.anonymous_client_task_response import \
+    AnonymousClientTaskResponse
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.client_identifier import ClientIdentifier
 from control_server.src.controller import controller
 from control_server.src.data.client_task import ClientTask
+from control_server.src.data.client_task_response import ClientTaskResponse
+from control_server.src.data.client_task_response_collection import \
+    ClientTaskResponseCollection
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
@@ -97,3 +102,68 @@ def task(done=False):
     return jsonify(
         [found_task.serialize() for found_task in tasks]
     ), 200
+
+
+def task_response():
+    """
+    Endpoint handing the client task request
+    :return: A list of tasks, if any, and a status code representing whether
+    the request was successful or not, and why it may have been unsuccessful
+    """
+    client_id = ClientIdentifier()
+
+    if not client_id.load_from(
+            lambda prop:
+            request.headers[prop] if prop in request.headers else None,
+            raise_error=False
+    ):
+        return "", 400
+
+    client_response = ClientTaskResponse()
+    if not client_response.load_from(
+            lambda prop:
+            request.json[prop] if prop in request.json else None,
+            raise_error=False
+    ):
+        return "", 400
+
+    identifying_response = ClientTaskResponseCollection(
+        client_id=client_id.authorization,
+        task_id=client_response.task_id
+    )
+
+    # Retrieve existing responses
+    existing_response = cast(
+        ClientTaskResponseCollection,
+        controller.db.get_one(
+            DatabaseCollection.USER_TASK_RESPONSES,
+            identifier=identifying_response.id,
+            entry_instance=cast(Deserializable, identifying_response)
+        )
+    )
+
+    # If no responses were stored already, instantiate the variable
+    if existing_response is None:
+        existing_response = ClientTaskResponseCollection(
+            client_id=client_id.authorization,
+            task_id=client_response.task_id,
+            responses=[]
+        )
+
+    # Append newly received response to existing responses
+    existing_response.responses.append(
+        cast(
+            AnonymousClientTaskResponse,
+            client_response
+        )
+    )
+
+    # Update responses in database
+    controller.db.set(
+        DatabaseCollection.USER_TASK_RESPONSES,
+        identifier=existing_response.id,
+        entry=existing_response,
+        overwrite=True
+    )
+
+    return "", 200

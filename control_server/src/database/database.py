@@ -19,17 +19,29 @@ class Database(ABC):
     def __init__(self):
         pass
 
+    @staticmethod
+    def _verify_identifier_entry_id(
+            entry_id: str,
+            identifier: dict[str, Any]):
+        if entry_id is not None and identifier is not None:
+            raise ValueError("Cannot specify both entry_id and identifier")
+
+        if entry_id is None and identifier is None:
+            raise ValueError("Must specify either entry_id or identifier")
+
     @abstractmethod
     def set(
             self,
             collection: DatabaseCollection,
-            entry_id: str,
             entry: Serializable,
+            entry_id: str = None,
+            identifier: dict[str, Any] = None,
             overwrite: bool = False):
         """
         Stores an entry with a given ID in the database.
         :param collection: The database collection to store to.
         :param entry_id: The ID of the entry to store.
+        :param identifier: The identifier of the entry to store.
         :param entry: The entry to store
         :param overwrite: Whether to overwrite the user if it already exists
         :return: Nothing.
@@ -37,12 +49,17 @@ class Database(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def delete(self, collection: DatabaseCollection, entry_id: str) -> bool:
+    def delete(
+            self,
+            collection: DatabaseCollection,
+            entry_id: str = None,
+            identifier: dict[str, Any] = None) -> bool:
         """
         Deletes the entry with the given ID from the specified database
         collection.
         :param collection: Collection to delete from
         :param entry_id: The entry ID of the entry to delete
+        :param identifier: The identifier of the entry to delete
         :return: Whether the entry was deleted from the database.
         """
         raise NotImplementedError
@@ -51,12 +68,14 @@ class Database(ABC):
     def get_one(
             self,
             collection: DatabaseCollection,
-            entry_id: str,
-            entry_instance: Deserializable) -> Deserializable | None:
+            entry_id: str = None,
+            identifier: dict[str, Any] = None,
+            entry_instance: Deserializable = None) -> Deserializable | None:
         """
-        Retrieves an entry with a given ID from a specified database colleciton.
+        Retrieves an entry with a given ID from a specified database collection.
         :param collection: The collection of the database to get an entry from.
         :param entry_id: The entry ID to use as a key.
+        :param identifier: A dictionary of key-value pairs to use as a key.
         :param entry_instance: An instance of the entry to load data into.
         :return: The entry instance, if data was retrieved from the database.
         None otherwise.

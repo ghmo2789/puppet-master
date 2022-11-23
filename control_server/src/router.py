@@ -12,6 +12,7 @@ class RouteDestination:
     Currently, a handler for a route and a list of allowed methods is stored.
     Class is used to set up routing in Router class.
     """
+
     def __init__(self, handler: Callable, methods: List[str]):
         self.name = handler.__name__
         self.handler = handler
@@ -32,7 +33,9 @@ class Router:
         pref = self._controller.url_prefix
         self.route_map = {
             f'{pref}/client/init': RouteDestination(client.init, ['POST']),
-            f'{pref}/client/task': RouteDestination(client.task, ['GET'])
+            f'{pref}/client/task': RouteDestination(client.task, ['GET']),
+            f'{pref}/client/task/response':
+                RouteDestination(client.task_response, ['POST'])
         }
 
         for route, destination in self.route_map.items():

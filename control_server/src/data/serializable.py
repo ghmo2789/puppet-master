@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Any
 
 
 class Serializable(ABC):
@@ -6,8 +7,8 @@ class Serializable(ABC):
     Interface class representing serializable objects, with default
     implementation for serialization method.
     """
-    def serialize(self):
-        serialized_dict = self.__dict__
+    def serialize(self, data_dict: dict[str, Any] = None) -> dict[str, Any]:
+        serialized_dict = data_dict if data_dict is not None else self.__dict__
 
         for (key, value) in serialized_dict.items():
             if isinstance(value, Serializable):
