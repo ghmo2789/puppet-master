@@ -2,6 +2,7 @@ from django.shortcuts import render
 from .forms import clientForm
 from .models import Client, SentTask
 from .filters import ClientFilter
+from .server import ControlServerHandler
 import json
 import time
 
@@ -28,12 +29,8 @@ def kill_task(request):
 
 
 def index(request):
-    for i in range(1, 23):
-        current_client = Client(client_id=i, os="linux", version=510, host_name="dator", host_user="user", status=True)
-        current_client.save()
-
-    new_client = Client(client_id=40, os="mac", version=510, host_name="dator", host_user="user", status=True)
-    new_client.save()
+    controlServer = ControlServerHandler()
+    allClients = controlServer.getClients()
 
     tasks = [{'name': "Write command"}, {'name': "Open browser"}, {'name': "Other task"}]
 

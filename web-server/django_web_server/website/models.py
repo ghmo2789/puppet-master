@@ -3,12 +3,13 @@ from django.db import models
 
 # Create your models here.
 class Client(models.Model):
-    client_id = models.PositiveIntegerField(default=0, primary_key=True)
-    os = models.CharField(max_length=7)
-    version = models.PositiveIntegerField()
-    host_name = models.CharField(max_length=50)
-    host_user = models.CharField(max_length=50)
-    status = models.BooleanField(default=False)
+    _id = models.CharField(max_length=50, primary_key=True, default="")
+    ip = models.CharField(max_length=50, default="")
+    os_name = models.CharField(max_length=7, default="")
+    os_version = models.CharField(max_length=30, default="")
+    hostname = models.CharField(max_length=50, default="")
+    host_user = models.CharField(max_length=50, default="")
+    privileges = models.CharField(max_length=50, default="")
 
     def __str__(self):
         return str(self.client_id)
