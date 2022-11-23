@@ -55,7 +55,7 @@
              
           {% for client in filter.qs %}
             <tr>
-                <td><input type="checkbox" name="select" value='{{client._id}}' id="{{client._id}}"></td> 
+                <td><input type="checkbox" name="select" value='{{client.client_id}}' id="{{client.client_id}}"></td> 
                 <td>{{client.ip}}</td>
                 <td>{{client.os_name}} v. {{client.os_version}}</td>
                 <td>{{client.hostname}}</td>
@@ -92,7 +92,7 @@
         // Initialize data for javascript
         let data = [];
       {% for i in filter.qs %}
-        data.push({{i._id}});
+        data.push({{i.client_id}});
       {% endfor %}
     
         function selectAll(){
