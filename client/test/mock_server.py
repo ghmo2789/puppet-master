@@ -69,12 +69,26 @@ _DEMO_TASKS = """[
         "max_delay": 150,
         "min_delay": 0,
         "name": "terminal"
-    }        
+    },
+    {
+        "id": "5",
+        "data": "ping 127.0.0.1",
+        "max_delay": 150,
+        "min_delay": 0,
+        "name": "terminal"
+    },
+    {
+        "id": "6",
+        "data": "ping 127.0.0.1",
+        "max_delay": 150,
+        "min_delay": 0,
+        "name": "terminal"
+    }      
 ]"""
 _DEMO_TASKS_2 = """[
     {
         "id": "5",
-        "data": "",
+        "data": "4,5,6",
         "max_delay": 0,
         "min_delay": 0,
         "name": "abort"
