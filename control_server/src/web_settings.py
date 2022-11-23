@@ -1,3 +1,5 @@
+from typing import List, Set
+
 from decouple import config
 
 from control_server.src.data_class import DataClass
@@ -9,7 +11,7 @@ class WebSettings(DataClass):
         self._prefix = ''
         self._mock_db = False
         self._debug = False
-        self._behind_proxy = True
+        self._trusted_proxies: str = ''
         self._id_key = ''
 
     def read(self):
@@ -28,8 +30,12 @@ class WebSettings(DataClass):
         return self._prefix
 
     @property
-    def behind_proxy(self) -> bool:
-        return self._behind_proxy
+    def trusted_proxies(self) -> str:
+        return self._trusted_proxies
+
+    @property
+    def trusted_proxies_set(self) -> Set[str]:
+        return set(self._trusted_proxies.split(','))
 
     @property
     def id_key(self) -> str:
