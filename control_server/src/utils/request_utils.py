@@ -9,7 +9,7 @@ trusted_proxies: set[IPv4Network | IPv6Network] | None = None
 
 
 def _get_addr(addr: str, network=True) -> \
-    IPv4Network | IPv6Network | IPv4Address | IPv6Address:
+        IPv4Network | IPv6Network | IPv4Address | IPv6Address:
     """
     Gets the address from the given string
     :param addr: The address to get
@@ -25,6 +25,7 @@ def to_ip_list(ips: List[str], network=True) -> \
         List[IPv4Network | IPv6Network | IPv4Address | IPv6Address]:
     return [_get_addr(addr, network=network) for addr in ips]
 
+
 def get_trusted_proxies() -> set[IPv4Network | IPv6Network]:
     """
     Gets the trusted proxies
@@ -34,6 +35,7 @@ def get_trusted_proxies() -> set[IPv4Network | IPv6Network]:
         controller.settings.trusted_proxies_set,
         network=True
     ))
+
 
 def contains_ip(
         ip: IPv4Address | IPv6Address,
