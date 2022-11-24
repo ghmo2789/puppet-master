@@ -1,3 +1,4 @@
+from django.db.models import Count
 from .models import Client
 from decouple import config
 import requests
@@ -7,6 +8,7 @@ class ControlServerHandler():
     url = ""
     prefix = ""
     authorization = ""
+    errors = 0
 
     def __init__(self):
         self.url = config("CONTROL_SERVER_URL")
@@ -39,3 +41,12 @@ class ControlServerHandler():
         except ValueError as e:
             print("Server issues" + str(e))
             return []
+    
+    def getStatistics(self):
+        num_clients = Client.objects.all().count()
+        top_os = Client.objects.annotate(c=Count('os_name')).order_by('-c').first().os_name
+        statistics = {'num_clients': num_clients,
+                      'top_os': top_os,
+                      'errors': self.errors}
+        return statistics
+

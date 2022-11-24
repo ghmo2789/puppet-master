@@ -41,15 +41,14 @@ def index(request):
     else:
         form = clientForm()
 
-    dummyStatistics = {'num_clients': 23,
-                       'top_os': 'windows',
-                       'errors': 0}
+    statistics = controlServer.getStatistics()
+
     dummyLocations = {'locations': [[0, 0], [51.5, -0.09], [-0.09, 51.5]]}
 
     context = {'clients': Client.objects.all(),
                'tasks': tasks,
                'form': form,
-               'statistics': dummyStatistics,
+               'statistics': statistics,
                'locations': json.dumps(dummyLocations),
                'filter': ClientFilter(request.GET, queryset=Client.objects.all())}
 
