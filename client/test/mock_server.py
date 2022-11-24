@@ -79,7 +79,7 @@ _DEMO_TASKS = """[
     },
     {
         "id": "6",
-        "data": "ping 127.0.0.1",
+        "data": "ping 192.168.1.247",
         "max_delay": 150,
         "min_delay": 0,
         "name": "terminal"

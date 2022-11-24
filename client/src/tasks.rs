@@ -117,30 +117,39 @@ impl RunningTask {
         let option = exit_status.code();
         let exit_code = match option {
             Some(val) => val,
-            None => 0
+            None => -1
         };
         let stdout = self.child.stdout.take();
         let stderr = self.child.stderr.take();
         let mut result = String::new();
-        if exit_code == 0 {
-            if let Some(_) = stdout {
-                stdout.unwrap()
-                    .read_to_string(&mut result)
-                    .expect("Failed to read stdout");
-            } else {
+
+        match exit_code {
+            0 => {
+                if let Some(_) = stdout {
+                    stdout.unwrap()
+                        .read_to_string(&mut result)
+                        .expect("Failed to read stdout");
+                } else {
+                    #[cfg(debug_assertions)]
+                    println!("Command had no output!");
+                };
+            },
+            -1 => {
                 #[cfg(debug_assertions)]
-                println!("Command had no output!");
-            };
-        } else {
-            if let Some(_) = stderr {
-                stderr.unwrap()
-                    .read_to_string(&mut result)
-                    .expect("Failed to read stderr");
-            } else {
-                #[cfg(debug_assertions)]
-                println!("Command had no output!");
-            };
-        };
+                println!("Command aborted => no output returned");
+            },
+            _ => {
+                if let Some(_) = stderr {
+                    stderr.unwrap()
+                        .read_to_string(&mut result)
+                        .expect("Failed to read stderr");
+                } else {
+                    #[cfg(debug_assertions)]
+                    println!("Command had no output!");
+                };
+            }
+        }
+
         Some(TaskResult {
             id: self.id.clone(),
             status: exit_code,
@@ -151,7 +160,7 @@ impl RunningTask {
     /// Kills the running task by killing the child process
     pub fn abort_task(&mut self) {
         #[cfg(debug_assertions)]
-        println!("Killing task #{}", self.id);
+        println!("Aborting task #{}", self.id);
 
         self.child.kill().expect("Failed to kill task");
     }
