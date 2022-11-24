@@ -79,41 +79,67 @@ def client_tasks():
     if auth != controller.settings.admin_key or auth is None:
         return '', 401
 
-    # TODO: List of clients, not a client
     # POST är för att en admin ska kunna ge en client en task
     if request.method == 'POST':
-        clients_id = request.form.get('client_id')
-        task_id = request.form.get('task')
+        incoming = request.get_json()
 
-        if clients_id is None or task_id is None:
-            return 'Missing ID', 400
+        clients_id = incoming.get('client_id')
+        task_to_send = incoming.get('data')
+        min_delay = incoming.get('min_delay')
+        max_delay = incoming.get('max_delay')
+
+        if clients_id is None or task_to_send is None:
+            return 'Missing ID or task', 400
 
         # Check if client exist
         # Client is a IdentifyingClientData
-        current_client = controller.db.get_user(clients_id)
-        if current_client is None:
-            return 'Client does not exists', 404
+        for current_client in clients_id.split(', '):
+            client_exist = controller.db.get_user(current_client)
 
-        # Check if task exist
-        # Current task is a Task()
-        current_task = controller.db.get_one(
-            collection=DatabaseCollection.USER_TASKS,
-            entry_id=task_id,
-            entry_instance=Task()
-        )
-        if current_task is None:
-            return 'Task does not exists', 404
+            if client_exist is None:
+                return 'Client does not exists', 404
 
+            new_task = Task(
+                task_to_send,   # Task name
+                task_to_send,   # The task itself
+                int(min_delay),
+                int(max_delay)
+            )
+            new_task.generate_id()
+
+            client_task = ClientTask(
+                client_exist.id,
+                new_task.task_id,
+                new_task
+            )
+            controller.db.set(
+                collection=DatabaseCollection.USER_TASKS,
+                entry_id=new_task.task_id,
+                entry=new_task,
+                overwrite=True
+            )
+        return '', 200
 
     # method == GET
     # GET är för att adminen ska kunna hämta tasks som en client har kört
     else:
 
         client_id = request.args.get('id')
+        task_to_get = request.form.get('task')
 
         # Wrong client id or bad formatting
         if client_id is None or len(client_id) == 0:
             return 'Missing client id', 400
+
+            # Check if task exist
+            # Current task is a Task()
+        current_task = controller.db.get_one(
+            collection=DatabaseCollection.USER_TASKS,
+            entry_id=task_to_get,
+            entry_instance=Task()
+        )
+        if current_task is None:
+            return 'Task does not exists', 404
 
         # Check if client exist in DB
         client_info = controller.db.get_user(
@@ -121,6 +147,8 @@ def client_tasks():
         )
         if client_info is None:
             return 'Client does not exist', 404
+
+        # TODO: Check if task exists
 
         # Get all the tasks for given client
         all_tasks_db = cast(
