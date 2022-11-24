@@ -25,8 +25,8 @@
               {% csrf_token %}
               {% for i in tasks%}
               <tr>
-                  <td><input type="checkbox" name="select" value="{{i.taskId}}" id="{{i.taskId}}"></td> 
-                  <td>{{i.id}}</td>
+                  <td><input type="checkbox" name="select" value="{{i.task_id}}" id="{{i.task_id}}"></td> 
+                  <td>{{i.task_id}}</td>
                   <td>{{i.client_id}}</td>
                   <td>{{i.start_time}}</td>
                   <td>{{i.finish_time}}</td>
@@ -43,8 +43,8 @@
 
         // Initialize data for javascript
         let data = [];
-        {% for i in data %}
-          data.push({{i.taskId}});
+        {% for i in tasks %}
+          data.push({{i.task_id}});
         {% endfor %}
     
         function select_all(){

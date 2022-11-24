@@ -32,7 +32,11 @@ class ControlServerHandler():
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
         requestHeaders = {'Authorization': self.authorization}
         r = requests.get(url=requestUrl, headers=requestHeaders)
-        clients = r.json()['all_clients']
-        self.__save_clients(clients)
+        try:
+            clients = r.json()['all_clients']
+            self.__save_clients(clients)
+            return clients
+        except ValueError as e:
+            print("Server issues" + str(e))
+            return []
 
-        return clients
