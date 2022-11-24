@@ -42,14 +42,14 @@ def index(request):
         form = clientForm()
 
     statistics = controlServer.getStatistics()
-
-    dummyLocations = {'locations': [[0, 0], [51.5, -0.09], [-0.09, 51.5]]}
+    coordinates = controlServer.getLocations()
+    locations = {'locations': coordinates}
 
     context = {'clients': Client.objects.all(),
                'tasks': tasks,
                'form': form,
                'statistics': statistics,
-               'locations': json.dumps(dummyLocations),
+               'locations': json.dumps(locations),
                'filter': ClientFilter(request.GET, queryset=Client.objects.all())}
 
     return render(request, 'website/index.html', context, )

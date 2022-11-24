@@ -2,6 +2,7 @@ from django.db.models import Count
 from .models import Client
 from decouple import config
 import requests
+from django.contrib.gis.geoip2 import GeoIP2 
 
 
 class ControlServerHandler():
@@ -49,4 +50,24 @@ class ControlServerHandler():
                       'top_os': top_os,
                       'errors': self.errors}
         return statistics
+    
+    def getLocations(self):
+        g = GeoIP2()
+        ips = list(Client.objects.values_list('ip', flat=True))
+        # TODO: Remove dummy location in the future
+        ips.append('72.14.207.99')
+        coordinates = []
+
+        for ip in ips:
+            try:
+                city = g.city(ip)
+                lat = city['latitude']
+                lon = city['longitude']
+                coordinates.append([lat, lon])
+            except Exception as e:
+                print(e)
+
+        return coordinates
+
+
 
