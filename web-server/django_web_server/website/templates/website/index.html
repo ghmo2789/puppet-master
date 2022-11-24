@@ -67,15 +67,18 @@
         </table>
       </div>
       <div class="w3-container w3-padding-16" action="/website/" id="submit" hidden>
-        <div class="w3-container w3-half w3-center">
+        <div class="w3-container w3-third w3-center">
           <select class="w3-select" name="option" id="task_selection">
             <option value="default" disabled selected>Select Task</option>
             {% for task in tasks %}
             <option value="{{task.name}}">{{task.name}}</option>
             {% endfor %}
-          </select>   
+          </select> 
+          <div style="margin-top: 10px; width: 100%;">
+            <input type="text" id="command_text" placeholder="Enter command..." hidden>
+          </div>
         </div>
-        <div class="w3-container w3-half w3-center ">
+        <div class="w3-container w3-third w3-center ">
           <input class ="w3-button w3-block w3-black", type="submit", value="Submit" id="send_task" disabled> 
         </div>
       </div>
@@ -125,7 +128,6 @@
           checked = false; 
           for(let i = 0; i < data.length; i++) {
             if(document.getElementById(data[i]).checked) {
-              console.log("hej")
               checked = true;
             }
           }
@@ -139,11 +141,20 @@
         function enableButton(){
           task_selection = document.getElementById("task_selection");
           button = document.getElementById("send_task")
+          command_text_element = document.getElementById("command_text");
           if(task_selection.value != "default"){
             button.disabled = false;
+            if (task_selection.value == "Write command"){
+              command_text_element.hidden = false;
+            }
+            else {
+              command_text_element.hidden = true;
+            }
           } else {
             button.disabled = true; 
           }
+
+
         }
       
         
