@@ -39,4 +39,3 @@ class ControlServerHandler():
         except ValueError as e:
             print("Server issues" + str(e))
             return []
-
