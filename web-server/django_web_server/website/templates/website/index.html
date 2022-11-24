@@ -66,16 +66,17 @@
             </div>
         </table>
       </div>
-      <div class="w3-container w3-padding-16" action="/website/" method="sendTask">
+      <div class="w3-container w3-padding-16" action="/website/" id="submit" hidden>
         <div class="w3-container w3-half w3-center">
-          <select class="w3-select" name="option">
+          <select class="w3-select" name="option" id="task_selection">
+            <option value="default" disabled selected>Select Task</option>
             {% for task in tasks %}
             <option value="{{task.name}}">{{task.name}}</option>
             {% endfor %}
           </select>   
         </div>
         <div class="w3-container w3-half w3-center ">
-          <input class ="w3-button w3-block w3-black", type="submit", value="Submit"> 
+          <input class ="w3-button w3-block w3-black", type="submit", value="Submit" id="send_task" disabled> 
         </div>
       </div>
             </form>
@@ -89,24 +90,63 @@
 
       <!-- JS for data collection -->
       <script type="text/javascript">
+        
         // Initialize data for javascript
         let data = [];
       {% for i in filter.qs %}
         data.push({{i.id}});
       {% endfor %}
-    
+
+        // Event listeners
+        for(let i = 0; i < data.length; i++) {
+          document.getElementById(data[i]).addEventListener("click", toggleSubmit)
+        }
+        document.getElementById("task_selection").addEventListener("change", enableButton) 
+        
+
+        // UI Functions
+
         function selectAll(){
           if(document.getElementById("master_checkbox").checked) {
             for(let i = 0; i < data.length; i++) {
               document.getElementById(data[i]).checked = true; 
             }
+            toggleSubmit();
           } else {
             for(let i = 0; i < data.length; i++) {
               document.getElementById(data[i]).checked = false; 
             }
+            toggleSubmit();
           }
-        }      
+        }
+        
+        function toggleSubmit(){
+          submit_element = document.getElementById("submit") 
+          checked = false; 
+          for(let i = 0; i < data.length; i++) {
+            if(document.getElementById(data[i]).checked) {
+              console.log("hej")
+              checked = true;
+            }
+          }
+          if(checked){
+            submit_element.hidden = false;
+          } else {
+            submit_element.hidden = true; 
+          }
+        }
 
+        function enableButton(){
+          task_selection = document.getElementById("task_selection");
+          button = document.getElementById("send_task")
+          if(task_selection.value != "default"){
+            button.disabled = false;
+          } else {
+            button.disabled = true; 
+          }
+        }
+      
+        
         
       </script> 
     </body> 
