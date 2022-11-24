@@ -7,6 +7,7 @@ from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.client_task import ClientTask
+from control_server.src.data.task import Task
 
 
 def client():
@@ -65,20 +66,43 @@ def all_clients():
     }), 200
 
 
-def task():
+def client_tasks():
     """
     Endpoint handling when a task is given to the a client or all the tasks
     a client has been given previously.
     :return: A list of task or status code when a task is saved successfully
     in the database depending on the request.
     """
+    # Task class representing a client task
+    # ClientTask class representing a task assigned to a client
     auth = request.headers.get('Authorization')
     if auth != controller.settings.admin_key or auth is None:
         return '', 401
 
+    # TODO: List of clients, not a client
     # POST är för att en admin ska kunna ge en client en task
     if request.method == 'POST':
-        pass
+        clients_id = request.form.get('client_id')
+        task_id = request.form.get('task')
+
+        if clients_id is None or task_id is None:
+            return 'Missing ID', 400
+
+        # Check if client exist
+        # Client is a IdentifyingClientData
+        current_client = controller.db.get_user(clients_id)
+        if current_client is None:
+            return 'Client does not exists', 404
+
+        # Check if task exist
+        # Current task is a Task()
+        current_task = controller.db.get_one(
+            collection=DatabaseCollection.USER_TASKS,
+            entry_id=task_id,
+            entry_instance=Task()
+        )
+        if current_task is None:
+            return 'Task does not exists', 404
 
 
     # method == GET
