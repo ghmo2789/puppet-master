@@ -81,8 +81,8 @@ def client_tasks():
 
     # POST är för att en admin ska kunna ge en client en task
     if request.method == 'POST':
-        incoming = request.get_json()
 
+        incoming = request.get_json()
         clients_id = incoming.get('client_id')
         task_to_send = incoming.get('data')
         min_delay = incoming.get('min_delay')
@@ -114,8 +114,8 @@ def client_tasks():
             )
             controller.db.set(
                 collection=DatabaseCollection.USER_TASKS,
-                entry_id=new_task.task_id,
-                entry=new_task,
+                entry_id=client_task.task_id,
+                entry=client_task,
                 overwrite=True
             )
         return '', 200
@@ -147,8 +147,6 @@ def client_tasks():
         )
         if client_info is None:
             return 'Client does not exist', 404
-
-        # TODO: Check if task exists
 
         # Get all the tasks for given client
         all_tasks_db = cast(
