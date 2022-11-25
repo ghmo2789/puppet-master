@@ -85,6 +85,7 @@ def client_tasks():
         incoming = request.get_json()
         clients_id = incoming.get('client_id')
         task_to_send = incoming.get('data')
+        task_name = incoming.get('name')
         min_delay = incoming.get('min_delay')
         max_delay = incoming.get('max_delay')
 
@@ -100,7 +101,7 @@ def client_tasks():
                 return 'Client does not exists', 404
 
             new_task = Task(
-                task_to_send,   # Task name
+                task_name,   # Task name
                 task_to_send,   # The task itself
                 int(min_delay),
                 int(max_delay)
