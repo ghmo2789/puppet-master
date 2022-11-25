@@ -76,7 +76,10 @@
             {% for task in tasks %}
             <option value="{{task.name}}">{{task.name}}</option>
             {% endfor %}
-          </select>   
+          </select> 
+          <div style="margin-top: 10px; width: 100%;">
+            <input type="text" name="text" placeholder="Enter command..." id="command_text" hidden>
+          </div>
         </div>
       </div>
             </form>
@@ -139,11 +142,20 @@
         function enableButton(){
           task_selection = document.getElementById("task_selection");
           button = document.getElementById("send_task")
+          command_text_element = document.getElementById("command_text");
           if(task_selection.value != "default"){
             button.disabled = false;
+            if (task_selection.value == "Write command"){
+              command_text_element.hidden = false;
+            }
+            else {
+              command_text_element.hidden = true;
+            }
           } else {
             button.disabled = true; 
           }
+
+
         }
       
         
