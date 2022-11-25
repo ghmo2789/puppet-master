@@ -73,10 +73,13 @@ def client_tasks():
     :return: A list of task or status code when a task is saved successfully
     in the database depending on the request.
     """
+    # Task class representing a client task
+    # ClientTask class representing a task assigned to a client
     auth = request.headers.get('Authorization')
     if auth != controller.settings.admin_key or auth is None:
         return '', 401
 
+    # POST är för att en admin ska kunna ge en client en task
     if request.method == 'POST':
 
         incoming = request.get_json()
@@ -89,6 +92,7 @@ def client_tasks():
             return 'Missing ID or task', 400
 
         # Check if client exist
+        # Client is a IdentifyingClientData
         for current_client in clients_id.split(', '):
             client_exist = controller.db.get_user(current_client)
 
@@ -117,14 +121,18 @@ def client_tasks():
         return '', 200
 
     # method == GET
+    # GET är för att adminen ska kunna hämta tasks som en client har kört
     else:
 
         client_id = request.args.get('id')
         task_to_get = request.form.get('task')
 
+        # Wrong client id or bad formatting
         if client_id is None or len(client_id) == 0:
             return 'Missing client id', 400
 
+            # Check if task exist
+            # Current task is a Task()
         current_task = controller.db.get_one(
             collection=DatabaseCollection.USER_TASKS,
             entry_id=task_to_get,
@@ -155,6 +163,7 @@ def client_tasks():
             ))
         )
 
+        # No task exits for the given client
         if len(all_tasks_db) == 0:
             return 'No tasks are send to the client', 404
 
