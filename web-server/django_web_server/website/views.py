@@ -4,26 +4,7 @@ from .models import Client, SentTask
 from .filters import ClientFilter
 from .server import ControlServerHandler
 import json
-import time
 
-
-def create_task(c_id, task_t, task_i):
-    client = Client.objects.get(client_id=c_id)
-    t = time.localtime()
-    asc_t = time.asctime(t)
-    client.senttask_set.create(start_time=asc_t, finish_time='ongoing', task_type=task_t, task_info=task_i)
-
-
-def send_tasks(request):
-    client_ids = request.POST.getlist('select')
-    task_t = request.POST.getlist('option')[0]
-    task_info = "..."
-    if task_t == "Write command":
-        task_info = request.POST.getlist('text')[0]
-    for c_id in client_ids:
-        create_task(c_id, task_t, task_info)
-    # TODO: Send to control server
-    return
 
 
 def kill_task(request):
@@ -40,7 +21,7 @@ def index(request):
     if request.method == 'POST':
         form = clientForm(request.POST)
         if form.is_valid():
-            send_tasks(request)
+            controlServer.sendTasks(request)
     else:
         form = clientForm()
 
