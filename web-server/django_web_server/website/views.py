@@ -44,5 +44,5 @@ def tasks(request):
     if request.method == 'POST':
         kill_task(request)
 
-    context = {'tasks': SentTask.objects.all()[:200]}
+    context = {'tasks': SentTask.objects.all().order_by('-task_id')[:200]}
     return render(request, 'website/tasks.html', context)
