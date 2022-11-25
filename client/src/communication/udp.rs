@@ -1,3 +1,7 @@
+use std::error::Error;
+use std::io;
+use anyhow::anyhow;
+
 /// Struct for UDP messages
 struct UDPMessage {
     message_header: UDPMessageHeader,
@@ -80,29 +84,46 @@ impl UDPMessage {
     ///
     /// # Returns
     /// A UDPMessage generated from bytes
-    fn from_bytes(buf: &Vec<u8>) -> UDPMessage {
+    ///
+    /// # Errors
+    /// If indexing on buffer goes out of range
+    fn from_bytes(buf: &Vec<u8>) -> Result<UDPMessage, anyhow::Error> {
+        let buf_len = buf.len();
+        if buf_len < UDPMessageHeader::HEADER_LENGTH as usize {
+            return Err(anyhow::Error::msg("Buffer to short!"));
+        }
         let message_header =
-            UDPMessageHeader::from_bytes(&buf[0..UDPMessageHeader::HEADER_LENGTH as usize]);
+            UDPMessageHeader::from_bytes(&buf[0..UDPMessageHeader::HEADER_LENGTH as usize])?;
 
         let mut cur_index = UDPMessageHeader::HEADER_LENGTH as usize;
 
+        if buf_len < (cur_index + message_header.url_length as usize) {
+            return Err(anyhow::Error::msg("Buffer to short!"));
+        }
         let url =
             buf[cur_index..(cur_index + message_header.url_length as usize)].to_vec();
         cur_index += message_header.url_length as usize;
 
+        if buf_len < (cur_index + message_header.body_length as usize) {
+            return Err(anyhow::Error::msg("Buffer to short!"));
+        }
         let body =
             buf[cur_index..(cur_index + message_header.body_length as usize)].to_vec();
         cur_index += message_header.body_length as usize;
 
+        if buf_len < (cur_index + message_header.request_header_length as usize) {
+            return Err(anyhow::Error::msg("Buffer to short!"));
+        }
         let request_header =
             buf[cur_index..(cur_index + message_header.request_header_length as usize)].to_vec();
 
-        UDPMessage {
+        let message = UDPMessage {
             message_header,
             url: String::from_utf8(url).unwrap(),
             body: String::from_utf8(body).unwrap(),
             request_header: String::from_utf8(request_header).unwrap(),
-        }
+        };
+        Ok(message)
     }
 
     /// Checks whether a UDPMessages is equal
@@ -117,7 +138,7 @@ impl UDPMessage {
     }
 }
 
-
+/// Struct for the UDP message header
 struct UDPMessageHeader {
     message_length: u16,
     status_code: u8,
@@ -126,9 +147,14 @@ struct UDPMessageHeader {
     request_header_length: u16,
 }
 
+/// Implementation of UDPMessageHeader methods
 impl UDPMessageHeader {
     const HEADER_LENGTH: u16 = 9;
 
+    /// Getter for the message header as a bytearray
+    ///
+    /// # Returns
+    /// Byte array representing the UDPMessageHeader
     fn as_bytes(&mut self) -> [u8; 9] {
         let mut buf = [0; 9];
         buf[0] = (self.message_length >> 8) as u8;
@@ -144,16 +170,32 @@ impl UDPMessageHeader {
         buf
     }
 
-    fn from_bytes(buf: &[u8]) -> UDPMessageHeader {
-        UDPMessageHeader {
+    /// Static method that creates a UDPMessageHeader from bytes
+    ///
+    /// # Returns
+    /// UDPMessageHeader build from bytes in Big Endian
+    ///
+    /// # Errors
+    /// If buffer goes out of range
+    fn from_bytes(buf: &[u8]) -> Result<UDPMessageHeader, anyhow::Error> {
+        if (buf.len() as u16) < UDPMessageHeader::HEADER_LENGTH {
+            return Err(anyhow::Error::msg("To short buffer!"));
+        }
+
+        let header = UDPMessageHeader {
             message_length: (buf[0] as u16) << 8 | buf[1] as u16,
             status_code: buf[2],
             url_length: (buf[3] as u16) << 8 | buf[4] as u16,
             body_length: (buf[5] as u16) << 8 | buf[6] as u16,
             request_header_length: (buf[7] as u16) << 8 | buf[8] as u16,
-        }
+        };
+        Ok(header)
     }
 
+    /// Check equality with another UDPMessageHeader
+    ///
+    /// # Returns
+    /// True if equal, otherwise false
     fn equal(&mut self, header: &UDPMessageHeader) -> bool {
         self.request_header_length == header.request_header_length &&
             self.body_length == header.body_length &&
@@ -163,6 +205,7 @@ impl UDPMessageHeader {
     }
 }
 
+/// Testing the UDP parsing
 mod tests {
     use super::*;
 
@@ -205,29 +248,42 @@ mod tests {
     #[test]
     fn test_udp_message_header_from_bytes() {
         for i in 0..UDP_HEADERS.len() {
-            let mut udp_header = UDPMessageHeader::from_bytes(UDP_HEADERS[i]);
+            let mut udp_header = match UDPMessageHeader::from_bytes(UDP_HEADERS[i]) {
+                Ok(val) => val,
+                _ => continue
+            };
             let expected_header = TEST_HEADERS[i];
             assert!(udp_header.equal(expected_header));
         }
     }
 
     #[test]
+    fn test_udp_message_header_from_bytes_invalid() {
+        let invalid_header = b"000";
+        match UDPMessageHeader::from_bytes(invalid_header) {
+            Ok(_) => assert!(false),
+            Err(_) => assert!(true)
+        };
+    }
+
+    const TEST_URL: &str = "http://127.0.0.1:8080/control/client/init";
+    const TEST_REQUEST_HEADER: &str = "Authorization: \"12345\"";
+
+    #[test]
     fn test_udp_new_message() {
-        let url = "http://127.0.0.1:8080";
-        let url_len = url.len() as u16;
-        let request_header = "Authorization: \"12345\"";
-        let request_header_len = request_header.len() as u16;
+        let url_len = TEST_URL.len() as u16;
+        let request_header_len = TEST_REQUEST_HEADER.len() as u16;
         let body = "Successful";
         let body_len = body.len() as u16;
         let status_code = 0;
-        let udp_message = UDPMessage::new(url.to_string(),
-                                          request_header.to_string(),
+        let udp_message = UDPMessage::new(TEST_URL.to_string(),
+                                          TEST_REQUEST_HEADER.to_string(),
                                           body.to_string(),
                                           status_code);
 
-        assert_eq!(url.to_string(), udp_message.url);
+        assert_eq!(TEST_URL.to_string(), udp_message.url);
         assert_eq!(body.to_string(), udp_message.body);
-        assert_eq!(request_header.to_string(), udp_message.request_header);
+        assert_eq!(TEST_REQUEST_HEADER.to_string(), udp_message.request_header);
 
         assert_eq!(status_code, udp_message.message_header.status_code);
         assert_eq!(url_len, udp_message.message_header.url_length);
@@ -235,12 +291,11 @@ mod tests {
         assert_eq!(body_len, udp_message.message_header.body_length);
     }
 
+
     #[test]
     fn test_udp_new_message_long_body() {
-        let url = "http://127.0.0.1:8080/control/client/init";
-        let url_len = url.len() as u16;
-        let request_header = "Authorization: \"12345\"";
-        let request_header_len = request_header.len() as u16;
+        let url_len = TEST_URL.len() as u16;
+        let request_header_len = TEST_REQUEST_HEADER.len() as u16;
         let mut body = String::new();
         for _ in 0..550 {
             body.push('A');
@@ -251,14 +306,14 @@ mod tests {
             UDPMessageHeader::HEADER_LENGTH;
 
         let status_code = 0;
-        let udp_message = UDPMessage::new(url.to_string(),
-                                          request_header.to_string(),
+        let udp_message = UDPMessage::new(TEST_URL.to_string(),
+                                          TEST_REQUEST_HEADER.to_string(),
                                           body.to_string(),
                                           status_code);
 
-        assert_eq!(url.to_string(), udp_message.url);
+        assert_eq!(TEST_URL.to_string(), udp_message.url);
         assert_eq!(body[0..body_len as usize].to_string(), udp_message.body);
-        assert_eq!(request_header.to_string(), udp_message.request_header);
+        assert_eq!(TEST_REQUEST_HEADER.to_string(), udp_message.request_header);
 
         assert_eq!(status_code, udp_message.message_header.status_code);
         assert_eq!(url_len, udp_message.message_header.url_length);
@@ -267,10 +322,38 @@ mod tests {
         assert_eq!(UDPMessage::MAX_LENGTH, udp_message.message_header.message_length);
     }
 
+    #[test]
+    fn test_udp_new_message_no_body() {
+        let url_len = TEST_URL.len() as u16;
+        let request_header_len = TEST_REQUEST_HEADER.len() as u16;
+        let mut body = String::new();
+        let body_len = body.len() as u16;
+        let status_code = 0;
+        let udp_message = UDPMessage::new(TEST_URL.to_string(),
+                                          TEST_REQUEST_HEADER.to_string(),
+                                          body.to_string(),
+                                          status_code);
+        let message_len = UDPMessageHeader::HEADER_LENGTH +
+            url_len +
+            request_header_len +
+            body_len;
+
+        assert_eq!(TEST_URL.to_string(), udp_message.url);
+        assert_eq!(body, udp_message.body);
+        assert_eq!(TEST_REQUEST_HEADER.to_string(), udp_message.request_header);
+
+        assert_eq!(status_code, udp_message.message_header.status_code);
+        assert_eq!(url_len, udp_message.message_header.url_length);
+        assert_eq!(request_header_len, udp_message.message_header.request_header_length);
+        assert_eq!(body_len, udp_message.message_header.body_length);
+        assert_eq!(message_len, udp_message.message_header.message_length);
+    }
+
     const UDP_MESSAGES: [&[u8; 12]; 2] = [
         b"\x00\x0C\x02\x00\x01\x00\x01\x00\x01ABC",
         b"\x00\x0C\x00\x00\x01\x00\x01\x00\x01AAA"
     ];
+
 
     #[test]
     fn test_udp_message_as_bytes() {
@@ -317,8 +400,30 @@ mod tests {
         ];
 
         for i in 0..UDP_MESSAGES.len() {
-            let mut udp_message = UDPMessage::from_bytes(&UDP_MESSAGES[i].to_vec());
+            let mut udp_message = match UDPMessage::from_bytes(&UDP_MESSAGES[i].to_vec()) {
+                Ok(val) => val,
+                _ => continue
+            };
             assert!(udp_message.equal(udp_messages[i]));
         }
+    }
+
+    #[test]
+    fn test_udp_message_from_bytes_invalid() {
+        let buf = b"000";
+        match UDPMessage::from_bytes(&buf.to_vec()) {
+            Ok(_) => assert!(false),
+            Err(_) => assert!(true)
+        }
+        let buf = b"000000000";
+        match UDPMessage::from_bytes(&buf.to_vec()) {
+            Ok(_) => assert!(false),
+            Err(_) => assert!(true)
+        };
+        let buf = b"\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+        match UDPMessage::from_bytes(&buf.to_vec()) {
+            Ok(_) => assert!(true),
+            Err(_) => assert!(false)
+        };
     }
 }
