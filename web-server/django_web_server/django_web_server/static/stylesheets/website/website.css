@@ -20,3 +20,8 @@
   border-radius: 2px;
   background-color: #212529;
 }
+
+#website-kill-btn {
+  background-color: black;
+  border-color: black;
+}
