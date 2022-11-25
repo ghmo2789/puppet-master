@@ -77,8 +77,8 @@
             <option value="{{task.name}}">{{task.name}}</option>
             {% endfor %}
           </select> 
-          <div style="margin-top: 10px; width: 100%;">
-            <input type="text" name="text" placeholder="Enter command..." id="command_text" hidden>
+          <div style="margin-top: 10px;">
+            <input class = "w3-block" type="text" name="text" placeholder="Enter command..." id="command_text" hidden>
           </div>
         </div>
       </div>
@@ -102,9 +102,11 @@
 
         // Event listeners
         for(let i = 0; i < data.length; i++) {
-          document.getElementById(data[i]).addEventListener("click", toggleSubmit)
+          document.getElementById(data[i]).addEventListener("click", toggleSubmit);
         }
-        document.getElementById("task_selection").addEventListener("change", enableButton) 
+        document.getElementById("task_selection").addEventListener("change", enableButton); 
+        document.getElementById("command_text").addEventListener("input", enableButton);
+        document.getElementById("send_task").addEventListener("click", sendAlert);
         
         toggleSubmit();
 
@@ -147,6 +149,10 @@
             button.disabled = false;
             if (task_selection.value == "Write command"){
               command_text_element.hidden = false;
+              command_text_value = document.getElementById("command_text").value;
+              if(command_text_value === ""){
+                button.disabled = true; 
+              }
             }
             else {
               command_text_element.hidden = true;
@@ -154,8 +160,26 @@
           } else {
             button.disabled = true; 
           }
+        }
 
+        function sendAlert(){
+          task_selection = document.getElementById("task_selection").value;
+          no_of_clients = 0;
 
+          for(let i = 0; i < data.length; i++) {
+            if(document.getElementById(data[i]).checked) {
+              no_of_clients++;
+            }
+          }
+
+          alert_text = "Sent " + task_selection + " to " + no_of_clients + " clients";
+
+          if(task_selection == "Write command") {
+            command_text = document.getElementById("command_text").value; 
+            alert_text = alert_text + ", written command: " + command_text;
+          }
+
+          alert(alert_text);          
         }
       
         
