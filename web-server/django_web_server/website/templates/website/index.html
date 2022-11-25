@@ -40,7 +40,7 @@
         </form>
       </div>
       
-      <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
+      <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0" id="client_table">
             <tr style="background-color: black;"> 
               <td><input type="checkbox" name="selectAll" value="1" id="master_checkbox" onclick="selectAll()"></td>
@@ -67,16 +67,16 @@
         </table>
       </div>
       <div class="w3-container w3-padding-16" action="/website/" id="submit" hidden>
-        <div class="w3-container w3-half w3-center">
+        <div class="w3-container w3-quarter w3-center" style="float: right">
+          <input class ="w3-button w3-block w3-black", type="submit", value="Submit" id="send_task" disabled> 
+        </div>
+        <div class="w3-container w3-quarter w3-center" style="float: right">
           <select class="w3-select" name="option" id="task_selection">
             <option value="default" disabled selected>Select Task</option>
             {% for task in tasks %}
             <option value="{{task.name}}">{{task.name}}</option>
             {% endfor %}
           </select>   
-        </div>
-        <div class="w3-container w3-half w3-center ">
-          <input class ="w3-button w3-block w3-black", type="submit", value="Submit" id="send_task" disabled> 
         </div>
       </div>
             </form>
@@ -103,6 +103,7 @@
         }
         document.getElementById("task_selection").addEventListener("change", enableButton) 
         
+        toggleSubmit();
 
         // UI Functions
 
@@ -125,7 +126,6 @@
           checked = false; 
           for(let i = 0; i < data.length; i++) {
             if(document.getElementById(data[i]).checked) {
-              console.log("hej")
               checked = true;
             }
           }

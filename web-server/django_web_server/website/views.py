@@ -11,7 +11,7 @@ def create_task(c_id, task_t):
     client = Client.objects.get(client_id=c_id)
     t = time.localtime()
     asc_t = time.asctime(t)
-    client.senttask_set.create(start_time=asc_t, finish_time='-', task_type=task_t, task_info="description")
+    client.senttask_set.create(start_time=asc_t, finish_time='ongoing', task_type=task_t, task_info="description")
 
 
 def send_tasks(request):

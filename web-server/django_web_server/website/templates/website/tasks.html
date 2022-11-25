@@ -9,55 +9,59 @@
   <body class="bg-dark text-white">
     <!-- Navbar -->
     {% block nav %}{% include 'website/navbar.html' %}{% endblock nav %}
-    <h1>Task History</h1>
-      <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
-          <table class="table table-dark table-striped table-hover mb-0">
-              <tr style="background-color: black;"> 
-                <td><input type="checkbox" name="select_all" value="1" id="master_checkbox" onclick="select_all()"></td>
-                <td>Task ID</td>
-                <td>Client ID</td>
-                <td>Start Time</td>
-                <td>Finish Time</td>
-                <td>Task Type</td>
-                <td>Task Info</td>
-              </tr>
-              <form method="post" >
-              {% csrf_token %}
-              {% for i in tasks%}
-              <tr>
-                  <td><input type="checkbox" name="select" value="{{i.task_id}}" id="{{i.task_id}}"></td> 
-                  <td>{{i.task_id}}</td>
-                  <td>{{i.client_id}}</td>
-                  <td>{{i.start_time}}</td>
-                  <td>{{i.finish_time}}</td>
-                  <td>{{i.task_type}}</td>
-                  <td>{{i.task_info}}</td>
-              </tr>
-              {% endfor %}
-          </table>
-        </div>
+    <div class="w3-container"> 
+      <h1>Task History</h1>
+    </div>
+    <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
+        <table class="table table-dark table-striped table-hover mb-0">
+            <tr style="background-color: black;"> 
+              <td><input type="checkbox" name="select_all" value="1" id="master_checkbox" onclick="select_all()"></td>
+              <td>Task ID</td>
+              <td>Client ID</td>
+              <td>Start Time</td>
+              <td>Finish Time</td>
+              <td>Task Type</td>
+              <td>Task Info</td>
+            </tr>
+            <form method="post" >
+            {% csrf_token %}
+            {% for i in tasks%}
+            <tr>
+                <td><input type="checkbox" name="select" value="{{i.task_id}}" id="{{i.task_id}}"></td> 
+                <td>{{i.task_id}}</td>
+                <td>{{i.client_id}}</td>
+                <td>{{i.start_time}}</td>
+                <td>{{i.finish_time}}</td>
+                <td>{{i.task_type}}</td>
+                <td>{{i.task_info}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+      </div>
+      <div class="w3-container">
         <input class ="w3-button w3-block w3-black", type="submit", value="Kill Task"> 
-        </form>
+      </div>
+      </form>
 
-      <script type="text/javascript">
+    <script type="text/javascript">
 
-        // Initialize data for javascript
-        let data = [];
-        {% for i in tasks %}
-          data.push({{i.task_id}});
-        {% endfor %}
-    
-        function select_all(){
-          if(document.getElementById("master_checkbox").checked) {
-            for(let i = 0; i < data.length; i++) {
-              document.getElementById(data[i]).checked = true; 
-            }
-          } else {
-            for(let i = 0; i < data.length; i++) {
-              document.getElementById(data[i]).checked = false; 
-            }
+      // Initialize data for javascript
+      let data = [];
+      {% for i in tasks %}
+        data.push({{i.task_id}});
+      {% endfor %}
+  
+      function select_all(){
+        if(document.getElementById("master_checkbox").checked) {
+          for(let i = 0; i < data.length; i++) {
+            document.getElementById(data[i]).checked = true; 
+          }
+        } else {
+          for(let i = 0; i < data.length; i++) {
+            document.getElementById(data[i]).checked = false; 
           }
         }
-      </script>
+      }
+    </script>
   </body> 
 </html>
