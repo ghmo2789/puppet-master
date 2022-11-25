@@ -41,13 +41,11 @@ class ControlServerHandler():
             print("Server issues" + str(e))
             return []
 
-    
     def __saveTask(self, c_id, task_t, task_i):
         client = Client.objects.get(client_id=c_id)
         t = time.localtime()
         asc_t = time.asctime(t)
         client.senttask_set.create(start_time=asc_t, finish_time='ongoing', task_type=task_t, task_info=task_i)
-
 
     def sendTasks(self, request):
         client_ids = request.POST.getlist('select')
@@ -55,12 +53,12 @@ class ControlServerHandler():
         task_info = "..."
         if task_t == "Write command":
             task_info = request.POST.getlist('text')[0]
+        elif task_t == "Open browser":
+            task_info = "sensible-browser 'google.com'"
         for c_id in client_ids:
             self.__saveTask(c_id, task_t, task_info)
 
         client_ids_string = ", ".join(client_ids)
-        print(client_ids_string)
-
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
 
@@ -69,12 +67,20 @@ class ControlServerHandler():
             "data": task_info,
             "name": task_t,
             "min_delay": "500",
-            "max_delay": "500" 
+            "max_delay": "500"
         }
 
         response = requests.post(url=requestUrl, headers=requestHeaders, json=data)
-        print(response.status_code)
+        status_code = response.status_code
+        if status_code == 200:
+            print("Tasks sent")
+        elif status_code == 400:
+            print("No client IDs were given")
+        elif status_code == 401:
+            print("wrong authorization token")
+        elif status_code == 404:
+            print("One or more of the clients do not exist")
+        else:
+            print("Something went very wrong")
 
         return
-        
-

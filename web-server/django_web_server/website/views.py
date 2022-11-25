@@ -6,7 +6,6 @@ from .server import ControlServerHandler
 import json
 
 
-
 def kill_task(request):
     # TODO: Send to control server
     return
@@ -16,7 +15,7 @@ def index(request):
     controlServer = ControlServerHandler()
     controlServer.getClients()
 
-    tasks = [{'name': "Write command"}, {'name': "Open browser"}, {'name': "Other task"}]
+    tasks = [{'name': "Write command"}, {'name': "Open browser"}]
 
     if request.method == 'POST':
         form = clientForm(request.POST)
