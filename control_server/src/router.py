@@ -39,6 +39,11 @@ class Router:
             f'{pref}/admin/allclients': RouteDestination(admin.all_clients, ['GET']),
             f'{pref}/client/task/response':
                 RouteDestination(client.task_response, ['POST']),
+<<<<<<< HEAD
+=======
+            f'{pref}/admin/task': RouteDestination(admin.client_tasks, ['GET', 'POST']),
+            f'{pref}/admin/alltasks': RouteDestination(admin.all_tasks, ['GET']),
+>>>>>>> control-server-admin
         }
 
         for route, destination in self.route_map.items():
