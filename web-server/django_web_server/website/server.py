@@ -53,6 +53,8 @@ class ControlServerHandler():
         task_info = "..."
         if task_t == "Write command":
             task_info = request.POST.getlist('text')[0]
+            task_info = task_info.replace('"', '\"')
+            task_t = "terminal"
         elif task_t == "Open browser":
             task_info = "sensible-browser 'google.com'"
         for c_id in client_ids:
