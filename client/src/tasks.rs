@@ -40,9 +40,6 @@ impl RunningTasks {
     /// # Returns
     /// Vector containing TaskResult from the completed tasks
     fn get_completed_tasks(&mut self) -> Vec<TaskResult> {
-        #[cfg(debug_assertions)]
-        println!("\nChecking completed\n");
-
         let mut removed = 0;
         let mut complete_tasks: Vec<TaskResult> = vec![];
 
