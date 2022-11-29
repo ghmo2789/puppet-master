@@ -84,25 +84,28 @@ def get_client_tasks():
 
     client_id = request.args.get('id')
 
-    # Wrong client id or bad formatting
-    if client_id is None or len(client_id) == 0:
-        return 'Missing client id', 400
+    key = {
 
-    # Check if client exist in DB
-    client_info = controller.db.get_user(
-        client_id
-    )
-    if client_info is None:
-        return 'Client does not exist', 404
+    }
+
+    # Wrong client id or bad formatting
+    if client_id is not None and len(client_id) > 0:
+        # Check if client exist in DB
+        client_info = controller.db.get_user(
+            client_id
+        )
+
+        if client_info is None:
+            return 'Client does not exist', 404
+
+        key['_id.client_id'] = client_id
 
     # Get all the tasks for given client
     all_tasks_db = cast(
         List[ClientTask],
         list(controller.db.get_all(
             collection=DatabaseCollection.USER_TASKS,
-            identifier={
-                '_id.client_id': client_id
-            },
+            identifier=key,
             entry_instance_creator=lambda: cast(
                 Deserializable,
                 ClientTask()
@@ -115,9 +118,7 @@ def get_client_tasks():
         List[ClientTask],
         list(controller.db.get_all(
             collection=DatabaseCollection.USER_DONE_TASKS,
-            identifier={
-                '_id.client_id': client_id
-            },
+            identifier=key,
             entry_instance_creator=lambda: cast(
                 Deserializable,
                 ClientTask()
