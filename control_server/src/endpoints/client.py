@@ -106,18 +106,19 @@ def task(done=False):
 
 def task_response():
     """
+    TODO: Function comment is not correct
     Endpoint handing the client task request
     :return: A list of tasks, if any, and a status code representing whether
     the request was successful or not, and why it may have been unsuccessful
     """
     client_id = ClientIdentifier()
 
-    if not client_id.load_from(
-            lambda prop:
-            request.headers[prop] if prop in request.headers else None,
-            raise_error=False
-    ):
-        return "", 400
+    # if not client_id.load_from(
+    #         lambda prop:
+    #         request.headers[prop] if prop in request.headers else None,
+    #         raise_error=False
+    # ):
+    #     return "", 400
 
     client_response = ClientTaskResponse()
     if not client_response.load_from(
@@ -129,7 +130,7 @@ def task_response():
 
     identifying_response = ClientTaskResponseCollection(
         client_id=client_id.authorization,
-        task_id=client_response.task_id
+        task_id=client_response.id
     )
 
     # Retrieve existing responses
@@ -146,7 +147,7 @@ def task_response():
     if existing_response is None:
         existing_response = ClientTaskResponseCollection(
             client_id=client_id.authorization,
-            task_id=client_response.task_id,
+            task_id=client_response.id,
             responses=[]
         )
 
