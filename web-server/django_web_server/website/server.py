@@ -15,8 +15,16 @@ class ControlServerHandler():
         self.authorization = config("CONTROL_SERVER_AUTHORIZATION")
 
     def __save_clients(self, clients):
-        # TODO: Old clients will still be visible even if they are not connected
-        # Client.objects.all().delete()
+        saved_client_ids = list(Client.objects.values_list('client_id', flat=True))
+        received_client_ids = [client['_id'] for client in clients]
+
+        for saved_client in saved_client_ids:
+            if saved_client not in received_client_ids:
+                Client.objects.filter(client_id=saved_client).delete()
+                print(f'Client {saved_client} has been removed, deleting')
+            else:
+                print(f'Client {saved_client} is still connected')
+
         for client in clients:
             if not (Client.objects.filter(client_id=client['_id']).exists()):
                 client_data = client['client_data']
@@ -49,7 +57,6 @@ class ControlServerHandler():
 
     def sendTasks(self, request):
         client_ids = request.POST.getlist('select')
-        print(f'client_ids: {client_ids}')
         task_t = request.POST.getlist('option')[0]
         task_info = "..."
         if task_t == "Write command":
