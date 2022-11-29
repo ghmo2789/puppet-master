@@ -129,7 +129,7 @@ def task_response():
 
     identifying_response = ClientTaskResponseCollection(
         client_id=client_id.authorization,
-        task_id=client_response.task_id
+        task_id=client_response.id
     )
 
     # Retrieve existing responses
@@ -146,7 +146,7 @@ def task_response():
     if existing_response is None:
         existing_response = ClientTaskResponseCollection(
             client_id=client_id.authorization,
-            task_id=client_response.task_id,
+            task_id=client_response.id,
             responses=[]
         )
 

@@ -13,4 +13,4 @@ class ClientTaskResponse(AnonymousClientTaskResponse):
             result: str = None,
             status: int = None):
         super().__init__(result=result, status=status)
-        self.task_id: str = task_id
+        self.id: str = task_id
