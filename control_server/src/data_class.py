@@ -148,7 +148,7 @@ class DataClass(ABC):
         """
         Load data from a data reader that only utilizes property name, and set
         the properties of the class accordingly.
-        :param data_reader: The data reeader to use. The data reader should
+        :param data_reader: The data reader to use. The data reader should
         only have one argument: the property name.
         :param raise_error: Whether to raise an error if a property is missing.
         :return: Whether the data was loaded successfully.

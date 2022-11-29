@@ -47,6 +47,8 @@ jobs:
           echo "DEBUG=False" >> .env
           echo "ID_KEY=some secret key" >> .env
           echo "BEHIND_PROXY=False" >> .env
+          echo "TRUSTED_PROXIES=172.17.0.0/16,172.18.0.0/16" >> .env
+          echo "ADMIN_KEY=Some secret key" >> .env
       - name: Test with pytest
         working-directory: ./control_server
         run: |
