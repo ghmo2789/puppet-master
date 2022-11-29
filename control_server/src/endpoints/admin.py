@@ -113,7 +113,7 @@ def client_tasks():
             new_task.generate_id()
             new_client_task = ClientTask(
                 client_exist.id,
-                new_task.task_id,
+                new_task.id,
                 new_task
             )
 

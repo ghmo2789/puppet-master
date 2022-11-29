@@ -7,14 +7,16 @@ class Serializable(ABC):
     Interface class representing serializable objects, with default
     implementation for serialization method.
     """
+
     def serialize(self, data_dict: dict[str, Any] = None) -> dict[str, Any]:
-        serialized_dict = data_dict if data_dict is not None else self.__dict__
+        serialized_dict = data_dict if data_dict is not None else \
+            self.__dict__.copy()
 
         for (key, value) in serialized_dict.items():
             if isinstance(value, Serializable):
                 serialized_dict[key] = value.serialize()
             elif hasattr(value, "__dict__") or isinstance(value, dict):
-                existing_dict = value.__dict__ \
+                existing_dict = value.__dict__.copy() \
                     if hasattr(value, "__dict__") else value
 
                 inner_dict = {}

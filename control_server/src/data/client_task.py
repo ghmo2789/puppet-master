@@ -18,7 +18,7 @@ class ClientTask(DataClass, Serializable, Deserializable):
         super().__init__()
         self.client_id = client_id
         self.task_id = task_id if task_id is not None else \
-            (task.task_id if task is not None else None)
+            (task.id if task is not None else None)
 
         self._id = client_id + "_" + self.task_id \
             if client_id is not None and self.task_id is not None else None
@@ -28,6 +28,10 @@ class ClientTask(DataClass, Serializable, Deserializable):
     @property
     def id(self):
         return self._id
+
+    @id.setter
+    def id(self, value: str):
+        self._id = value
 
     @staticmethod
     def load_from_dict(data_dict: dict, raise_error: bool = True):

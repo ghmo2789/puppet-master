@@ -36,7 +36,7 @@ class WebSettings(DataClass):
 
     @property
     def trusted_proxies_set(self) -> Set[str]:
-        return set(self._trusted_proxies.split(','))
+        return set([proxy for proxy in self._trusted_proxies.split(',') if len(proxy) > 0])
 
     @property
     def id_key(self) -> str:
