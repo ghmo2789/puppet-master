@@ -2,6 +2,7 @@ from typing import cast, List
 
 from flask import request, jsonify
 from control_server.src.controller import controller
+from control_server.src.data.task_status import TaskStatus
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
@@ -83,6 +84,7 @@ def get_client_tasks():
         return '', 401
 
     client_id = request.args.get('id')
+    task_id = request.args.get('task_id')
 
     key = {
 
@@ -99,6 +101,10 @@ def get_client_tasks():
             return 'Client does not exist', 404
 
         key['_id.client_id'] = client_id
+
+    # Wrong client id or bad formatting
+    if task_id is not None and len(task_id) > 0:
+        key['_id.task_id'] = task_id
 
     # Get all the tasks for given client
     all_tasks_db = cast(
@@ -127,9 +133,9 @@ def get_client_tasks():
     )
 
     return jsonify({
-        'all_tasks': [current_task.serialize() for current_task in
+        'pending_tasks': [current_task.serialize() for current_task in
                       all_tasks_db],
-        'done_tasks': [
+        'sent_tasks': [
             [current_task.serialize() for current_task in all_done_tasks]]
     }), 200
 
@@ -188,6 +194,8 @@ def post_client_tasks():
             task_id=new_task.id,
             task=new_task
         )
+
+        new_client_task.set_status(TaskStatus.PENDING)
 
         controller.db.set(
             collection=DatabaseCollection.USER_TASKS,

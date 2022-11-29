@@ -2,10 +2,12 @@ import uuid
 from typing import cast
 
 from control_server.src.controller import controller
+from control_server.src.data.client_task import ClientTask
 from control_server.src.data.client_task_response import ClientTaskResponse
 from control_server.src.data.client_task_response_collection import \
     ClientTaskResponseCollection
 from control_server.src.data.deserializable import Deserializable
+from control_server.src.data.task import Task
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.tests.utils.generic_test_utils import get_prefix
 
@@ -93,6 +95,19 @@ def test_task_response(client):
     assert_no_responses()
     task_response = get_task_response()
 
+    controller.db.set(
+        collection=DatabaseCollection.USER_DONE_TASKS,
+        identifier={
+            "client_id": client_id,
+            "task_id": task_id
+        },
+        entry=ClientTask(
+            client_id=client_id,
+            task_id=task_id,
+            task=Task()
+        )
+    )
+
     response = client.post(
         f"{get_prefix()}/client/task/response",
         headers={
@@ -122,6 +137,19 @@ def test_task_two_responses(client):
     randomize_ids()
     assert_no_responses()
     number = 10
+
+    controller.db.set(
+        collection=DatabaseCollection.USER_DONE_TASKS,
+        identifier={
+            "client_id": client_id,
+            "task_id": task_id
+        },
+        entry=ClientTask(
+            client_id=client_id,
+            task_id=task_id,
+            task=Task()
+        )
+    )
 
     task_responses = [ClientTaskResponse(
         task_id=task_id,

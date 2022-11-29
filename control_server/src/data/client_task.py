@@ -3,6 +3,7 @@ from typing import Dict, cast
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.serializable import Serializable
 from control_server.src.data.task import Task
+from control_server.src.data.task_status import TaskStatus
 from control_server.src.data_class import DataClass
 
 
@@ -23,6 +24,22 @@ class ClientTask(DataClass, Serializable, Deserializable):
             self.set_id(task_id, client_id)
 
         self.task = task
+        self.status: str | None = None
+        self.status_code: int | None = None
+
+    def set_status_code(self, status_code: int):
+        self.status_code = status_code
+
+        if status_code >= TaskStatus.ERROR.get_code():
+            self.status = TaskStatus.ERROR.get_name()
+        elif status_code <= TaskStatus.IN_PROGRESS.get_code():
+            self.status = TaskStatus.IN_PROGRESS.get_name()
+        else:
+            self.status = TaskStatus.DONE.get_name()
+
+    def set_status(self, status: TaskStatus):
+        self.status = status.get_name()
+        self.status_code = status.get_code()
 
     @property
     def id(self) -> Dict[str, str]:
