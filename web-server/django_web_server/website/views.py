@@ -40,8 +40,10 @@ def index(request):
 
 
 def tasks(request):
+    controlServer = ControlServerHandler()
+    
     if request.method == 'POST':
-        kill_task(request)
+        controlServer.killTask(request)
 
     context = {'tasks': SentTask.objects.all().order_by('-task_id')[:200]}
     return render(request, 'website/tasks.html', context)

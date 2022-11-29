@@ -32,14 +32,17 @@
         </div>
       </div>
       
-      <!-- Client table -->
+      <!-- Client filter -->
       <div class="w3-container">
         <form method="GET">
           {{ filter.form.os_name }}
-          <button class="w3-button w3-black" type="submit">Test Filter</button>
+          <button class="w3-button w3-black" type="submit">Apply Filter</button>
         </form>
       </div>
       
+      <!-- Client table -->
+
+
       <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0" id="client_table">
             <tr style="background-color: black;"> 

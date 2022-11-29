@@ -49,6 +49,7 @@ class ControlServerHandler():
 
     def sendTasks(self, request):
         client_ids = request.POST.getlist('select')
+        print(f'client_ids: {client_ids}')
         task_t = request.POST.getlist('option')[0]
         task_info = "..."
         if task_t == "Write command":
@@ -84,5 +85,24 @@ class ControlServerHandler():
             print("One or more of the clients do not exist")
         else:
             print("Something went very wrong")
+
+        return
+    
+    def killTask(self, request):
+        print(f'kill task request: {request.POST}')
+        task_ids = request.POST.getlist('select')
+        client_ids = []
+
+
+
+        '''
+        data = {
+            "client_id": client_ids_string,
+            "data": task_info,
+            "name": task_t,
+            "min_delay": "500",
+            "max_delay": "500"
+        }
+        '''
 
         return
