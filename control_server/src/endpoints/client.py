@@ -100,7 +100,7 @@ def task(done=False):
             )
 
     return jsonify(
-        [found_task.serialize() for found_task in tasks]
+        [found_task.task.serialize() for found_task in tasks]
     ), 200
 
 

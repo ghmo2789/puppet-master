@@ -21,14 +21,14 @@ class Task(DataClass, Serializable, Deserializable):
         self.data: str = data
         self.min_delay: int = min_delay
         self.max_delay: int = max_delay
-        self.task_id: str | None = None
+        self.id: str | None = None
 
     def generate_id(self):
-        self.task_id = str(uuid.uuid4())
+        self.id = str(uuid.uuid4())
 
     def with_id(self):
         self.generate_id()
         return self
 
     def serialize(self):
-        return self.__dict__
+        return self.__dict__.copy()
