@@ -3,7 +3,7 @@ from threading import Thread
 from typing import Any
 
 from control_server.src.middleware.event import Event
-from control_server.src.middleware.udp_receive_event import UdpReceiveEvent
+from control_server.src.middleware.events.udp_receive_event import UdpReceiveEvent
 
 
 class UdpServer:
@@ -15,6 +15,13 @@ class UdpServer:
         self.sock: socket.socket | None = None
         self.is_listening = False
         self.receive_event = Event()
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
 
     def bind(self):
         self.sock = socket.socket(
@@ -28,14 +35,23 @@ class UdpServer:
         current_socket = self.sock
         self.is_listening = True
         while self.is_listening:
-            data, addr = current_socket.recvfrom(self.buffer_size)
+            if self._receive(current_socket):
+                break
+
+    def _receive(self, with_socket: socket):
+        try:
+            data, addr = with_socket.recvfrom(self.buffer_size)
 
             if not self.is_listening:
-                break
+                return True
 
             response = self._handle_receive(data, addr)
             if response is not None:
-                current_socket.sendto(response, addr)
+                with_socket.sendto(response, addr)
+
+            return False
+        except:
+            return False
 
     def _handle_receive(self, data: bytes, address: Any) -> bytes:
         event_data = UdpReceiveEvent(data, address)
