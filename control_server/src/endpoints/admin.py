@@ -167,13 +167,18 @@ def post_client_tasks():
         int(max_delay)
     )
 
+    clients = []
+
     # Check if client exist
-    for current_client in clients_id.split(', '):
-        client_exist = controller.db.get_user(current_client)
+    for current_client in clients_id.split(','):
+        client_exist = controller.db.get_user(current_client.strip())
 
         if client_exist is None:
-            return 'Client does not exists', 404
+            return 'Client does not exist', 404
 
+        clients.append(client_exist)
+
+    for client_exist in clients:
         # Generate a task id
         new_task.generate_id()
         new_client_task = ClientTask(
