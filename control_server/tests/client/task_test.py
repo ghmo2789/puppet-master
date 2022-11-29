@@ -69,7 +69,7 @@ def test_task(client):
 
     for response_task in tasks:
         assert response_task is not None
-        assert response_task.id == client_task.task_id
+        assert response_task.id == client_task.get_task_id()
 
         assert response_task.name == task.name
         assert response_task.data == task.data

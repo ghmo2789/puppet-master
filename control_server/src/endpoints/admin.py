@@ -101,7 +101,7 @@ def get_client_tasks():
         list(controller.db.get_all(
             collection=DatabaseCollection.USER_TASKS,
             identifier={
-                'client_id': client_id
+                '_id.client_id': client_id
             },
             entry_instance_creator=lambda: cast(
                 Deserializable,
@@ -116,7 +116,7 @@ def get_client_tasks():
         list(controller.db.get_all(
             collection=DatabaseCollection.USER_DONE_TASKS,
             identifier={
-                'client_id': client_id
+                '_id.client_id': client_id
             },
             entry_instance_creator=lambda: cast(
                 Deserializable,
@@ -161,11 +161,13 @@ def post_client_tasks():
         return 'Missing ID or task', 400
 
     new_task = Task(
-        task_name,
-        task_data,
-        int(min_delay),
-        int(max_delay)
+        name=task_name,
+        data=task_data,
+        min_delay=int(min_delay),
+        max_delay=int(max_delay)
     )
+
+    new_task.generate_id()
 
     clients = []
 
@@ -180,18 +182,17 @@ def post_client_tasks():
 
     for client_exist in clients:
         # Generate a task id
-        new_task.generate_id()
         new_client_task = ClientTask(
-            client_exist.id,
-            new_task.id,
-            new_task
+            client_id=client_exist.id,
+            task_id=new_task.id,
+            task=new_task
         )
 
         controller.db.set(
             collection=DatabaseCollection.USER_TASKS,
-            entry_id=new_client_task.task_id,
+            entry_id=new_client_task.id,
             entry=new_client_task,
             overwrite=True
         )
 
-    return '', 200
+    return new_task.id, 200

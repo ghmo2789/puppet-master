@@ -1,4 +1,5 @@
 from typing import cast, List
+import re
 
 from flask import request, jsonify
 
@@ -79,7 +80,7 @@ def task(done=False):
         list(controller.db.get_all(
             source_collection,
             identifier={
-                "client_id": client_id.authorization
+                "_id.client_id": client_id.authorization
             },
             entry_instance_creator=lambda: cast(Deserializable, ClientTask())
         ))
