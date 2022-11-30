@@ -1,4 +1,6 @@
 from control_server.src.middleware.event import Event
+from control_server.src.middleware.events.message_received_event import \
+    MessageReceivedEvent
 from control_server.src.middleware.headers.message_header import MessageHeader
 from control_server.src.middleware.messages.generic_message import \
     GenericMessage
@@ -7,6 +9,10 @@ from control_server.src.middleware.udp_server import UdpServer
 
 
 class UdpControlListener:
+    """
+    A listener that listens for UDP control server messages, and, upon receiving
+    one, fires an event.
+    """
     def __init__(self, port, host='0.0.0.0', buffer_size=1024):
         self.udp_server = UdpServer(
             port=port,
@@ -15,7 +21,7 @@ class UdpControlListener:
         )
 
         self.udp_server.receive_event += self._handle_receive_udp_event
-        self.message_received = Event()
+        self.message_received: Event[MessageReceivedEvent] = Event()
 
     def __enter__(self):
         self.udp_server.start()
@@ -34,9 +40,10 @@ class UdpControlListener:
         )
         self.receive_message(address=event.address, message=message)
 
-    def receive_message(self, address: str, message: GenericMessage):
-        self.message_received(address, message)
+    def receive_message(self, address: str, message: GenericMessage) -> bytes:
+        self.message_received(MessageReceivedEvent(address, message))
         print(f'Received message from {address}:')
         print(f'\tURL: \t{message.url}')
         print(f'\tBody: \t{message.body}')
         print(f'\tHeaders: \t{message.headers}')
+        return b'1'

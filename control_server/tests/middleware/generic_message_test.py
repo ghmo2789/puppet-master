@@ -55,6 +55,11 @@ def utils():
 
 
 def test_read(utils: HeaderUtils):
+    """
+    Tests that the header can be read from a byte array
+    :param utils:
+    :return:
+    """
     for byte_arr, expected_dict in datasets:
         utils.assert_read(
             data=byte_arr,
@@ -63,6 +68,11 @@ def test_read(utils: HeaderUtils):
 
 
 def test_write(utils: HeaderUtils):
+    """
+    Tests that the header can be written to a byte array
+    :param utils:
+    :return:
+    """
     for byte_arr, expected_dict in datasets:
         utils.assert_write(
             expected=byte_arr,
@@ -71,6 +81,12 @@ def test_write(utils: HeaderUtils):
 
 
 def test_read_write(utils: HeaderUtils):
+    """
+    Tests that converting the header to bytes and then back results in the same
+    header.
+    :param utils:
+    :return:
+    """
     for _, expected_dict in datasets:
         utils.assert_read_write(
             data=expected_dict

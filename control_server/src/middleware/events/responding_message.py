@@ -2,6 +2,9 @@ from control_server.src.middleware.events.ip_message import IpMessage
 
 
 class RespondingMessage(IpMessage):
+    """
+    A message that has support for sending a response
+    """
     def __init__(self, address: str = None):
         super().__init__(address)
         self._response: bytes | None = None
