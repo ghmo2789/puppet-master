@@ -1,70 +1,64 @@
 from django.shortcuts import render
+from .forms import clientForm
+from .models import Client, SentTask
+from .filters import ClientFilter
+from .server import ControlServerHandler
 import json
+import time
+
+
+def create_task(c_id, task_t):
+    client = Client.objects.get(client_id=c_id)
+    t = time.localtime()
+    asc_t = time.asctime(t)
+    client.senttask_set.create(start_time=asc_t, finish_time='-', task_type=task_t, task_info="description")
+
+
+def send_tasks(request):
+    client_ids = request.POST.getlist('select')
+    task_t = request.POST.getlist('option')[0]
+    for c_id in client_ids:
+        create_task(c_id, task_t)
+    # TODO: Send to control server
+    return
+
+
+def kill_task(request):
+    # TODO: Send to control server
+    return
 
 
 def index(request):
-    dummyData = [{'id': 1, 'os': 'linux', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 2, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 3, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 4, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 5, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 6, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 7, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 8, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 9, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 10, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 11, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 12, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 13, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 14, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 15, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 16, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 17, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 18, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 19, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 20, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 21, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 22, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'},
-                 {'id': 23, 'os': 'windows', 'version': '5.1', 'hostname': 'skoldator',
-                 'host_user': 'Alfred', 'status': 'ok'}]
+    controlServer = ControlServerHandler()
+    controlServer.getClients()
 
-    dummyTasks = [{'name': 'write command'}, {'name': 'open browser'}, {'name': 'other task'}]
+    tasks = [{'name': "Write command"}, {'name': "Open browser"}, {'name': "Other task"}]
+
+    if request.method == 'POST':
+        form = clientForm(request.POST)
+        if form.is_valid():
+            send_tasks(request)
+    else:
+        form = clientForm()
 
     dummyStatistics = {'num_clients': 23,
                        'top_os': 'windows',
                        'errors': 0}
-
     dummyLocations = {'locations': [[0, 0], [51.5, -0.09], [-0.09, 51.5]]}
 
-    context = {'data': dummyData,
+    context = {'clients': Client.objects.all(),
+               'tasks': tasks,
+               'form': form,
                'statistics': dummyStatistics,
                'locations': json.dumps(dummyLocations),
-               'tasks': dummyTasks}
-    return render(request, 'website/index.html', context)
+               'filter': ClientFilter(request.GET, queryset=Client.objects.all())}
+
+    return render(request, 'website/index.html', context, )
 
 
 def tasks(request):
-    context = {'data': 'hello tasks'}
+    if request.method == 'POST':
+        kill_task(request)
+
+    context = {'tasks': SentTask.objects.all()[:200]}
     return render(request, 'website/tasks.html', context)

@@ -1,4 +1,5 @@
-from typing import List, Callable
+from __future__ import annotations
+from typing import List, Callable, Tuple
 
 from flask import Flask
 
@@ -14,10 +15,11 @@ class RouteDestination:
     Class is used to set up routing in Router class.
     """
 
-    def __init__(self, handler: Callable, methods: List[str]):
+    def __init__(self, route: str, handler: Callable, methods: List[str]):
         self.name = handler.__name__
         self.handler = handler
         self.methods = methods
+        self.route = route
 
 
 class Router:
@@ -32,21 +34,50 @@ class Router:
         self._app.debug = self._controller.settings.debug
 
         pref = self._controller.url_prefix
-        self.route_map = {
-            f'{pref}/client/init': RouteDestination(client.init, ['POST']),
-            f'{pref}/client/task': RouteDestination(client.task, ['GET']),
-            f'{pref}/admin/client': RouteDestination(admin.client, ['GET']),
-            f'{pref}/admin/allclients': RouteDestination(admin.all_clients, ['GET']),
-            f'{pref}/client/task/response':
-                RouteDestination(client.task_response, ['POST']),
-        }
+        self.route_map: List[RouteDestination] = [
+            RouteDestination(
+                f'{pref}/client/init',
+                client.init,
+                ['POST']
+            ),
+            RouteDestination(
+                f'{pref}/client/task',
+                client.task,
+                ['GET']
+            ),
+            RouteDestination(
+                f'{pref}/admin/client',
+                admin.client,
+                ['GET']
+            ),
+            RouteDestination(
+                f'{pref}/admin/allclients',
+                admin.all_clients,
+                ['GET']
+            ),
+            RouteDestination(
+                f'{pref}/client/task/response',
+                client.task_response,
+                ['POST']
+            ),
+            RouteDestination(
+                f'{pref}/admin/task',
+                admin.get_client_tasks,
+                ['GET']
+            ),
+            RouteDestination(
+                f'{pref}/admin/task',
+                admin.post_client_tasks,
+                ['POST']
+            )
+        ]
 
-        for route, destination in self.route_map.items():
+        for route in self.route_map:
             self._app.add_url_rule(
-                rule=route,
-                endpoint=destination.name,
-                view_func=destination.handler,
-                methods=destination.methods)
+                rule=route.route,
+                endpoint=route.name,
+                view_func=route.handler,
+                methods=route.methods)
 
     @property
     def app(self):

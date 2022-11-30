@@ -46,6 +46,7 @@ jobs:
           echo "MONGO_AUTH_MECHANISM=" >> .env
           echo "DEBUG=False" >> .env
           echo "ID_KEY=some secret key" >> .env
+          echo "BEHIND_PROXY=False" >> .env
           echo "TRUSTED_PROXIES=172.17.0.0/16,172.18.0.0/16" >> .env
           echo "ADMIN_KEY=RSU7CM9hbZ4swfHW0eVppblG4EtYiiVcREcYhn3SbraZXcfL3lP0bbDF2cpo4jUA" >> .env
       - name: Test with pytest

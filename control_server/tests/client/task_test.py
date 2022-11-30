@@ -28,7 +28,7 @@ def test_task(client):
     task = Task("test", "test", 0, 0).with_id()
     client_task = ClientTask(
         client_id=client_id,
-        task_id=task.task_id,
+        task_id=task.id,
         task=task
     )
 
@@ -58,9 +58,9 @@ def test_task(client):
     )
 
     tasks = [
-                ClientTask().deserialize(task) for task in response.json
+                Task().deserialize(task) for task in response.json
             ] + [
-                ClientTask().deserialize(task) for task in done_response.json
+                Task().deserialize(task) for task in done_response.json
             ]
 
     assert response.status_code == 200
@@ -69,10 +69,9 @@ def test_task(client):
 
     for response_task in tasks:
         assert response_task is not None
-        assert response_task.client_id == client_task.client_id
-        assert response_task.task_id == client_task.task_id
+        assert response_task.id == client_task.get_task_id()
 
-        assert response_task.task.name == task.name
-        assert response_task.task.data == task.data
-        assert response_task.task.min_delay == task.min_delay
-        assert response_task.task.max_delay == task.max_delay
+        assert response_task.name == task.name
+        assert response_task.data == task.data
+        assert response_task.min_delay == task.min_delay
+        assert response_task.max_delay == task.max_delay

@@ -35,7 +35,8 @@ class MockDatabase(Database):
             entry: IdentifyingClientData,
             entry_id: str = None,
             identifier: dict[str, Any] = None,
-            overwrite: bool = False):
+            overwrite: bool = False,
+            ignore_id: bool = False):
         Database._verify_identifier_entry_id(entry_id, identifier)
 
         if collection not in self._collections:
