@@ -77,6 +77,7 @@ version = "0.1.0"
 dependencies = [
  "actix-rt",
  "anyhow",
+ "lazy_static",
  "rand 0.3.23",
  "reqwest",
  "serde",
