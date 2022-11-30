@@ -18,6 +18,7 @@ class Controller:
         self._client_id_generator = ClientIdGenerator(
             self._settings.id_key
         )
+        self._admin_key = self._settings.admin_key
 
         if isinstance(self._db, MockDatabase):
             print("Using mock database")

@@ -12,7 +12,7 @@ const URL: &'static str = env!("CONTROL_SERVER_URL");
 const TIMEOUT: Duration = Duration::from_secs(2);
 const INIT_ENDPOINT: &'static str = "/control/client/init";
 const COMMAND_ENDPOINT: &'static str = "/control/client/task";
-const RESULT_ENDPOINT: &'static str = "/client/task/response";
+const RESULT_ENDPOINT: &'static str = "/control/client/task/response";
 const CONTENT_HEADER_VALUE: &'static str = "application/json";
 const AUTHORIZATION_HEADER: &'static str = "Authorization";
 
