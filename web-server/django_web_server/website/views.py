@@ -44,7 +44,7 @@ def index(request):
 def tasks(request):
     controlServer = ControlServerHandler()
     controlServer.getTasks()
-    
+
     if request.method == 'POST':
         controlServer.killTask(request)
         return HttpResponseRedirect(request.path_info)

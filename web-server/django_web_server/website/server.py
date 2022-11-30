@@ -51,11 +51,9 @@ class ControlServerHandler():
             client = Client.objects.get(client_id=c_id)
             t = time.localtime()
             asc_t = time.asctime(t)
-            client.senttask_set.create(task_id = t_id, start_time=asc_t, status=t_status, task_type=task_t, task_info=task_i)
-        else:
-            print('Abort task not added')
+            client.senttask_set.create(task_id=t_id, start_time=asc_t, status=t_status,
+                                       task_type=task_t, task_info=task_i)
 
-    
     def getTasks(self):
         # TODO: Update when endpoint alltasks is implemented
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
@@ -67,30 +65,29 @@ class ControlServerHandler():
                 "id": client,
             }
             response = requests.get(url=requestUrl, headers=requestHeaders, params=data)
+
             status_code = response.status_code
             if status_code == 200:
-                all_tasks = response.json()['all_tasks']
-                done_tasks = response.json()['done_tasks'][0]
-                for task in all_tasks:
+                pending_tasks = response.json()['pending_tasks']
+                sent_tasks = response.json()['sent_tasks'][0]
+                for task in pending_tasks:
                     t_id = task['_id']['task_id']
                     if not (SentTask.objects.filter(task_id=t_id).exists()):
                         c_id = task['_id']['client_id']
                         task_t = task['task']['name']
                         task_i = task['task']['data']
-                        t_status = 'Running'
+                        t_status = 'Pending'
                         self.__saveTask(t_id, c_id, task_t, task_i, t_status)
-                for task in done_tasks:
-                    t_id = task['_id']
+                for task in sent_tasks:
+                    t_id = task['_id']['task_id']
                     if not (SentTask.objects.filter(task_id=t_id).exists()):
-                        c_id = task['client_id']
+                        c_id = task['_id']['client_id']
                         task_t = task['task']['name']
                         task_i = task['task']['data']
-                        t_status = 'Done'
+                        t_status = task['status'].replace("_", " ")
                         self.__saveTask(t_id, c_id, task_t, task_i, t_status)
                     else:
-                        SentTask.objects.filter(task_id=t_id).update(status='Done')
-
-
+                        SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
 
     def sendTasks(self, request):
         client_ids = request.POST.getlist('select')
@@ -102,8 +99,6 @@ class ControlServerHandler():
             task_t = "terminal"
         elif task_t == "Open browser":
             task_info = "sensible-browser 'google.com'"
-        #for c_id in client_ids:
-        #    self.__saveTask(c_id, task_t, task_info)
 
         client_ids_string = ", ".join(client_ids)
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
@@ -131,7 +126,7 @@ class ControlServerHandler():
             print("Something went very wrong")
 
         return
-    
+
     def killTask(self, request):
         selected = request.POST.getlist('select')
         task_ids = list(SentTask.objects.filter(id__in=selected).values_list('task_id', flat=True))
