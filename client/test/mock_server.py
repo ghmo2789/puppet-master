@@ -7,6 +7,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import json
+import argparse
 
 _INIT_CLIENT_KEYS = ['os_name', 'os_version', 'hostname', 'host_user', 'privileges']
 _INIT_CLIENT_PATH = '/control/client/init'
@@ -37,9 +38,65 @@ _TEST_TASKS = """[
         "max_delay": 150,
         "min_delay": 0,
         "name": "terminal"
-    }    
+    }         
 ]"""
 
+_DEMO_TASKS = """[
+    {
+        "id": "1",
+        "data": "ls -al",
+        "max_delay": 2000,
+        "min_delay": 1000,
+        "name": "terminal"
+    },
+    {
+        "id": "2",
+        "data": "echo Hejsan!",
+        "max_delay": 2000,
+        "min_delay": 1000,
+        "name": "terminal"
+    },
+    {
+        "id": "3",
+        "data": "hejhej",
+        "max_delay": 1000,
+        "min_delay": 0,
+        "name": "terminal"
+    },
+    {
+        "id": "4",
+        "data": "ping 127.0.0.1",
+        "max_delay": 150,
+        "min_delay": 0,
+        "name": "terminal"
+    },
+    {
+        "id": "5",
+        "data": "ping 127.0.0.1",
+        "max_delay": 150,
+        "min_delay": 0,
+        "name": "terminal"
+    },
+    {
+        "id": "6",
+        "data": "ping 192.168.1.247",
+        "max_delay": 150,
+        "min_delay": 0,
+        "name": "terminal"
+    }      
+]"""
+_DEMO_TASKS_2 = """[
+    {
+        "id": "5",
+        "data": "4,5,6",
+        "max_delay": 0,
+        "min_delay": 0,
+        "name": "abort"
+    }        
+]"""
+
+n_gets = 0
+demo = True
 
 class S(BaseHTTPRequestHandler):
     def _set_response(self):
@@ -53,18 +110,22 @@ class S(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        global n_gets, demo
         print("----------------------------------------------------------")
         print(f"Received GET request to {self.path}\n")
-
         if _TEST_TOKEN in str(self.headers):
             self._set_response()
-            message = _TEST_TASKS
+            if demo:
+                message = _DEMO_TASKS if n_gets % 2 == 0 else _DEMO_TASKS_2
+            else:
+                message = _TEST_TASKS
         else:
             self._set_fail_response()
             message = 'Failed auth'
 
         print(f'Responding with: {message}')
         self.wfile.write(message.encode('utf-8'))
+        n_gets += 1
 
     def do_POST(self):
         if not (_CLIENT_HEADER in str(self.headers)):
@@ -110,10 +171,20 @@ def run(server_class=HTTPServer, handler_class=S, port=8080):
     logging.info('Stopping httpd...\n')
 
 
-if __name__ == '__main__':
-    from sys import argv
+def parse_args():
+    parser = argparse.ArgumentParser(description="Test server for puppet-master client")
+    parser.add_argument('--port',
+                        default=8080,
+                        type=int,
+                        help='What port the server will listen on, if not set, 8080 is default')
+    parser.add_argument('--demo',
+                        action='store_true',
+                        default=False,
+                        help='If running in demo mode or not')
+    return parser.parse_args()
 
-    if len(argv) == 2:
-        run(port=int(argv[1]))
-    else:
-        run()
+
+if __name__ == '__main__':
+    args = parse_args()
+    demo = args.demo
+    run(port=args.port)
