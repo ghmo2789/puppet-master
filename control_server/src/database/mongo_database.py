@@ -48,7 +48,8 @@ class MongoDatabase(Database):
             entry: Serializable,
             entry_id: str = None,
             identifier: dict[str, Any] = None,
-            overwrite: bool = False):
+            overwrite: bool = False,
+            ignore_id: bool = False):
         Database._verify_identifier_entry_id(entry_id, identifier)
 
         entry_dict = entry.serialize()
@@ -59,13 +60,16 @@ class MongoDatabase(Database):
         complete_entry_dict = entry_dict | entry_id_dict
 
         if overwrite:
+            if ignore_id:
+                complete_entry_dict.pop("_id")
+
             self._db[collection.get_name()] \
                 .update_one(
                 entry_id_dict,
                 {
                     "$set": complete_entry_dict
                 },
-                upsert=overwrite
+                upsert=True
             )
         else:
             self._db[collection.get_name()].insert_one(complete_entry_dict)

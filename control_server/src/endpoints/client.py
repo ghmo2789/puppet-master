@@ -1,4 +1,5 @@
 from typing import cast, List
+import re
 
 from flask import request, jsonify
 
@@ -14,6 +15,7 @@ from control_server.src.data.client_task_response_collection import \
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
+from control_server.src.data.task_status import TaskStatus
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.src.utils.request_utils import get_ip
 
@@ -79,14 +81,17 @@ def task(done=False):
         list(controller.db.get_all(
             source_collection,
             identifier={
-                "client_id": client_id.authorization
+                "_id.client_id": client_id.authorization
             },
             entry_instance_creator=lambda: cast(Deserializable, ClientTask())
         ))
     )
 
+    serialized_result = [found_task.task.serialize() for found_task in tasks]
+
     if not done:
         for retrieved_task in tasks:
+            retrieved_task.set_status(TaskStatus.IN_PROGRESS)
             controller.db.set(
                 DatabaseCollection.USER_DONE_TASKS,
                 entry_id=retrieved_task.id,
@@ -100,7 +105,7 @@ def task(done=False):
             )
 
     return jsonify(
-        [found_task.task.serialize() for found_task in tasks]
+        serialized_result
     ), 200
 
 
@@ -127,6 +132,22 @@ def task_response():
             raise_error=False
     ):
         return "", 400
+
+    task_key = {
+        "_id.client_id": client_id.authorization,
+        "_id.task_id": client_response.id
+    }
+    client_task = cast(
+        ClientTask,
+        controller.db.get_one(
+            DatabaseCollection.USER_DONE_TASKS,
+            identifier=task_key,
+            entry_instance=ClientTask()
+        )
+    )
+
+    if client_task is None:
+        return "Task does not exist", 404
 
     identifying_response = ClientTaskResponseCollection(
         client_id=client_id.authorization,
@@ -165,6 +186,15 @@ def task_response():
         identifier=existing_response.id,
         entry=existing_response,
         overwrite=True
+    )
+
+    client_task.set_status_code(client_response.status)
+    controller.db.set(
+        DatabaseCollection.USER_DONE_TASKS,
+        identifier=task_key,
+        entry=client_task,
+        overwrite=True,
+        ignore_id=True
     )
 
     return "", 200
