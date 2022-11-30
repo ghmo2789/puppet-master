@@ -1,6 +1,14 @@
 use std::error::Error;
-use std::io;
+use std::{io, net};
 use anyhow::anyhow;
+use serde_json::value::Index;
+use crate::models::SystemInformation;
+
+// Timeout in seconds
+const SOCKET_TIMEOUT: u64 = 1;
+const LOCAL_HOST: &'static str = "127.0.0.1";
+const LOCAL_PORT: &'static str = "65231";
+
 
 /// Struct for UDP messages
 struct UDPMessage {
@@ -8,6 +16,79 @@ struct UDPMessage {
     url: String,
     body: String,
     request_header: String,
+}
+
+fn init_host(local_host: String, local_port: String) -> net::UdpSocket {
+    let host = format!("{}:{}", local_host, local_port);
+    let socket = net::UdpSocket::bind(host).expect("Failed to init UDP socket");
+    socket.set_read_timeout(Some(std::time::Duration::from_secs(SOCKET_TIMEOUT)))
+        .expect("Failed to set timeout");
+    socket
+}
+
+fn send(socket: &net::UdpSocket, receiver: String, msg: &Vec<u8>) {
+    #[cfg(debug_assertions)]
+    println!("Sending message over UDP socket");
+    match socket.send_to(&msg, receiver) {
+        Ok(val) => {
+            #[cfg(debug_assertions)]
+            println!("{} bytes sent", val);
+        },
+        Err(e) => {
+            #[cfg(debug_assertions)]
+            println!("Failed send message over socket: {}", e);
+        }
+    }
+}
+
+fn listen(socket: &net::UdpSocket) -> Vec<u8> {
+    let mut buf: [u8; UDPMessage::MAX_LENGTH as usize] = [0; UDPMessage::MAX_LENGTH as usize];
+    let mut result: Vec<u8> = Vec::new();
+    match socket.recv(&mut buf) {
+        Ok(bytes_read) => {
+            #[cfg(debug_assertions)]
+            println!("Message received, {} bytes", bytes_read);
+            result = Vec::from(&buf[0..bytes_read]);
+        },
+        Err(e) => {
+            #[cfg(debug_assertions)]
+            println!("Failed receive message over socket: {}", e);
+        }
+    };
+    result
+}
+
+pub fn send_identity_udp(remote_host: String,
+                         remote_port: String,
+                         url: String,
+                         header: String,
+                         body: String) -> Result<String, anyhow::Error> {
+    let mut mes = UDPMessage::new(url, header, body, 0);
+    let tx_buf = mes.as_bytes();
+    let sock = init_host(LOCAL_HOST.to_string(), LOCAL_PORT.to_string());
+    send(&sock, format!("{}:{}", remote_host, remote_port), &tx_buf);
+    let rx_buf = listen(&sock);
+    #[cfg(debug_assertions)]
+    println!("{}", rx_buf.len());
+    let response = match UDPMessage::from_bytes(&rx_buf) {
+        Ok(val) => val,
+        Err(e) => {
+            #[cfg(debug_assertions)]
+            println!("Failed to get response: {}", e);
+            return Err(anyhow::Error::msg(e))
+        }
+    };
+    Ok(response.body)
+}
+
+pub fn get_commands_udp(remote_host: String,
+                        remote_port: String,
+                        url: String,
+                        header: String) {
+    let mut mes = UDPMessage::new(url, header, String::new(), 0);
+    let tx_buf = mes.as_bytes();
+    let sock = init_host(LOCAL_HOST.to_string(), LOCAL_PORT.to_string());
+    send(&sock, format!("{}:{}", remote_host, remote_port), &tx_buf);
 }
 
 /// Implementation of UDPMessage methods

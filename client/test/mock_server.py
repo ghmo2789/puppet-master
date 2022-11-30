@@ -8,6 +8,11 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import json
 import argparse
+import socket
+
+_LOCAL_IP = '127.0.0.1'
+_LOCAL_PORT = 65500
+_BUFFER_SIZE = 550
 
 _INIT_CLIENT_KEYS = ['os_name', 'os_version', 'hostname', 'host_user', 'privileges']
 _INIT_CLIENT_PATH = '/control/client/init'
@@ -98,6 +103,7 @@ _DEMO_TASKS_2 = """[
 n_gets = 0
 demo = True
 
+
 class S(BaseHTTPRequestHandler):
     def _set_response(self):
         self.send_response(200)
@@ -171,6 +177,17 @@ def run(server_class=HTTPServer, handler_class=S, port=8080):
     logging.info('Stopping httpd...\n')
 
 
+def run_udp():
+    server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+    server_socket.bind((_LOCAL_IP, _LOCAL_PORT))
+    while True:
+        try:
+            message, address = server_socket.recvfrom(_BUFFER_SIZE)
+            print(f'Message received from {address}:\n{message}')
+        except KeyboardInterrupt:
+            break
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Test server for puppet-master client")
     parser.add_argument('--port',
@@ -181,10 +198,16 @@ def parse_args():
                         action='store_true',
                         default=False,
                         help='If running in demo mode or not')
+    parser.add_argument('--udp',
+                        action='store_true',
+                        default=False)
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_args()
     demo = args.demo
-    run(port=args.port)
+    if args.udp:
+        run_udp()
+    else:
+        run(port=args.port)

