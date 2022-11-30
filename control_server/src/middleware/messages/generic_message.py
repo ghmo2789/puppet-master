@@ -1,13 +1,21 @@
-from control_server.src.middleware.headers.StringProperty import StringProperty
+from control_server.src.middleware.headers.string_property import StringProperty
 from control_server.src.middleware.headers.byte_property import ByteProperty
 from control_server.src.middleware.headers.message_header import MessageHeader
 
 
 class GenericMessage(MessageHeader):
+    """
+    A generic message that can be sent over the network, containing a URL,
+    headers and a body.
+    """
     def __init__(
             self,
             message_header: MessageHeader,
             data: bytes = None):
+        self.url: str = ''
+        self.body: str = ''
+        self.headers: str = ''
+
         super().__init__(
             data=data,
             extra_properties=[
@@ -31,7 +39,3 @@ class GenericMessage(MessageHeader):
                 )
             ]
         )
-
-        self.url: str = ''
-        self.body: str = ''
-        self.headers: str = ''

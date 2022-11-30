@@ -4,6 +4,9 @@ T = TypeVar('T')
 
 
 class ByteProperty(Generic[T]):
+    """
+    A property that can be serialized to and from bytes
+    """
     def __init__(
             self,
             name: str,
@@ -18,7 +21,16 @@ class ByteProperty(Generic[T]):
         self.has_reader = reader is not None
 
     def read(self) -> T:
+        """
+        Reads the value of the property
+        :return: The value of the property
+        """
         return self.reader()
 
     def write(self, value: T):
+        """
+        Writes a value to the property
+        :param value: The value to write
+        :return:
+        """
         self.writer(value)

@@ -8,6 +8,11 @@ from control_server.src.middleware.headers.byte_property import ByteProperty
 
 
 class MessageHeader(ByteConvertible):
+    """
+    A header for a message, containing information about the message and its
+    size. Useful as it has a fixed size, which makes it easy to read the
+    rest of the message without knowing its length prior to receiving.
+    """
     def __init__(
             self,
             data: bytes = None,
@@ -56,23 +61,3 @@ class MessageHeader(ByteConvertible):
 
         for (key, value) in kwargs.items():
             setattr(self, key, value)
-
-    # def load_from_bytes(self, data: bytes = None):
-    #     if data is None:
-    #         return False
-    #
-    #     self.message_length, \
-    #     self.status_code, \
-    #     self.url_length, \
-    #     self.body_length, \
-    #     self.headers_length \
-    #         = struct.unpack('!HBHHH', data)
-    #
-    # def to_bytes(self) -> bytes:
-    #     return struct.pack(
-    #         '!HBHHH',
-    #         self.message_length,
-    #         self.status_code,
-    #         self.url_length,
-    #         self.body_length,
-    #         self.headers_length)
