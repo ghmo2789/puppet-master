@@ -1,5 +1,8 @@
 import socket
 
+import pytest
+from decouple import config
+
 from control_server.src.middleware.events.udp_receive_event import \
     UdpReceiveEvent
 from control_server.src.middleware.udp_server import UdpServer
@@ -51,6 +54,9 @@ def test_udp_server():
     Tests that the UDP server can receive a message
     :return:
     """
+    if config('CI', default=False, cast=bool):
+        pytest.skip('Skipping UDP tests on CI')
+
     with get_udp_server() as server:
         result = ResultContainer()
         server.receive_event += lambda event: handle_udp_response(event, result)
