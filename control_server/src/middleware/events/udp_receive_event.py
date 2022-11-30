@@ -1,6 +1,5 @@
 from typing import Any
 
-from control_server.src.middleware.events.IpMessage import IpMessage
 from control_server.src.middleware.events.responding_message import \
     RespondingMessage
 

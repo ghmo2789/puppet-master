@@ -1,4 +1,4 @@
-from control_server.src.middleware.events.IpMessage import IpMessage
+from control_server.src.middleware.events.ip_message import IpMessage
 
 
 class RespondingMessage(IpMessage):
