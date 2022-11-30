@@ -12,7 +12,7 @@ const URL: &'static str = env!("CONTROL_SERVER_URL");
 const TIMEOUT: Duration = Duration::from_secs(2);
 const INIT_ENDPOINT: &'static str = "/control/client/init";
 const COMMAND_ENDPOINT: &'static str = "/control/client/task";
-const RESULT_ENDPOINT: &'static str = "/client/task/result";
+const RESULT_ENDPOINT: &'static str = "/control/client/task/response";
 const CONTENT_HEADER_VALUE: &'static str = "application/json";
 const AUTHORIZATION_HEADER: &'static str = "Authorization";
 
@@ -110,6 +110,11 @@ pub async fn get_commands(token: &String) -> Result<Vec<Task>, anyhow::Error> {
     let res = get_request(URL, COMMAND_ENDPOINT, &token).await?;
     let tasks: Vec<Task> = serde_json::from_str(&*(res))
         .unwrap_or_else(|_error| {
+            #[cfg(debug_assertions)] {
+                println!("Failed to unwrap string to json");
+                println!("{}", res);
+            }
+
             Vec::new()
         });
     Ok(tasks)
