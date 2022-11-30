@@ -32,10 +32,16 @@ class ClientTask(DataClass, Serializable, Deserializable):
 
         if status_code >= TaskStatus.ERROR.get_code():
             self.status = TaskStatus.ERROR.get_name()
-        elif status_code <= TaskStatus.IN_PROGRESS.get_code():
+        elif status_code == TaskStatus.IN_PROGRESS.get_code():
             self.status = TaskStatus.IN_PROGRESS.get_name()
-        else:
+        elif status_code == TaskStatus.PENDING.get_code():
+            self.status = TaskStatus.PENDING.get_name()
+        elif status_code == TaskStatus.ABORTED.get_code():
+            self.status = TaskStatus.ABORTED.get_name()
+        elif status_code == TaskStatus.DONE.get_code():
             self.status = TaskStatus.DONE.get_name()
+        else:
+            self.status = TaskStatus.ERROR.get_name()
 
     def set_status(self, status: TaskStatus):
         self.status = status.get_name()
