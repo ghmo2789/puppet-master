@@ -132,7 +132,7 @@ impl RunningTask {
                     println!("Command had no output!");
                 };
             },
-            -1 => {
+            ABORTED_STATUS_CODE => {
                 #[cfg(debug_assertions)]
                 println!("Command aborted => no output returned");
             },
