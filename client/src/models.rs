@@ -35,3 +35,4 @@ pub struct Auth {
     #[serde(rename(serialize = "Authorization", deserialize = "Authorization"))]
     pub authorization: String,
 }
+
