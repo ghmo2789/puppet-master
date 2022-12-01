@@ -9,29 +9,43 @@ from control_server.tests.utils.header_utils import HeaderUtils
 
 datasets: List[Tuple[bytes, Dict[str, Any]]] = [
     (
-        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00AAA',
+        b'\x00\x00\x00\x00\x01\x00\x01\x00\x01AAA',
         {
             'message_length': 0,
             'status_code': 0,
-            'url_length': 0,
-            'body_length': 0,
-            'headers_length': 0,
+            'url_length': 1,
+            'body_length': 1,
+            'headers_length': 1,
             'url': b'A',
             'body': b'A',
             'headers': b'A'
         }
     ),
     (
-        b'\x00\x01\x02\x00\x03\x00\x04\x00\x05ABC',
+        b'\x00\x01\x02\x00\x01\x00\x01\x00\x01ABC',
         {
             'message_length': 1,
             'status_code': 2,
-            'url_length': 3,
-            'body_length': 4,
-            'headers_length': 5,
+            'url_length': 1,
+            'body_length': 1,
+            'headers_length': 1,
             'url': b'A',
             'body': b'B',
             'headers': b'C'
+        }
+    ),
+    (
+        b'\x00s\x00\x00(\x00*\x00\x18http://127.0.0.1:8080/client/task/result' +
+        b'{"id":"2","status":0,"result":"Hejsan!\\n"}"Authorization": "12345"',
+        {
+            'message_length': 115,
+            'status_code': 0,
+            'url_length': 40,
+            'body_length': 42,
+            'headers_length': 24,
+            'url': b'http://127.0.0.1:8080/client/task/result',
+            'body': b'{"id":"2","status":0,"result":"Hejsan!\\n"}',
+            'headers': b'"Authorization": "12345"'
         }
     )
 ]
@@ -43,12 +57,19 @@ def utils():
     Creates header utils for the test class
     :return:
     """
-    yield HeaderUtils(
+    yield get_utils()
+
+
+def get_utils(
+        url_length: int = 1,
+        body_length: int = 1,
+        headers_length: int = 1) -> HeaderUtils:
+    return HeaderUtils(
         convertible_creator=lambda: GenericMessage(
             MessageHeader(
-                url_length=1,
-                body_length=1,
-                headers_length=1
+                url_length=url_length,
+                body_length=body_length,
+                headers_length=headers_length
             )
         )
     )
@@ -61,7 +82,13 @@ def test_read(utils: HeaderUtils):
     :return:
     """
     for byte_arr, expected_dict in datasets:
-        utils.assert_read(
+        current_utils = get_utils(
+            url_length=expected_dict['url_length'],
+            body_length=expected_dict['body_length'],
+            headers_length=expected_dict['headers_length']
+        )
+
+        current_utils.assert_read(
             data=byte_arr,
             expected=expected_dict
         )
@@ -74,7 +101,13 @@ def test_write(utils: HeaderUtils):
     :return:
     """
     for byte_arr, expected_dict in datasets:
-        utils.assert_write(
+        current_utils = get_utils(
+            url_length=expected_dict['url_length'],
+            body_length=expected_dict['body_length'],
+            headers_length=expected_dict['headers_length']
+        )
+
+        current_utils.assert_write(
             expected=byte_arr,
             data=expected_dict
         )
@@ -88,6 +121,12 @@ def test_read_write(utils: HeaderUtils):
     :return:
     """
     for _, expected_dict in datasets:
-        utils.assert_read_write(
+        current_utils = get_utils(
+            url_length=expected_dict['url_length'],
+            body_length=expected_dict['body_length'],
+            headers_length=expected_dict['headers_length']
+        )
+
+        current_utils.assert_read_write(
             data=expected_dict
         )
