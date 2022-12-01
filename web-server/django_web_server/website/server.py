@@ -1,15 +1,9 @@
-<<<<<<< HEAD
 from django.db.models import Count
-from .models import Client
 from decouple import config
 import requests
-from django.contrib.gis.geoip2 import GeoIP2 
-=======
+from django.contrib.gis.geoip2 import GeoIP2
 from .models import Client, SentTask
-from decouple import config
-import requests
 import time
->>>>>>> 925e9f28affcc924cfdde72da999d905ee692534
 
 
 class ControlServerHandler():
@@ -54,8 +48,7 @@ class ControlServerHandler():
         except ValueError as e:
             print("Server issues" + str(e))
             return []
-<<<<<<< HEAD
-    
+
     def getStatistics(self):
         num_clients = Client.objects.all().count()
         top_os = Client.objects.annotate(c=Count('os_name')).order_by('-c').first().os_name
@@ -63,12 +56,12 @@ class ControlServerHandler():
                       'top_os': top_os,
                       'errors': self.errors}
         return statistics
-    
+
     def getLocations(self):
         g = GeoIP2()
         ips = list(Client.objects.values_list('ip', flat=True))
         # TODO: Remove dummy location in the future
-        ips.append('72.14.207.99')
+        # ips.append('72.14.207.99')
         coordinates = []
 
         for ip in ips:
@@ -81,10 +74,6 @@ class ControlServerHandler():
                 print(e)
 
         return coordinates
-
-
-
-=======
 
     def __saveTask(self, t_id, c_id, task_t, task_i, t_status):
         if task_t != 'abort':
@@ -201,4 +190,3 @@ class ControlServerHandler():
             print("Something went very wrong")
 
         return
->>>>>>> 925e9f28affcc924cfdde72da999d905ee692534
