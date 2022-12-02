@@ -4,6 +4,7 @@
 4 Usage::
 5     ./server.py [<port>]
 6 """
+import struct
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import json
@@ -177,6 +178,30 @@ def run(server_class=HTTPServer, handler_class=S, port=8080):
     logging.info('Stopping httpd...\n')
 
 
+def udp_init_response():
+    body = b'{"Authorization": "12345"}'
+    url_len = 0
+    req_h_len = 0
+    body_len = len(body)
+    status_code = 200
+    message_len = 9 + url_len + body_len + req_h_len
+    header = struct.pack('>HBHHH', message_len, status_code, url_len, body_len, req_h_len)
+    mes = header + body
+    return mes
+
+
+def udp_get_commands_response():
+    body = _TEST_TASKS.encode()
+    url_len = 0
+    req_h_len = 0
+    body_len = len(body)
+    status_code = 200
+    message_len = 9 + url_len + body_len + req_h_len
+    header = struct.pack('>HBHHH', message_len, status_code, url_len, body_len, req_h_len)
+    mes = header + body
+    return mes
+
+
 def run_udp():
     server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     server_socket.bind((_LOCAL_IP, _LOCAL_PORT))
@@ -184,6 +209,23 @@ def run_udp():
         try:
             message, address = server_socket.recvfrom(_BUFFER_SIZE)
             print(f'Message received from {address}:\n{message}')
+            message_len, status_code, url_len, body_len, req_h_len = struct.unpack('>HBHHH', message[0:9])
+            index = 9
+            url = message[index:index + url_len].decode('utf-8')
+            index += url_len
+            body = message[index:index + body_len].decode('utf-8')
+            index += body_len
+            req_h = message[index:index + req_h_len].decode('utf-8')
+
+            if _INIT_CLIENT_PATH in url:
+                msg = udp_init_response()
+                server_socket.sendto(msg, address)
+            elif _TASK_PATH in url:
+                msg = udp_get_commands_response()
+                server_socket.sendto(msg, address)
+            if _TASK_RESULT_PATH in url:
+                pass
+
         except KeyboardInterrupt:
             break
 

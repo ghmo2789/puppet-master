@@ -17,13 +17,12 @@ const AUTHORIZATION_HEADER: &'static str = "Authorization";
 /// This function fails if there are issues sending the request, if 200 is not returned from
 /// the server or if parsing of the request response text fails
 pub async fn post_request(body: String,
-                          url: &str,
-                          endpoint: &str,
+                          url: String,
                           auth_token: &String) -> Result<String, anyhow::Error> {
     let client = Client::builder()
         .timeout(TIMEOUT)
         .build()?;
-    let res = client.post(format!("{}{}", url, endpoint))
+    let res = client.post(url)
         .header(CONTENT_TYPE, CONTENT_HEADER_VALUE)
         .header(AUTHORIZATION_HEADER, auth_token)
         .body(body)
@@ -79,8 +78,7 @@ mod tests {
         let url = "https://1.2.3.4";
 
         match post_request(String::from("hej"),
-                           url,
-                           "/",
+                           url.to_string(),
                            &String::from("")).await {
             Ok(_val) => assert!(false),
             Err(_) => assert!(true)
