@@ -59,12 +59,15 @@ def test_all_client_with_clients(client):
 
     new_client_1 = IdentifyingClientData(
         client_data=data_1,
-        ip=client_1_id
+        ip=client_1_id,
     )
     new_client_2 = IdentifyingClientData(
         client_data=data_2,
         ip=client_2_id
     )
+
+    new_client_1.set_id(client_1_id)
+    new_client_2.set_id(client_2_id)
 
     controller.db.set_user(
         user_id=client_1_id,
@@ -77,14 +80,30 @@ def test_all_client_with_clients(client):
         overwrite=True
     )
 
+    new_clients = [new_client_1, new_client_2]
+
     response = client.get(f"{get_prefix()}/admin/allclients", headers={
         "Authorization": controller.settings.admin_key
     })
 
-    all_clients = response.json.get("all_clients")
+    all_clients = [
+        IdentifyingClientData().deserialize(cur_client)
+        for cur_client in response.json["all_clients"]
+    ]
+
     assert response.status_code == 200
     assert len(all_clients) == 2
-    assert all_clients[0]["_id"] == client_1_id
-    assert all_clients[1]["_id"] == client_2_id
 
-
+    for i in range(len(all_clients)):
+        assert all_clients[i].id == new_clients[i].id
+        assert all_clients[i].ip == new_clients[i].ip
+        assert all_clients[i].client_data.get("host_user") \
+               == new_clients[i].client_data.host_user
+        assert all_clients[i].client_data.get("hostname")\
+               == new_clients[i].client_data.hostname
+        assert all_clients[i].client_data.get("os_name") \
+               == new_clients[i].client_data.os_name
+        assert all_clients[i].client_data.get("os_version")\
+               == new_clients[i].client_data.os_version
+        assert all_clients[i].client_data.get("privileges") \
+               == new_clients[i].client_data.privileges
