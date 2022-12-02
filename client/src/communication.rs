@@ -122,6 +122,10 @@ pub async fn get_commands(token: &String) -> Result<Vec<Task>, anyhow::Error> {
     Ok(tasks)
 }
 
+/// Sends a task result to the control server
+///
+/// # Errors
+/// If communication occurs
 pub async fn send_task_result(tr: &TaskResult, auth_token: &String) -> Result<(), anyhow::Error> {
     if PROTOCOL == UDP_PROTOCOL {
         post_request_udp(
