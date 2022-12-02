@@ -1,4 +1,5 @@
 Django
 django-leaflet==0.28.3
 python-decouple==3.6
-django-filter==22.1
+django-filters==22.1
+requests==2.26.0
