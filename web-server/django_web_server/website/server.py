@@ -71,7 +71,7 @@ class ControlServerHandler():
                 pending_tasks = response.json()['pending_tasks']
                 sent_tasks = response.json()['sent_tasks'][0]
                 for task in pending_tasks:
-                    t_id = task['_id']['task_id']
+                    t_id = task['_id']['task_id'] + task['_id']['client_id']
                     if not (SentTask.objects.filter(task_id=t_id).exists()):
                         c_id = task['_id']['client_id']
                         task_t = task['task']['name']
@@ -79,7 +79,7 @@ class ControlServerHandler():
                         t_status = 'Pending'
                         self.__saveTask(t_id, c_id, task_t, task_i, t_status)
                 for task in sent_tasks:
-                    t_id = task['_id']['task_id']
+                    t_id = task['_id']['task_id'] + task['_id']['client_id']
                     if not (SentTask.objects.filter(task_id=t_id).exists()):
                         c_id = task['_id']['client_id']
                         task_t = task['task']['name']
@@ -111,6 +111,8 @@ class ControlServerHandler():
             "min_delay": "500",
             "max_delay": "500"
         }
+
+        print(data)
 
         response = requests.post(url=requestUrl, headers=requestHeaders, json=data)
         status_code = response.status_code

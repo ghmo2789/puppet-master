@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from .forms import clientForm
 from .models import Client, SentTask
-from .filters import ClientFilter
+from .filters import ClientFilter, TaskFilter
 from .server import ControlServerHandler
 import json
 
@@ -49,5 +49,5 @@ def tasks(request):
         controlServer.killTask(request)
         return HttpResponseRedirect(request.path_info)
 
-    context = {'tasks': SentTask.objects.all().order_by('-id')[:200]}
+    context = {'tasks': TaskFilter(request.GET, queryset=SentTask.objects.all())}
     return render(request, 'website/tasks.html', context)
