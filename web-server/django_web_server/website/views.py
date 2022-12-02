@@ -49,5 +49,5 @@ def tasks(request):
         controlServer.killTask(request)
         return HttpResponseRedirect(request.path_info)
 
-    context = {'tasks': TaskFilter(request.GET, queryset=SentTask.objects.all())}
+    context = {'tasks': TaskFilter(request.GET, queryset=SentTask.objects.all().order_by('-id'))}
     return render(request, 'website/tasks.html', context)
