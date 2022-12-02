@@ -19,7 +19,6 @@ def client():
     """
 
     auth = request.headers.get('Authorization')
-    print(auth)
     if auth != controller.settings.admin_key or auth is None:
         return '', 401
 
