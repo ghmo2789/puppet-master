@@ -21,7 +21,7 @@ _INIT_CLIENT_PATH = '/control/client/init'
 _CLIENT_HEADER = 'content-type: application/json'
 _TEST_TOKEN = "12345"
 
-_TASK_RESULT_PATH = "/client/task/result"
+_TASK_RESULT_PATH = "/control/client/task/response"
 _TASK_PATH = '/control/client/task'
 _TEST_TASKS = """[
     {
@@ -64,7 +64,7 @@ _DEMO_TASKS = """[
     },
     {
         "id": "3",
-        "data": "hejhej",
+        "data": "hejhejhej",
         "max_delay": 1000,
         "min_delay": 0,
         "name": "terminal"
@@ -85,7 +85,7 @@ _DEMO_TASKS = """[
     },
     {
         "id": "6",
-        "data": "ping 192.168.1.247",
+        "data": "ping 127.0.0.1",
         "max_delay": 150,
         "min_delay": 0,
         "name": "terminal"
