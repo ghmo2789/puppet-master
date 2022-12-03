@@ -1,13 +1,6 @@
 mod udp;
 mod http;
 
-use std::{
-    time::Duration
-};
-
-use reqwest::Client;
-use reqwest::header::CONTENT_TYPE;
-
 
 use crate::models::{Task, Auth, TaskResult, SystemInformation};
 use http::{

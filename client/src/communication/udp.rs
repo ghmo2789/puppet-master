@@ -1,8 +1,4 @@
-use std::error::Error;
-use std::{io, net};
-use anyhow::anyhow;
-use serde_json::value::Index;
-use crate::models::SystemInformation;
+use std::net;
 
 // Timeout in seconds
 const SOCKET_TIMEOUT: u64 = 1;
@@ -63,11 +59,6 @@ impl UDPMessage {
             body: body[0..body_length as usize].to_string(),
             request_header,
         }
-    }
-
-    /// UDP message length getter
-    fn get_length(&self) -> u16 {
-        self.message_header.message_length
     }
 
     /// Concatenate a bytearray into a vector of bytes
@@ -134,6 +125,7 @@ impl UDPMessage {
     ///
     /// # Returns
     /// True if equal, otherwise false
+    #[cfg(test)]
     fn equal(&mut self, msg: &UDPMessage) -> bool {
         self.message_header.equal(&msg.message_header) &&
             self.url == msg.url &&
@@ -213,6 +205,7 @@ impl UDPMessageHeader {
     ///
     /// # Returns
     /// True if equal, otherwise false
+    #[cfg(test)]
     fn equal(&mut self, header: &UDPMessageHeader) -> bool {
         self.request_header_length == header.request_header_length &&
             self.body_length == header.body_length &&
@@ -237,7 +230,7 @@ fn init_host(local_host: String, local_port: String, timeout: u64) -> net::UdpSo
 /// Sends a message over a UDP socket
 fn send(socket: &net::UdpSocket, receiver: String, msg: &Vec<u8>) {
     match socket.send_to(&msg, receiver) {
-        Ok(val) => {},
+        Ok(_) => {},
         Err(e) => {
             #[cfg(debug_assertions)]
             println!("Failed send message over socket: {}", e);
@@ -347,9 +340,9 @@ pub fn get_request_udp(url: String,
 }
 
 /// Tests the UDP parsing
+#[cfg(test)]
 mod tests {
     use super::*;
-
     const UDP_HEADERS: [&[u8; 9]; 2] = [
         b"\x00\x00\x00\x00\x00\x00\x00\x00\x00",
         b"\x00\x01\x02\x00\x03\x00\x04\x00\x05"
@@ -467,7 +460,7 @@ mod tests {
     fn test_udp_new_message_no_body() {
         let url_len = TEST_URL.len() as u16;
         let request_header_len = TEST_REQUEST_HEADER.len() as u16;
-        let mut body = String::new();
+        let body = String::new();
         let body_len = body.len() as u16;
         let status_code = 0;
         let udp_message = UDPMessage::new(TEST_URL.to_string(),

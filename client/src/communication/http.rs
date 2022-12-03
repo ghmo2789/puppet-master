@@ -1,7 +1,6 @@
 use std::time::Duration;
 use reqwest::Client;
 use reqwest::header::CONTENT_TYPE;
-use crate::models::{Task, Auth, TaskResult, SystemInformation};
 
 const TIMEOUT: Duration = Duration::from_secs(2);
 
