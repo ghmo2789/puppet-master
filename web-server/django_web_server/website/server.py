@@ -55,7 +55,6 @@ class ControlServerHandler():
                                        task_type=task_t, task_info=task_i)
 
     def getTasks(self):
-        # TODO: Update when endpoint alltasks is implemented
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
 
