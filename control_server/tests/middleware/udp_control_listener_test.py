@@ -93,6 +93,9 @@ def test_valid_message_with_response():
     Tests that a valid message is received correctly
     :return:
     """
+    if config('CI', default=False, cast=bool):
+        pytest.skip('Skipping UDP tests on CI')
+
     rc: ResultContainer[MessageReceivedEvent] = ResultContainer(
         responder=lambda event: _set_response(event)
     )

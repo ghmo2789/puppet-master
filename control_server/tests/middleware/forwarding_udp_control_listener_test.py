@@ -1,5 +1,6 @@
 from typing import Callable, Generic, TypeVar
 
+import pytest
 from decouple import config
 
 from control_server.src.middleware.events.message_received_event import \
@@ -33,6 +34,9 @@ def test_simple_message():
     Tests that a valid message is received correctly
     :return:
     """
+    if config('CI', default=False, cast=bool):
+        pytest.skip('Skipping UDP tests on CI')
+
     with get_control_listener() as listener:
         send_message = GenericMessageBuilder() \
             .set_url('/') \
