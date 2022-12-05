@@ -295,7 +295,11 @@ pub fn post_request_udp(
     remote_host: String,
     remote_port: String,
     expecting_response: bool) -> Result<String, anyhow::Error> {
-    let header = get_authorization_header(auth_token);
+    let header = if auth_token != "" {
+        get_authorization_header(auth_token)
+    } else {
+        String::new()
+    };
     let mut message = UDPMessage::new(url, header, body, UDP_POST);
     let tx_buf = message.as_bytes();
     let sock = init_host(LOCAL_HOST.to_string(),
@@ -335,7 +339,11 @@ pub fn get_request_udp(url: String,
                        auth_token: &String,
                        remote_host: String,
                        remote_port: String) -> Result<String, anyhow::Error> {
-    let header = get_authorization_header(auth_token);
+    let header = if auth_token != "" {
+        get_authorization_header(auth_token)
+    } else {
+        String::new()
+    };
     let mut mes = UDPMessage::new(url,
                                   header,
                                   String::new(),
