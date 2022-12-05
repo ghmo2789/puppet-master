@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from .forms import clientForm
 from .models import Client, SentTask
-from .filters import ClientFilter
+from .filters import ClientFilter, TaskFilter
 from .server import ControlServerHandler
 import json
 
@@ -26,16 +26,15 @@ def index(request):
     else:
         form = clientForm()
 
-    dummyStatistics = {'num_clients': 23,
-                       'top_os': 'windows',
-                       'errors': 0}
-    dummyLocations = {'locations': [[0, 0], [51.5, -0.09], [-0.09, 51.5]]}
+    statistics = controlServer.getStatistics()
+    locations = controlServer.getLocations()
+    locations = {'locations': locations}
 
     context = {'clients': Client.objects.all(),
                'tasks': tasks,
                'form': form,
-               'statistics': dummyStatistics,
-               'locations': json.dumps(dummyLocations),
+               'statistics': statistics,
+               'locations': json.dumps(locations),
                'filter': ClientFilter(request.GET, queryset=Client.objects.all())}
 
     return render(request, 'website/index.html', context, )
@@ -49,5 +48,5 @@ def tasks(request):
         controlServer.killTask(request)
         return HttpResponseRedirect(request.path_info)
 
-    context = {'tasks': SentTask.objects.all().order_by('-id')[:200]}
+    context = {'tasks': TaskFilter(request.GET, queryset=SentTask.objects.all().order_by('-id'))}
     return render(request, 'website/tasks.html', context)

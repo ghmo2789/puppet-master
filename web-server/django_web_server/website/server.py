@@ -1,6 +1,7 @@
-from .models import Client, SentTask
+from django.db.models import Count
 from decouple import config
 import requests
+from .models import Client, SentTask
 import time
 
 
@@ -8,6 +9,7 @@ class ControlServerHandler():
     url = ""
     prefix = ""
     authorization = ""
+    errors = 0
 
     def __init__(self):
         self.url = config("CONTROL_SERVER_URL")
@@ -38,6 +40,7 @@ class ControlServerHandler():
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
         requestHeaders = {'Authorization': self.authorization}
         r = requests.get(url=requestUrl, headers=requestHeaders)
+
         try:
             clients = r.json()['all_clients']
             self.__save_clients(clients)
@@ -45,6 +48,60 @@ class ControlServerHandler():
         except ValueError as e:
             print("Server issues" + str(e))
             return []
+
+    def getStatistics(self):
+        num_clients = Client.objects.all().count()
+        top_os = Client.objects.annotate(c=Count('os_name')).order_by('-c').first().os_name
+        statistics = {'num_clients': num_clients,
+                      'top_os': top_os,
+                      'errors': self.errors}
+        return statistics
+
+    def getLocations(self):
+        ids = list(Client.objects.values_list('id', flat=True))
+        locations = []
+
+        for c_id in ids:
+            try:
+                ip = Client.objects.get(id=c_id).ip
+                requestUrl = 'http://ip-api.com/json/' + ip
+                r = requests.get(url=requestUrl)
+                if r.status_code == 200:
+                    response = r.json()
+                    lat = response['lat']
+                    lon = response['lon']
+                    clientLocation = {
+                        'client': c_id,
+                        'location': [lat, lon],
+                    }
+                    locations.append(clientLocation)
+            except Exception as e:
+                print(e)
+
+        summarized_locations = []
+        processed_locations = []
+
+        for client_location in locations:
+            client_ids = [client_location['client']]
+            current_loc = client_location['location']
+
+            if current_loc not in processed_locations:
+                for cl in locations:
+                    if current_loc == cl['location'] and cl['client'] not in client_ids:
+                        client_ids.append(cl['client'])
+
+                summarized_location = {
+                    'client_ids': client_ids,
+                    'location': current_loc
+                }
+
+                summarized_locations.append(summarized_location)
+                processed_locations.append(current_loc)
+
+        print(f'all locations: {locations}')
+        print(f'summarized locations: {summarized_locations}')
+
+        return summarized_locations
 
     def __saveTask(self, t_id, c_id, task_t, task_i, t_status):
         if task_t != 'abort':
@@ -68,7 +125,7 @@ class ControlServerHandler():
             pending_tasks = response.json()['pending_tasks']
             sent_tasks = response.json()['sent_tasks'][0]
             for task in pending_tasks:
-                t_id = task['_id']['task_id']
+                t_id = task['_id']['task_id'] + task['_id']['client_id']
                 if not (SentTask.objects.filter(task_id=t_id).exists()):
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
@@ -76,7 +133,7 @@ class ControlServerHandler():
                     t_status = 'Pending'
                     self.__saveTask(t_id, c_id, task_t, task_i, t_status)
             for task in sent_tasks:
-                t_id = task['_id']['task_id']
+                t_id = task['_id']['task_id'] + task['_id']['client_id']
                 if not (SentTask.objects.filter(task_id=t_id).exists()):
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
