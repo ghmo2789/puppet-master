@@ -185,7 +185,7 @@ def udp_init_response():
     body_len = len(body)
     status_code = 200
     message_len = 9 + url_len + body_len + req_h_len
-    header = struct.pack('>HBHHH', message_len, status_code, url_len, body_len, req_h_len)
+    header = struct.pack('>HHHHH', message_len, status_code, url_len, body_len, req_h_len)
     mes = header + body
     return mes
 
@@ -197,7 +197,7 @@ def udp_get_commands_response():
     body_len = len(body)
     status_code = 200
     message_len = 9 + url_len + body_len + req_h_len
-    header = struct.pack('>HBHHH', message_len, status_code, url_len, body_len, req_h_len)
+    header = struct.pack('>HHHHH', message_len, status_code, url_len, body_len, req_h_len)
     mes = header + body
     return mes
 

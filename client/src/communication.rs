@@ -1,7 +1,6 @@
 mod udp;
 mod http;
 
-
 use crate::models::{Task, Auth, TaskResult, SystemInformation};
 use http::{
     get_request,
@@ -13,18 +12,17 @@ use crate::communication::udp::{
 };
 
 // Note that URL is set by environment variable during compilation
-const PROTOCOL: &'static str = env!("PROTOCOL");
+const PROTOCOL: &str = env!("PROTOCOL");
 const URL: &'static str = env!("CONTROL_SERVER_URL");
 const REMOTE_PORT: &'static str = env!("REMOTE_PORT");
 const REMOTE_HOST: &'static str = env!("REMOTE_HOST");
-
 
 const INIT_ENDPOINT: &'static str = "/control/client/init";
 const COMMAND_ENDPOINT: &'static str = "/control/client/task";
 const RESULT_ENDPOINT: &'static str = "/client/task/result";
 
 
-const UDP_PROTOCOL: &'static str = "udp";
+const UDP_PROTOCOL: &str = "udp";
 const HTTPS_PROTOCOL: &'static str = "https";
 
 /// Sends the clients identifying characteristics to the control server.
@@ -38,7 +36,7 @@ const HTTPS_PROTOCOL: &'static str = "https";
 pub async fn send_identity(id: SystemInformation) -> Result<String, anyhow::Error> {
     let res = if PROTOCOL == UDP_PROTOCOL {
         match post_request_udp(serde_json::to_string(&id).unwrap(),
-                               format!("{}{}", URL, INIT_ENDPOINT),
+                               INIT_ENDPOINT.to_string(),
                                &String::new(),
                                REMOTE_HOST.to_string(),
                                REMOTE_PORT.to_string(),
@@ -58,7 +56,7 @@ pub async fn send_identity(id: SystemInformation) -> Result<String, anyhow::Erro
     } else {
         #[cfg(debug_assertions)]
         println!("No valid communication protocol chosen!");
-        String::new()
+        panic!("Invalid communication protocol");
     };
 
     let response: Auth = serde_json::from_str(&*(res))
@@ -86,7 +84,7 @@ pub async fn get_commands(token: &String) -> Result<Vec<Task>, anyhow::Error> {
 
     let res = if PROTOCOL == UDP_PROTOCOL {
         match get_request_udp(
-            format!("{}{}", URL, COMMAND_ENDPOINT),
+            COMMAND_ENDPOINT.to_string(),
             token,
             REMOTE_HOST.to_string(),
             REMOTE_PORT.to_string()) {
@@ -102,7 +100,7 @@ pub async fn get_commands(token: &String) -> Result<Vec<Task>, anyhow::Error> {
     } else {
         #[cfg(debug_assertions)]
         println!("No valid communication protocol chosen!");
-        String::new()
+        panic!("Invalid communication protocol");
     };
 
     #[cfg(debug_assertions)]
@@ -123,7 +121,7 @@ pub async fn send_task_result(tr: &TaskResult, auth_token: &String) -> Result<()
     if PROTOCOL == UDP_PROTOCOL {
         post_request_udp(
             serde_json::to_string(tr).unwrap(),
-            format!("{}{}", URL, RESULT_ENDPOINT),
+            RESULT_ENDPOINT.to_string(),
             auth_token,
             REMOTE_HOST.to_string(),
             REMOTE_PORT.to_string(),
@@ -135,6 +133,7 @@ pub async fn send_task_result(tr: &TaskResult, auth_token: &String) -> Result<()
     } else {
         #[cfg(debug_assertions)]
         println!("No valid communication protocol chosen!");
+        panic!("Invalid communication protocol");
     }
 
     Ok(())

@@ -7,11 +7,22 @@ const LOCAL_HOST: &'static str = "127.0.0.1";
 // This number could have been randomised to be more stealthy
 const LOCAL_PORT: &'static str = "65231";
 
+// Status codes used in the UDP header
+const UDP_GET: u16 = 1;
+const UDP_HEAD: u16 = 2;
+const UDP_POST: u16 = 3;
+const UDP_PUT: u16 = 4;
+const UDP_DELETE: u16 = 5;
+const UDP_CONNECT: u16 = 6;
+const UDP_OPTIONS: u16 = 7;
+const UDP_TRACE: u16 = 8;
+const UDP_PATCH: u16 = 9;
+
 
 /// Struct for UDP messages
 struct UDPMessage {
     message_header: UDPMessageHeader,
-    url: String,
+    endpoint: String,
     body: String,
     request_header: String,
 }
@@ -26,7 +37,7 @@ impl UDPMessage {
     ///
     /// # Returns
     /// UDPMessage struct
-    fn new(url: String, request_header: String, body: String, status_code: u8) -> UDPMessage {
+    fn new(url: String, request_header: String, body: String, status_code: u16) -> UDPMessage {
         let url_length = url.len() as u16;
         let request_header_length = request_header.len() as u16;
         let true_body_len = body.len() as u16;
@@ -55,7 +66,7 @@ impl UDPMessage {
 
         UDPMessage {
             message_header,
-            url,
+            endpoint: url,
             body: body[0..body_length as usize].to_string(),
             request_header,
         }
@@ -75,7 +86,7 @@ impl UDPMessage {
     fn as_bytes(&mut self) -> Vec<u8> {
         let mut buf: Vec<u8> = vec![];
         UDPMessage::push_buf(&mut buf, &self.message_header.as_bytes());
-        UDPMessage::push_buf(&mut buf, self.url.as_bytes());
+        UDPMessage::push_buf(&mut buf, self.endpoint.as_bytes());
         UDPMessage::push_buf(&mut buf, self.body.as_bytes());
         UDPMessage::push_buf(&mut buf, self.request_header.as_bytes());
 
@@ -114,7 +125,7 @@ impl UDPMessage {
 
         let message = UDPMessage {
             message_header,
-            url: String::from_utf8(url).unwrap(),
+            endpoint: String::from_utf8(url).unwrap(),
             body: String::from_utf8(body).unwrap(),
             request_header: String::from_utf8(request_header).unwrap(),
         };
@@ -128,7 +139,7 @@ impl UDPMessage {
     #[cfg(test)]
     fn equal(&mut self, msg: &UDPMessage) -> bool {
         self.message_header.equal(&msg.message_header) &&
-            self.url == msg.url &&
+            self.endpoint == msg.endpoint &&
             self.body == msg.body &&
             self.request_header == msg.request_header
     }
@@ -137,7 +148,7 @@ impl UDPMessage {
 /// Struct for the UDP message header
 struct UDPMessageHeader {
     message_length: u16,
-    status_code: u8,
+    status_code: u16,
     url_length: u16,
     body_length: u16,
     request_header_length: u16,
@@ -145,26 +156,30 @@ struct UDPMessageHeader {
 
 /// Implementation of UDPMessageHeader methods
 impl UDPMessageHeader {
-    const HEADER_LENGTH: u16 = 9;
+    const HEADER_LENGTH: u16 = 10;
     const MESSAGE_LEN_MSB: usize = 0;
+
+    // Indexes for buffer
     const MESSAGE_LEN_LSB: usize = 1;
-    const STATUS_CODE: usize = 2;
-    const URL_LEN_MSB: usize = 3;
-    const URL_LEN_LSB: usize = 4;
-    const BODY_LEN_MSB: usize = 5;
-    const BODY_LEN_LSB: usize = 6;
-    const MSG_HEADER_LEN_MSB: usize = 7;
-    const MSG_HEADER_LEN_LSB: usize = 8;
+    const STATUS_CODE_MSB: usize = 2;
+    const STATUS_CODE_LSB: usize = 3;
+    const URL_LEN_MSB: usize = 4;
+    const URL_LEN_LSB: usize = 5;
+    const BODY_LEN_MSB: usize = 6;
+    const BODY_LEN_LSB: usize = 7;
+    const MSG_HEADER_LEN_MSB: usize = 8;
+    const MSG_HEADER_LEN_LSB: usize = 9;
 
     /// Getter for the message header as a bytearray
     ///
     /// # Returns
     /// Byte array representing the UDPMessageHeader
-    fn as_bytes(&mut self) -> [u8; 9] {
-        let mut buf = [0; 9];
+    fn as_bytes(&mut self) -> [u8; UDPMessageHeader::HEADER_LENGTH as usize] {
+        let mut buf = [0; UDPMessageHeader::HEADER_LENGTH as usize];
         buf[UDPMessageHeader::MESSAGE_LEN_MSB] = (self.message_length >> 8) as u8;
         buf[UDPMessageHeader::MESSAGE_LEN_LSB] = (self.message_length) as u8;
-        buf[UDPMessageHeader::STATUS_CODE] = self.status_code;
+        buf[UDPMessageHeader::STATUS_CODE_MSB] = (self.status_code >> 8) as u8;
+        buf[UDPMessageHeader::STATUS_CODE_LSB] = self.status_code as u8;
         buf[UDPMessageHeader::URL_LEN_MSB] = (self.url_length >> 8) as u8;
         buf[UDPMessageHeader::URL_LEN_LSB] = self.url_length as u8;
         buf[UDPMessageHeader::BODY_LEN_MSB] = (self.body_length >> 8) as u8;
@@ -190,7 +205,8 @@ impl UDPMessageHeader {
         let header = UDPMessageHeader {
             message_length: (buf[UDPMessageHeader::MESSAGE_LEN_MSB] as u16) << 8 |
                 buf[UDPMessageHeader::MESSAGE_LEN_LSB] as u16,
-            status_code: buf[UDPMessageHeader::STATUS_CODE],
+            status_code: (buf[UDPMessageHeader::STATUS_CODE_MSB] as u16) << 8 |
+                buf[UDPMessageHeader::STATUS_CODE_LSB] as u16,
             url_length: (buf[UDPMessageHeader::URL_LEN_MSB] as u16) << 8 |
                 buf[UDPMessageHeader::URL_LEN_LSB] as u16,
             body_length: (buf[UDPMessageHeader::BODY_LEN_MSB] as u16) << 8 |
@@ -280,7 +296,7 @@ pub fn post_request_udp(
     remote_port: String,
     expecting_response: bool) -> Result<String, anyhow::Error> {
     let header = get_authorization_header(auth_token);
-    let mut message = UDPMessage::new(url, header, body, 0);
+    let mut message = UDPMessage::new(url, header, body, UDP_POST);
     let tx_buf = message.as_bytes();
     let sock = init_host(LOCAL_HOST.to_string(),
                          LOCAL_PORT.to_string(),
@@ -300,6 +316,11 @@ pub fn post_request_udp(
             return Err(anyhow::Error::msg(e))
         }
     };
+    if response.message_header.status_code != 200 {
+        #[cfg(debug_assertions)]
+        println!("UDP POST request received: {}", response.message_header.status_code);
+        return Err(anyhow::Error::msg("Failed UDP POST request"))
+    }
     Ok(response.body)
 }
 
@@ -318,7 +339,7 @@ pub fn get_request_udp(url: String,
     let mut mes = UDPMessage::new(url,
                                   header,
                                   String::new(),
-                                  0);
+                                  UDP_GET);
     let tx_buf = mes.as_bytes();
     let sock = init_host(LOCAL_HOST.to_string(),
                          LOCAL_PORT.to_string(),
@@ -336,6 +357,11 @@ pub fn get_request_udp(url: String,
             return Err(anyhow::Error::msg(e))
         }
     };
+    if response.message_header.status_code != 200 {
+        #[cfg(debug_assertions)]
+        println!("UDP GET request received: {}", response.message_header.status_code);
+        return Err(anyhow::Error::msg("Failed UDP GET request"))
+    }
     Ok(response.body)
 }
 
@@ -343,9 +369,10 @@ pub fn get_request_udp(url: String,
 #[cfg(test)]
 mod tests {
     use super::*;
-    const UDP_HEADERS: [&[u8; 9]; 2] = [
-        b"\x00\x00\x00\x00\x00\x00\x00\x00\x00",
-        b"\x00\x01\x02\x00\x03\x00\x04\x00\x05"
+
+    const UDP_HEADERS: [&[u8; UDPMessageHeader::HEADER_LENGTH as usize]; 2] = [
+        b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        b"\x00\x01\x00\x02\x00\x03\x00\x04\x00\x05"
     ];
     const TEST_HEADER1: UDPMessageHeader = UDPMessageHeader {
         message_length: 0,
@@ -415,7 +442,7 @@ mod tests {
                                           body.to_string(),
                                           status_code);
 
-        assert_eq!(TEST_URL.to_string(), udp_message.url);
+        assert_eq!(TEST_URL.to_string(), udp_message.endpoint);
         assert_eq!(body.to_string(), udp_message.body);
         assert_eq!(TEST_REQUEST_HEADER.to_string(), udp_message.request_header);
 
@@ -445,7 +472,7 @@ mod tests {
                                           body.to_string(),
                                           status_code);
 
-        assert_eq!(TEST_URL.to_string(), udp_message.url);
+        assert_eq!(TEST_URL.to_string(), udp_message.endpoint);
         assert_eq!(body[0..body_len as usize].to_string(), udp_message.body);
         assert_eq!(TEST_REQUEST_HEADER.to_string(), udp_message.request_header);
 
@@ -472,7 +499,7 @@ mod tests {
             request_header_len +
             body_len;
 
-        assert_eq!(TEST_URL.to_string(), udp_message.url);
+        assert_eq!(TEST_URL.to_string(), udp_message.endpoint);
         assert_eq!(body, udp_message.body);
         assert_eq!(TEST_REQUEST_HEADER.to_string(), udp_message.request_header);
 
@@ -483,9 +510,9 @@ mod tests {
         assert_eq!(message_len, udp_message.message_header.message_length);
     }
 
-    const UDP_MESSAGES: [&[u8; 12]; 2] = [
-        b"\x00\x0C\x02\x00\x01\x00\x01\x00\x01ABC",
-        b"\x00\x0C\x00\x00\x01\x00\x01\x00\x01AAA"
+    const UDP_MESSAGES: [&[u8; 13]; 2] = [
+        b"\x00\x0D\x00\x02\x00\x01\x00\x01\x00\x01ABC",
+        b"\x00\x0D\x00\x00\x00\x01\x00\x01\x00\x01AAA"
     ];
 
 
@@ -549,12 +576,12 @@ mod tests {
             Ok(_) => assert!(false),
             Err(_) => assert!(true)
         }
-        let buf = b"000000000";
+        let buf = b"0000000000";
         match UDPMessage::from_bytes(&buf.to_vec()) {
             Ok(_) => assert!(false),
             Err(_) => assert!(true)
         };
-        let buf = b"\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+        let buf = b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
         match UDPMessage::from_bytes(&buf.to_vec()) {
             Ok(_) => assert!(true),
             Err(_) => assert!(false)
