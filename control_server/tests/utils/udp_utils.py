@@ -51,7 +51,6 @@ def send_bytes_receive_message(
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.sendto(data, (host, port))
 
-    header_length = MessageHeader.size()
     response_bytes, _ = sock.recvfrom(1024)
     header = MessageHeader(data=response_bytes)
 

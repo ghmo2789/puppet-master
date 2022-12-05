@@ -61,8 +61,8 @@ datasets: List[Tuple[bytes, Dict[str, Any]]] = [
             'url': b'http://127.0.0.1:8080/control/client/init',
             'headers': b'',
             'body': b'{"os_name":"macOS","os_version":"12.6.1",' +
-                b'"hostname":"johans-mbp' +
-                b'-5","host_user":"johan","privileges":"null"}'
+                    b'"hostname":"johans-mbp' +
+                    b'-5","host_user":"johan","privileges":"null"}'
         }
     )
 ]

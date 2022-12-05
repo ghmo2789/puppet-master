@@ -6,7 +6,8 @@ from typing import Any
 from decouple import config
 
 from control_server.src.middleware.event import Event
-from control_server.src.middleware.events.udp_receive_event import UdpReceiveEvent
+from control_server.src.middleware.events.udp_receive_event import \
+    UdpReceiveEvent
 
 
 class UdpServer:
@@ -14,6 +15,7 @@ class UdpServer:
     A UDP server, that listens for UDP messages, and, upon receiving one, fires
     an event.
     """
+
     def __init__(self, port, host='0.0.0.0', buffer_size=1024):
         self.port = port
         self.host = host
@@ -96,10 +98,10 @@ class UdpServer:
         except TimeoutError:
             with_socket.close()
             return False
-        except OSError as e:
+        except OSError:
             if self.is_listening:
-                print(f'Error receiving data, perhaps listening socket '
-                      f'was closed?')
+                print('Error receiving data, perhaps listening socket '
+                      'was closed?')
                 traceback.print_exc()
 
             if with_socket is not None:
@@ -120,7 +122,7 @@ class UdpServer:
         return event_data.response if event_data.do_respond else None
 
     # def _init_socket_listener(self):
-        # self.sock.listen()
+    # self.sock.listen()
 
     def listen(self):
         """
