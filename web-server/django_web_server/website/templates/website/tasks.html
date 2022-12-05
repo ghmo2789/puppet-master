@@ -20,10 +20,9 @@
         <table class="table table-dark table-striped table-hover mb-0">
             <tr style="background-color: black;"> 
               <td><input type="checkbox" name="select_all" value="1" id="master_checkbox" onclick="select_all()"></td>
-              <td>Task ID</td>
-              <td>Client ID</td>
+              <td>Client IP</td>
               <td>Start Time</td>
-              <td>Finish Time</td>
+              <td>Status</td>
               <td>Task Type</td>
               <td>Task Info</td>
             </tr>
@@ -31,11 +30,10 @@
             {% csrf_token %}
             {% for i in tasks%}
             <tr>
-                <td><input type="checkbox" name="select" value="{{i.task_id}}" id="{{i.task_id}}"></td> 
-                <td>{{i.task_id}}</td>
+                <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}"></td> 
                 <td>{{i.client_id.ip}}</td>
                 <td>{{i.start_time}}</td>
-                <td>{{i.finish_time}}</td>
+                <td>{{i.status}}</td>
                 <td>{{i.task_type}}</td>
                 <td>{{i.task_info}}</td>
             </tr>
@@ -56,7 +54,7 @@
       // Initialize data for javascript
       let data = [];
       {% for i in tasks %}
-        data.push({{i.task_id}});
+        data.push({{i.id}});
       {% endfor %}
 
       // Event listeners
