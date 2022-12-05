@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.http import HttpResponseRedirect
 from .forms import clientForm
 from .models import Client, SentTask
 from .filters import ClientFilter
@@ -21,6 +22,7 @@ def index(request):
         form = clientForm(request.POST)
         if form.is_valid():
             controlServer.sendTasks(request)
+            return HttpResponseRedirect(request.path_info)
     else:
         form = clientForm()
 
@@ -40,8 +42,12 @@ def index(request):
 
 
 def tasks(request):
-    if request.method == 'POST':
-        kill_task(request)
+    controlServer = ControlServerHandler()
+    controlServer.getTasks()
 
-    context = {'tasks': SentTask.objects.all().order_by('-task_id')[:200]}
+    if request.method == 'POST':
+        controlServer.killTask(request)
+        return HttpResponseRedirect(request.path_info)
+
+    context = {'tasks': SentTask.objects.all().order_by('-id')[:200]}
     return render(request, 'website/tasks.html', context)
