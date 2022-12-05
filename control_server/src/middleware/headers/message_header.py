@@ -14,6 +14,7 @@ class MessageHeader(ByteConvertible):
     size. Useful as it has a fixed size, which makes it easy to read the
     rest of the message without knowing its length prior to receiving.
     """
+
     def __init__(
             self,
             data: bytes = None,
@@ -23,27 +24,27 @@ class MessageHeader(ByteConvertible):
         super().__init__(
             endianness='!',
             serialized_properties=[
-                ByteProperty(
-                    name='message_length',
-                    data_format='H'
-                ),
-                ByteProperty(
-                    name='status_code',
-                    data_format='H'
-                ),
-                ByteProperty(
-                    name='url_length',
-                    data_format='H'
-                ),
-                ByteProperty(
-                    name='body_length',
-                    data_format='H'
-                ),
-                ByteProperty(
-                    name='headers_length',
-                    data_format='H'
-                )
-            ] + (extra_properties or [])
+                                      ByteProperty(
+                                          name='message_length',
+                                          data_format='H'
+                                      ),
+                                      ByteProperty(
+                                          name='status_code',
+                                          data_format='H'
+                                      ),
+                                      ByteProperty(
+                                          name='url_length',
+                                          data_format='H'
+                                      ),
+                                      ByteProperty(
+                                          name='body_length',
+                                          data_format='H'
+                                      ),
+                                      ByteProperty(
+                                          name='headers_length',
+                                          data_format='H'
+                                      )
+                                  ] + (extra_properties or [])
         )
 
         if copy_from_header is None:
@@ -67,4 +68,3 @@ class MessageHeader(ByteConvertible):
     def size():
         sample_header = MessageHeader()
         return struct.calcsize(sample_header.binary_format)
-

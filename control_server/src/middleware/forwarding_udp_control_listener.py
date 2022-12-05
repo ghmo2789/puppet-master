@@ -17,6 +17,10 @@ from control_server.src.middleware.udp_control_listener import \
 
 
 class ForwardingUdpControlListener(UdpControlListener):
+    """
+    A listener that listens for UDP messages and forwards them to a given
+    HTTP API endpoint. The response is then sent back to the sender.
+    """
     def __init__(
             self,
             api_base_url: str,
@@ -42,11 +46,18 @@ class ForwardingUdpControlListener(UdpControlListener):
                 raise Exception('No route validator provided')
             self.route_validator = lambda x: True
 
+    @staticmethod
     def create_message_response(
-            self,
             response: requests.Response,
             request: GenericMessage
     ) -> GenericMessage:
+        """
+        Creates a message response from a request GenericMessage and the web
+        APIs response
+        :param response: The web APIs response
+        :param request: The request GenericMessage
+        :return: The response, as a GenericMessage
+        """
         return GenericMessageBuilder() \
             .set_status_code(response.status_code) \
             .set_url('') \
@@ -55,6 +66,11 @@ class ForwardingUdpControlListener(UdpControlListener):
             .build()
 
     def _handle_message_received(self, event: MessageReceivedEvent):
+        """
+        Handles a received message by forwarding it and potentially replying.
+        :param event: The event to handle
+        :return: Nothing
+        """
         url_path = urlparse(event.message.url).path
         sender_ip, sender_port = event.address
 
@@ -106,7 +122,7 @@ class ForwardingUdpControlListener(UdpControlListener):
             raise Exception('Unsupported HTTP method')
 
         response = handlers[method](message)
-        response_message = self.create_message_response(
+        response_message = ForwardingUdpControlListener.create_message_response(
             request=message,
             response=response
         )
@@ -117,6 +133,11 @@ class ForwardingUdpControlListener(UdpControlListener):
 
     @staticmethod
     def get_headers(message: GenericMessage):
+        """
+        Gets the headers from a GenericMessage, as a dictionary
+        :param message: The message to get the headers from
+        :return: The headers, from the message, as a dictionary
+        """
         try:
             headers = json.loads('{' + message.headers + '}')
         except JSONDecodeError:

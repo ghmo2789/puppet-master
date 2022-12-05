@@ -2,6 +2,9 @@ from enum import Enum
 
 
 class HttpMethod(Enum):
+    """
+    Enum representing an HTTP method
+    """
     GET = 1,
     HEAD = 2,
     POST = 3,

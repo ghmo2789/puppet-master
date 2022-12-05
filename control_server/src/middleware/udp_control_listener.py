@@ -24,9 +24,17 @@ class UdpControlListener:
         self.message_received: Event[MessageReceivedEvent] = Event()
 
     def start(self):
+        """
+        Starts the UDP server
+        :return:
+        """
         self.udp_server.start()
 
     def stop(self):
+        """
+        Stops the UDP server
+        :return:
+        """
         self.udp_server.stop()
 
     def __enter__(self):
@@ -51,6 +59,13 @@ class UdpControlListener:
             udp_event: UdpReceiveEvent,
             message: GenericMessage
     ):
+        """
+        Called when a message is received. Fires a message_received event.
+        :param udp_event: The UDP event, containing the sender's address and
+        the data
+        :param message: The message parsed from the sender's data
+        :return: Nothing
+        """
         event = MessageReceivedEvent(
             event=udp_event,
             message=message

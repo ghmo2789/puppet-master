@@ -134,7 +134,7 @@ def get_client_tasks():
 
     return jsonify({
         'pending_tasks': [current_task.serialize() for current_task in
-                      all_tasks_db],
+                          all_tasks_db],
         'sent_tasks': [
             [current_task.serialize() for current_task in all_done_tasks]]
     }), 200

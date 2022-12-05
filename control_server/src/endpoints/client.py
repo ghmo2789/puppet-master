@@ -1,5 +1,4 @@
 from typing import cast, List
-import re
 
 from flask import request, jsonify
 

@@ -1,5 +1,3 @@
-import socket
-
 import pytest
 from decouple import config
 

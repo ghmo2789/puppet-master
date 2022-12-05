@@ -1,5 +1,4 @@
 from control_server.src.middleware.headers.string_property import StringProperty
-from control_server.src.middleware.headers.byte_property import ByteProperty
 from control_server.src.middleware.headers.message_header import MessageHeader
 
 
