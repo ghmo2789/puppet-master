@@ -1,4 +1,6 @@
 import json
+from json import JSONDecodeError
+from typing import Callable
 from urllib.parse import urlparse
 
 import requests as requests
@@ -12,7 +14,6 @@ from control_server.src.middleware.messages.generic_message import \
     GenericMessage
 from control_server.src.middleware.udp_control_listener import \
     UdpControlListener
-from control_server.src.router import router
 
 
 class ForwardingUdpControlListener(UdpControlListener):
@@ -20,6 +21,7 @@ class ForwardingUdpControlListener(UdpControlListener):
             self,
             api_base_url: str,
             port,
+            route_validator: Callable[[str], bool],
             host='0.0.0.0',
             buffer_size=1024,
             ignore_route_check: bool = False
@@ -30,6 +32,7 @@ class ForwardingUdpControlListener(UdpControlListener):
             buffer_size=buffer_size
         )
 
+        self.route_validator: Callable[[str], bool] = route_validator
         self.message_received += self._handle_message_received
         self.api_base_url: str = api_base_url
         self.ignore_route_check: bool = ignore_route_check
@@ -50,7 +53,7 @@ class ForwardingUdpControlListener(UdpControlListener):
         url_path = urlparse(event.message.url).path
 
         if not self.ignore_route_check and \
-                (url_path is None or not router.has_route(url_path)):
+                (url_path is None or not self.route_validator(url_path)):
             raise Exception(
                 'No valid route found for url: ' + (url_path or 'None')
             )
@@ -101,10 +104,17 @@ class ForwardingUdpControlListener(UdpControlListener):
 
     @staticmethod
     def get_headers(message: GenericMessage):
-        headers = json.loads('{' + message.headers + '}')
+        try:
+            headers = json.loads('{' + message.headers + '}')
+        except JSONDecodeError:
+            headers = {}
 
         if not isinstance(headers, dict):
             raise ValueError('Headers must be a dict.')
+
+        ct_key = 'Content-Type'
+        if ct_key not in headers:
+            headers[ct_key] = 'application/json'
 
         for key, value in headers.items():
             if not isinstance(key, str):

@@ -17,6 +17,7 @@ class UdpServer:
         self.host = host
         self.buffer_size = buffer_size
         self.listen_thread: Thread | None = None
+        self.socket_thread: Thread | None = None
         self.sock: socket.socket | None = None
         self.is_listening = False
         self.receive_event: Event[UdpReceiveEvent] = Event()
@@ -57,9 +58,9 @@ class UdpServer:
         Listens for UDP messages.
         :return:
         """
-        current_socket = self.sock
         self.is_listening = True
         while self.is_listening:
+            current_socket = self.bind()
             if self._receive(current_socket):
                 # Signal was received to exit
                 break
@@ -80,8 +81,9 @@ class UdpServer:
             if response is not None:
                 with_socket.sendto(response, addr)
 
+            with_socket.close()
             return False
-        except OSError:
+        except OSError as e:
             if self.is_listening:
                 print(f'Error receiving data, perhaps listening socket '
                       f'was closed?')
@@ -104,17 +106,25 @@ class UdpServer:
         self.receive_event(event_data)
         return event_data.response if event_data.do_respond else None
 
+    # def _init_socket_listener(self):
+        # self.sock.listen()
+
     def listen(self):
         """
         Starts listening for UDP messages on a new thread.
         :return:
         """
         if self.listen_thread is None:
+            # self.socket_thread = Thread(
+            #     target=self._init_socket_listener,
+            # )
+
             self.listen_thread = Thread(
                 target=self._do_listen,
                 args=[]
             )
 
+        # self.socket_thread.start()
         self.listen_thread.start()
 
     def start(self):

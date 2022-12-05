@@ -23,12 +23,18 @@ class UdpControlListener:
         self.udp_server.receive_event += self._handle_receive_udp_event
         self.message_received: Event[MessageReceivedEvent] = Event()
 
-    def __enter__(self):
+    def start(self):
         self.udp_server.start()
+
+    def stop(self):
+        self.udp_server.stop()
+
+    def __enter__(self):
+        self.start()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.udp_server.stop()
+        self.stop()
 
     def _handle_receive_udp_event(self, event: UdpReceiveEvent):
         header = MessageHeader(
