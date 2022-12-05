@@ -27,8 +27,8 @@ def index(request):
         form = clientForm()
 
     statistics = controlServer.getStatistics()
-    coordinates = controlServer.getLocations()
-    locations = {'locations': coordinates}
+    locations = controlServer.getLocations()
+    locations = {'locations': locations}
 
     context = {'clients': Client.objects.all(),
                'tasks': tasks,

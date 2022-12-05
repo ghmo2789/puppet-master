@@ -58,22 +58,27 @@ class ControlServerHandler():
         return statistics
 
     def getLocations(self):
-        ips = list(Client.objects.values_list('ip', flat=True))
-        coordinates = []
+        ids = list(Client.objects.values_list('id', flat=True))
+        locations = []
 
-        for ip in ips:
+        for c_id in ids:
             try:
+                ip = Client.objects.get(id=c_id).ip
                 requestUrl = 'http://ip-api.com/json/' + ip
                 r = requests.get(url=requestUrl)
                 if r.status_code == 200:
                     response = r.json()
                     lat = response['lat']
                     lon = response['lon']
-                    coordinates.append([lat, lon])
+                    clientLocation = {
+                        'client' : c_id,
+                        'location' : [lat, lon],
+                    }
+                    locations.append(clientLocation)
             except Exception as e:
                 print(e)
 
-        return coordinates
+        return locations
 
     def __saveTask(self, t_id, c_id, task_t, task_i, t_status):
         if task_t != 'abort':
