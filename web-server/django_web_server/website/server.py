@@ -1,7 +1,6 @@
 from django.db.models import Count
 from decouple import config
 import requests
-from django.contrib.gis.geoip2 import GeoIP2
 from .models import Client, SentTask
 import time
 
@@ -41,6 +40,7 @@ class ControlServerHandler():
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
         requestHeaders = {'Authorization': self.authorization}
         r = requests.get(url=requestUrl, headers=requestHeaders)
+
         try:
             clients = r.json()['all_clients']
             self.__save_clients(clients)
@@ -58,18 +58,18 @@ class ControlServerHandler():
         return statistics
 
     def getLocations(self):
-        g = GeoIP2()
         ips = list(Client.objects.values_list('ip', flat=True))
-        # TODO: Remove dummy location in the future
-        # ips.append('72.14.207.99')
         coordinates = []
 
         for ip in ips:
             try:
-                city = g.city(ip)
-                lat = city['latitude']
-                lon = city['longitude']
-                coordinates.append([lat, lon])
+                requestUrl = 'http://ip-api.com/json/' + ip
+                r = requests.get(url=requestUrl)
+                if r.status_code == 200:
+                    response = r.json()
+                    lat = response['lat']
+                    lon = response['lon']
+                    coordinates.append([lat, lon])
             except Exception as e:
                 print(e)
 
