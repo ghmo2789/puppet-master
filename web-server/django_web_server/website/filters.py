@@ -22,25 +22,23 @@ class ClientFilter(django_filters.FilterSet):
 
 
 class TaskFilter(django_filters.FilterSet):
-    
+
     try:
         existing_id = list(SentTask.objects.values_list('client_id', flat=True))
-        existing_ip = list(Client.objects.filter(id__in = existing_id).values_list('ip', flat=True))
+        existing_ip = list(Client.objects.filter(id__in=existing_id).values_list('ip', flat=True))
         ip_CHOICES = tuple((i, i) for i in existing_ip)
         client_id__ip = django_filters.AllValuesFilter(choices=ip_CHOICES, empty_label="Filter by IP")
 
         existing_status = list(SentTask.objects.values_list('status', flat=True))
         status_CHOICES = tuple((i, i) for i in existing_status)
-        status = django_filters.AllValuesFilter(choices = status_CHOICES, empty_label="Filter by status")
+        status = django_filters.AllValuesFilter(choices=status_CHOICES, empty_label="Filter by status")
 
         existing_types = list(SentTask.objects.values_list('task_type', flat=True))
         type_CHOICES = tuple((i, i) for i in existing_types)
-        task_type = django_filters.AllValuesFilter(choices = type_CHOICES, empty_label="Filter by task type")
+        task_type = django_filters.AllValuesFilter(choices=type_CHOICES, empty_label="Filter by task type")
     except OperationalError as e:
         print("Database not initialized: " + str(e))
         print("Please run migrate, then makemigrations and migrate again")
-
-    
 
     class Meta:
         model = SentTask

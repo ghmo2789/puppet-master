@@ -71,8 +71,8 @@ class ControlServerHandler():
                     lat = response['lat']
                     lon = response['lon']
                     clientLocation = {
-                        'client' : c_id,
-                        'location' : [lat, lon],
+                        'client': c_id,
+                        'location': [lat, lon],
                     }
                     locations.append(clientLocation)
             except Exception as e:
@@ -84,7 +84,7 @@ class ControlServerHandler():
         for client_location in locations:
             client_ids = [client_location['client']]
             current_loc = client_location['location']
-            
+
             if current_loc not in processed_locations:
                 for cl in locations:
                     if current_loc == cl['location'] and cl['client'] not in client_ids:
@@ -112,12 +112,9 @@ class ControlServerHandler():
                                        task_type=task_t, task_info=task_i)
 
     def getTasks(self):
-        # TODO: Update when endpoint alltasks is implemented
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
-        saved_client_ids = list(Client.objects.values_list('client_id', flat=True))
 
-        #for client in saved_client_ids:
         data = {
             "id": "",
         }
@@ -168,8 +165,6 @@ class ControlServerHandler():
             "min_delay": "500",
             "max_delay": "500"
         }
-
-        print(data)
 
         response = requests.post(url=requestUrl, headers=requestHeaders, json=data)
         status_code = response.status_code
