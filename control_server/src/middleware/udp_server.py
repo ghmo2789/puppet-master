@@ -93,6 +93,9 @@ class UdpServer:
 
             with_socket.close()
             return False
+        except TimeoutError:
+            with_socket.close()
+            return False
         except OSError as e:
             if self.is_listening:
                 print(f'Error receiving data, perhaps listening socket '

@@ -56,6 +56,7 @@ class ForwardingUdpControlListener(UdpControlListener):
 
     def _handle_message_received(self, event: MessageReceivedEvent):
         url_path = urlparse(event.message.url).path
+        sender_ip, sender_port = event.address
 
         if not self.ignore_route_check and \
                 (url_path is None or not self.route_validator(url_path)):
@@ -66,6 +67,13 @@ class ForwardingUdpControlListener(UdpControlListener):
         message = event.message
         target_url = self.api_base_url + message.url
         headers = ForwardingUdpControlListener.get_headers(message)
+
+        forward_header_name = 'X-Forwarded-For'
+        forward_header = headers[forward_header_name] + ', ' \
+            if forward_header_name in headers else \
+            sender_ip
+
+        headers[forward_header_name] = forward_header
 
         handlers = {
             HttpMethod.GET: lambda request: requests.get(
