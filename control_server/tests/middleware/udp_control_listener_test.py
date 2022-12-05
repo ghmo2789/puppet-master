@@ -1,5 +1,8 @@
 from typing import Generic, TypeVar, Callable
 
+import pytest
+from decouple import config
+
 from control_server.src.middleware.events.message_received_event import \
     MessageReceivedEvent
 from control_server.src.middleware.generic_message_builder import \
@@ -65,6 +68,9 @@ def test_valid_message():
     Tests that a valid message is received correctly
     :return:
     """
+    if config('CI', default=False, cast=bool):
+        pytest.skip('Skipping UDP tests on CI')
+
     rc: ResultContainer[MessageReceivedEvent] = ResultContainer()
     with get_control_listener() as listener:
         listener.message_received += lambda event: rc.set_result(event)
