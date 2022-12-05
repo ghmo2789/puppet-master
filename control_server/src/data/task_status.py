@@ -9,6 +9,7 @@ class TaskStatus(StrEnum):
     ERROR = "error"
     IN_PROGRESS = "in_progress"
     PENDING = "pending"
+    ABORTED = "aborted"
 
     def get_name(self):
         """
@@ -26,7 +27,8 @@ class TaskStatus(StrEnum):
             TaskStatus.DONE: 0,
             TaskStatus.ERROR: 1,
             TaskStatus.IN_PROGRESS: -1,
-            TaskStatus.PENDING: -2
+            TaskStatus.PENDING: -2,
+            TaskStatus.ABORTED: -3
         }
 
         return codes[self]
