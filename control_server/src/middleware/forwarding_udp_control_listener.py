@@ -21,7 +21,7 @@ class ForwardingUdpControlListener(UdpControlListener):
             self,
             api_base_url: str,
             port,
-            route_validator: Callable[[str], bool],
+            route_validator: Callable[[str], bool] = None,
             host='0.0.0.0',
             buffer_size=1024,
             ignore_route_check: bool = False
@@ -36,6 +36,11 @@ class ForwardingUdpControlListener(UdpControlListener):
         self.message_received += self._handle_message_received
         self.api_base_url: str = api_base_url
         self.ignore_route_check: bool = ignore_route_check
+
+        if route_validator is None:
+            if not self.ignore_route_check:
+                raise Exception('No route validator provided')
+            self.route_validator = lambda x: True
 
     def create_message_response(
             self,

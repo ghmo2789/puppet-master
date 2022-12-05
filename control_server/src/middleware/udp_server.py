@@ -3,6 +3,8 @@ import traceback
 from threading import Thread
 from typing import Any
 
+from decouple import config
+
 from control_server.src.middleware.event import Event
 from control_server.src.middleware.events.udp_receive_event import UdpReceiveEvent
 
@@ -50,6 +52,12 @@ class UdpServer:
             socket.SOCK_DGRAM
         )
 
+        self.sock.settimeout(config(
+            'UDP_SERVER_SOCKET_TIMEOUT',
+            cast=float,
+            default=1
+        ))
+
         self.sock.bind((self.host, self.port))
         return self.sock
 
@@ -64,6 +72,8 @@ class UdpServer:
             if self._receive(current_socket):
                 # Signal was received to exit
                 break
+
+        self.sock = None
 
     def _receive(self, with_socket: socket):
         """
@@ -133,7 +143,7 @@ class UdpServer:
         UDP messages.
         :return:
         """
-        self.bind()
+        # self.bind()
         self.listen()
 
     def close(self):
@@ -152,7 +162,11 @@ class UdpServer:
         """
         if self.is_listening is not None:
             self.is_listening = False
+            self.sock.close()
 
-        if self.sock is not None:
-            self.close()
-            self.sock = None
+            while self.sock is not None:
+                pass
+
+        # if self.sock is not None:
+        #     self.close()
+        #     self.sock = None

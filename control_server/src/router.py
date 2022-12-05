@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import List, Callable, Dict
 
 from decouple import config, Choices
@@ -114,6 +115,7 @@ _is_flask: bool = True
 
 def init():
     global router, app
+    is_testing = "pytest" in sys.modules
     mode = config(
         'MODE',
         default='both',
@@ -135,20 +137,26 @@ def init():
             )
             app = None
 
-        listener = ForwardingUdpControlListener(
-            port=config(
-                'UDP_PORT',
-                default=36652,
-                cast=int
-            ),
-            route_validator=lambda route: router.has_route(route),
-            api_base_url=config('FORWARD_TO_HOST'),
-            ignore_route_check=False
-        )
+        if not is_testing:
+            listener = ForwardingUdpControlListener(
+                port=config(
+                    'UDP_PORT',
+                    default=36652,
+                    cast=int
+                ),
+                host=config(
+                    'UDP_HOST',
+                    default='0.0.0.0',
+                    cast=str
+                ),
+                route_validator=lambda route: router.has_route(route),
+                api_base_url=config('FORWARD_TO_HOST'),
+                ignore_route_check=False
+            )
 
-        listener.start()
-        print(f' * UDP listener started on '
-              f'{listener.udp_server.host}:{listener.udp_server.port}')
+            listener.start()
+            print(f' * UDP listener started on '
+                  f'{listener.udp_server.host}:{listener.udp_server.port}')
 
     if mode == 'http' or is_both:
         return app

@@ -82,9 +82,6 @@ def test_valid_message():
             buffer_size=0
         )
 
-        while rc.result is None:
-            pass
-
     _assert_response(rc.get_result().message)
 
 

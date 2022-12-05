@@ -22,6 +22,7 @@ def send_bytes(
     :return: The response, if any. None if response_length is 0 or less.
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(1)
     sock.sendto(data, (host, port))
 
     response = None
