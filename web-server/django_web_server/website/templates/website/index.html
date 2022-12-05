@@ -109,10 +109,12 @@
         // Event listeners
         for(let i = 0; i < data.length; i++) {
           document.getElementById(data[i]).addEventListener("click", toggleSubmit);
+          document.getElementById(data[i]).addEventListener("click", toggleMarker);
         }
         document.getElementById("task_selection").addEventListener("change", enableButton); 
         document.getElementById("command_text").addEventListener("input", enableButton);
         document.getElementById("send_task").addEventListener("click", sendAlert);
+        document.getElementById("master_checkbox").addEventListener("click", toggleMarker);
         
         toggleSubmit();
 

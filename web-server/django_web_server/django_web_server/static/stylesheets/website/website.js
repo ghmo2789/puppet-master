@@ -24,6 +24,18 @@ var blueIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+function markerActivate(marker) {
+  marker.myJsonData.checked = true;
+  marker.setIcon(greenIcon);
+}
+
+function markerDeactivate(marker) {
+  marker.myJsonData.checked = false;
+  marker.setIcon(blueIcon);
+}
+
+let markers = [];
+
 for (const clientLocation of locations) {
   var ids = clientLocation.client_ids;
   var loc = clientLocation.location;
@@ -34,12 +46,10 @@ for (const clientLocation of locations) {
         
         // Fix marker color and status
         if (!checked) {
-          clickedMarker.myJsonData.checked = true;
-          clickedMarker.setIcon(greenIcon);
+          markerActivate(clickedMarker)
         }
         else {
-          clickedMarker.myJsonData.checked = false;
-          clickedMarker.setIcon(blueIcon);
+          markerDeactivate(clickedMarker)
         }
 
         // Fix checkboxes
@@ -58,4 +68,26 @@ for (const clientLocation of locations) {
   );
   marker.myJsonData = {clientIds: ids,
                        checked: false};
+  markers.push(marker)
+}
+
+function toggleMarker() {
+  for (i = 0; i < markers.length; i++) {
+    var marker = markers[i];
+    var c_ids = marker.myJsonData.clientIds;
+    var client_checked = false;
+    
+    for (j = 0; j < c_ids.length; j++) {
+      c_id = c_ids[j];
+      if (document.getElementById(c_id).checked) {
+        client_checked = true;
+      }
+    }
+    if (client_checked) {
+      markerActivate(marker);
+    }
+    else {
+      markerDeactivate(marker);
+    }
+  }
 }
