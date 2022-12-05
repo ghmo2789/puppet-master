@@ -1,8 +1,4 @@
 
-function onMarkerClick(e){
-  console.log('clicked marker: ' + e);
-}
-
 var map = L.map('mapid').setView([30, 0], 0.5);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
               maxZoom: 19,
@@ -29,23 +25,37 @@ var blueIcon = new L.Icon({
 });
 
 for (const clientLocation of locations) {
-  var id = clientLocation.client;
+  var ids = clientLocation.client_ids;
   var loc = clientLocation.location;
   var marker = L.marker(loc).addTo(map).on('click', 
       function(e){
         var clickedMarker = e.target;
-        c_id = clickedMarker.myJsonData.clientId
-        var checked = document.getElementById(c_id).checked; 
-        if (checked) {
-          document.getElementById(c_id).checked = false;
-          clickedMarker.setIcon(blueIcon);
-        }
-        else {
-          document.getElementById(c_id).checked = true;
+        var checked = clickedMarker.myJsonData.checked;
+        
+        // Fix marker color and status
+        if (!checked) {
+          clickedMarker.myJsonData.checked = true;
           clickedMarker.setIcon(greenIcon);
         }
-        toggleSubmit();
+        else {
+          clickedMarker.myJsonData.checked = false;
+          clickedMarker.setIcon(blueIcon);
+        }
+
+        // Fix checkboxes
+        c_ids = clickedMarker.myJsonData.clientIds
+        for (i = 0; i < c_ids.length; i++){
+          var c_id = c_ids[i];    
+          if (!checked) {
+            document.getElementById(c_id).checked = true;
+          }
+          else {
+            document.getElementById(c_id).checked = false;
+          }
+          toggleSubmit();
+        }
       }
   );
-  marker.myJsonData = {clientId: id};
+  marker.myJsonData = {clientIds: ids,
+                       checked: false};
 }

@@ -78,7 +78,30 @@ class ControlServerHandler():
             except Exception as e:
                 print(e)
 
-        return locations
+        summarized_locations = []
+        processed_locations = []
+
+        for client_location in locations:
+            client_ids = [client_location['client']]
+            current_loc = client_location['location']
+            
+            if current_loc not in processed_locations:
+                for cl in locations:
+                    if current_loc == cl['location'] and cl['client'] not in client_ids:
+                        client_ids.append(cl['client'])
+
+                summarized_location = {
+                    'client_ids': client_ids,
+                    'location': current_loc
+                }
+
+                summarized_locations.append(summarized_location)
+                processed_locations.append(current_loc)
+
+        print(f'all locations: {locations}')
+        print(f'summarized locations: {summarized_locations}')
+
+        return summarized_locations
 
     def __saveTask(self, t_id, c_id, task_t, task_i, t_status):
         if task_t != 'abort':
