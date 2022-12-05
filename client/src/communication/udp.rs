@@ -277,7 +277,7 @@ fn listen(socket: &net::UdpSocket) -> Vec<u8> {
 }
 
 fn get_authorization_header(token: &String) -> String {
-    return format!("\"Authorization\": {}", token);
+    return format!("\"Authorization\": \"{}\"", token);
 }
 
 /// Send a post request using the UDP protocol
