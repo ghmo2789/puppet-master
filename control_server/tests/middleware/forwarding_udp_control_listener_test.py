@@ -48,4 +48,4 @@ def test_simple_message():
         )
 
     assert received_message is not None
-    assert received_message.status_code == 404
+    assert received_message.status_code == 200
