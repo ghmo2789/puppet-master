@@ -208,4 +208,36 @@ def test_get_task(client):
     :param client:
     :return:
     """
-    pass
+    client_id = "1966283-b9b8-4503-a431-6bc39046481f"
+    task_id_sent = "1966284-b9b8-4543-a431-6bc39046482f"
+    task_id_pending = "1966284-b9b8-4543-a431-6bc39046483f"
+
+    # Save a task as pending in DB
+    set_user_and_task(client_id=client_id,
+                      task_id=task_id_pending,
+                      db_collection=DatabaseCollection.USER_TASKS)
+
+    # Save a task as sent DB
+    set_user_and_task(client_id=client_id,
+                      task_id=task_id_sent,
+                      db_collection=DatabaseCollection.USER_DONE_TASKS)
+
+    response = \
+        client.get(f"{get_prefix()}/admin/task",
+                   headers={
+                       "Authorization": controller.settings.admin_key
+                   },
+                   query_string={
+                       "id": client_id,
+                   })
+    pending_tasks = response.json.get("pending_tasks")
+    sent_tasks = response.json.get("sent_tasks")[0]
+
+    pending_client_task = ClientTask().deserialize(pending_tasks[0])
+    sent_client_task = ClientTask().deserialize(sent_tasks[0])
+
+    assert len(pending_tasks) == 1
+    assert len(sent_tasks) == 1
+    assert pending_client_task.get_task_id() == task_id_pending
+    assert sent_client_task.get_task_id() == task_id_sent
+    assert response.status_code == 200
