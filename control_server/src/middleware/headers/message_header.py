@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import struct
 from typing import List
 
 from control_server.src.middleware.headers.byte_convertible import \
@@ -28,7 +29,7 @@ class MessageHeader(ByteConvertible):
                 ),
                 ByteProperty(
                     name='status_code',
-                    data_format='B'
+                    data_format='H'
                 ),
                 ByteProperty(
                     name='url_length',
@@ -61,3 +62,9 @@ class MessageHeader(ByteConvertible):
 
         for (key, value) in kwargs.items():
             setattr(self, key, value)
+
+    @staticmethod
+    def size():
+        sample_header = MessageHeader()
+        return struct.calcsize(sample_header.binary_format)
+

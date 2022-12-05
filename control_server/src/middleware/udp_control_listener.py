@@ -38,17 +38,18 @@ class UdpControlListener:
             message_header=header,
             data=event.data
         )
-        self.receive_message(address=event.address, message=message)
+        self.receive_message(udp_event=event, message=message)
 
-    def receive_message(self, address: str, message: GenericMessage) -> bytes:
-        event = MessageReceivedEvent(address, message)
+    def receive_message(
+            self,
+            udp_event: UdpReceiveEvent,
+            message: GenericMessage
+    ):
+        event = MessageReceivedEvent(
+            event=udp_event,
+            message=message
+        )
+
         self.message_received(event)
 
-        # WIP code: the following prints are used for debugging purposes, and
-        # will be removed in the future. Instead, a mechanism for returning a
-        # response will be added here instead of just returning b'1'.
-        print(f'Received message from {address}:')
-        print(f'\tURL: \t{message.url}')
-        print(f'\tBody: \t{message.body}')
-        print(f'\tHeaders: \t{message.headers}')
-        return b'1'
+        udp_event.copy_from(event)

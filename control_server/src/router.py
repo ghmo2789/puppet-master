@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Callable, Tuple
+from typing import List, Callable, Tuple, Dict
 
 from flask import Flask
 
@@ -72,12 +72,22 @@ class Router:
             )
         ]
 
+        self.endpoints: Dict[str, List[RouteDestination]] = {}
+
         for route in self.route_map:
             self._app.add_url_rule(
                 rule=route.route,
                 endpoint=route.name,
                 view_func=route.handler,
                 methods=route.methods)
+
+            if route.route not in self.endpoints:
+                self.endpoints[route.route] = []
+
+            self.endpoints[route.route].append(route)
+
+    def has_route(self, route: str):
+        return route.lower() in self.endpoints
 
     @property
     def app(self):

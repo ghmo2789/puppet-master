@@ -1,4 +1,5 @@
 import socket
+import traceback
 from threading import Thread
 from typing import Any
 
@@ -38,7 +39,7 @@ class UdpServer:
         """
         self.stop()
 
-    def bind(self):
+    def bind(self) -> socket.socket:
         """
         Binds the UDP server to the specified port and host.
         :return:
@@ -49,6 +50,7 @@ class UdpServer:
         )
 
         self.sock.bind((self.host, self.port))
+        return self.sock
 
     def _do_listen(self):
         """
@@ -59,6 +61,7 @@ class UdpServer:
         self.is_listening = True
         while self.is_listening:
             if self._receive(current_socket):
+                # Signal was received to exit
                 break
 
     def _receive(self, with_socket: socket):
@@ -78,8 +81,11 @@ class UdpServer:
                 with_socket.sendto(response, addr)
 
             return False
-        except Exception as e:
-            print(f'Error receiving data: {e}')
+        except OSError:
+            if self.is_listening:
+                print(f'Error receiving data, perhaps listening socket '
+                      f'was closed?')
+                traceback.print_exc()
 
             if with_socket is not None:
                 with_socket.close()
