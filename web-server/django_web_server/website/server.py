@@ -89,34 +89,34 @@ class ControlServerHandler():
         requestHeaders = {'Authorization': self.authorization}
         saved_client_ids = list(Client.objects.values_list('client_id', flat=True))
 
-        for client in saved_client_ids:
-            data = {
-                "id": client,
-            }
-            response = requests.get(url=requestUrl, headers=requestHeaders, params=data)
+        #for client in saved_client_ids:
+        data = {
+            "id": "",
+        }
+        response = requests.get(url=requestUrl, headers=requestHeaders, params=data)
+        status_code = response.status_code
 
-            status_code = response.status_code
-            if status_code == 200:
-                pending_tasks = response.json()['pending_tasks']
-                sent_tasks = response.json()['sent_tasks'][0]
-                for task in pending_tasks:
-                    t_id = task['_id']['task_id']
-                    if not (SentTask.objects.filter(task_id=t_id).exists()):
-                        c_id = task['_id']['client_id']
-                        task_t = task['task']['name']
-                        task_i = task['task']['data']
-                        t_status = 'Pending'
-                        self.__saveTask(t_id, c_id, task_t, task_i, t_status)
-                for task in sent_tasks:
-                    t_id = task['_id']['task_id']
-                    if not (SentTask.objects.filter(task_id=t_id).exists()):
-                        c_id = task['_id']['client_id']
-                        task_t = task['task']['name']
-                        task_i = task['task']['data']
-                        t_status = task['status'].replace("_", " ")
-                        self.__saveTask(t_id, c_id, task_t, task_i, t_status)
-                    else:
-                        SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
+        if status_code == 200:
+            pending_tasks = response.json()['pending_tasks']
+            sent_tasks = response.json()['sent_tasks'][0]
+            for task in pending_tasks:
+                t_id = task['_id']['task_id'] + task['_id']['client_id']
+                if not (SentTask.objects.filter(task_id=t_id).exists()):
+                    c_id = task['_id']['client_id']
+                    task_t = task['task']['name']
+                    task_i = task['task']['data']
+                    t_status = 'Pending'
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status)
+            for task in sent_tasks:
+                t_id = task['_id']['task_id'] + task['_id']['client_id']
+                if not (SentTask.objects.filter(task_id=t_id).exists()):
+                    c_id = task['_id']['client_id']
+                    task_t = task['task']['name']
+                    task_i = task['task']['data']
+                    t_status = task['status'].replace("_", " ")
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status)
+                else:
+                    SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
 
     def sendTasks(self, request):
         client_ids = request.POST.getlist('select')
@@ -140,6 +140,8 @@ class ControlServerHandler():
             "min_delay": "500",
             "max_delay": "500"
         }
+
+        print(data)
 
         response = requests.post(url=requestUrl, headers=requestHeaders, json=data)
         status_code = response.status_code
