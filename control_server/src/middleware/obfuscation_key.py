@@ -1,4 +1,3 @@
-import binascii
 import os
 from itertools import cycle
 
