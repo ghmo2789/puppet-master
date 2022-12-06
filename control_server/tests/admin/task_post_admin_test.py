@@ -1,9 +1,14 @@
 import uuid
+from typing import cast
 
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.identifying_client_data import IdentifyingClientData
+from control_server.src.data.task_status import TaskStatus
 from control_server.tests.utils.generic_test_utils import get_prefix
 from control_server.src.controller import controller
+from control_server.src.database.database_collection import DatabaseCollection
+from control_server.src.data.client_task import ClientTask
+from control_server.src.data.task import Task
 
 
 def randomize_ids() -> (str, str):
@@ -114,6 +119,21 @@ def test_post_task(client):
         "max_delay": "0"
     })
 
+    task_id = response.get_data(as_text=True)
+    client_task = cast(
+        ClientTask,
+        controller.db.get_one(
+            collection=DatabaseCollection.USER_TASKS,
+            identifier={
+                "_id.task_id": task_id
+            },
+            entry_instance=ClientTask()
+        )
+    )
     assert response.status_code == 200, \
         "Received a non-200 status code"
+    assert client_task.id.get("task_id") == task_id
+    assert client_task.id.get("client_id") == client_id
+    assert client_task.status_code == -2
+    assert client_task.status == TaskStatus.PENDING
 

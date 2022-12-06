@@ -12,7 +12,6 @@ class DatabaseCollection(StrEnum):
     # The collection containing the completed tasks
     USER_DONE_TASKS = "user_done_tasks"
 
-
     # The collection containing the client's responses to tasks
     USER_TASK_RESPONSES = "user_task_responses"
 
