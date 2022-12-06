@@ -202,14 +202,30 @@ def udp_get_commands_response():
     return mes
 
 
-def run_udp():
+def xor_key(buf, key):
+    for i in range(0, len(buf)):
+        buf[i] = buf[i] ^ key[i % len(key)]
+    return bytes(buf)
+
+
+def run_udp(key=''):
     server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     server_socket.bind((_LOCAL_IP, _LOCAL_PORT))
+    if key != '':
+        with open(key, 'r') as f:
+            key = bytes.fromhex(f.readline())
+
     while True:
         try:
             message, address = server_socket.recvfrom(_BUFFER_SIZE)
             print(f'Message received from {address}:\n{message}')
+            if key != '':
+                print('Decrypting message')
+                message = xor_key(bytearray(message), key)
+                print(message)
+
             message_len, status_code, url_len, body_len, req_h_len = struct.unpack('>HBHHH', message[0:9])
+            print(message_len)
             index = 9
             url = message[index:index + url_len].decode('utf-8')
             index += url_len
@@ -219,9 +235,13 @@ def run_udp():
 
             if _INIT_CLIENT_PATH in url:
                 msg = udp_init_response()
+                if key != '':
+                    msg = xor_key(bytearray(msg), key)
                 server_socket.sendto(msg, address)
             elif _TASK_PATH in url:
                 msg = udp_get_commands_response()
+                if key != '':
+                    msg = xor_key(bytearray(msg), key)
                 server_socket.sendto(msg, address)
             if _TASK_RESULT_PATH in url:
                 pass
@@ -243,6 +263,9 @@ def parse_args():
     parser.add_argument('--udp',
                         action='store_true',
                         default=False)
+    parser.add_argument('-key',
+                        help='If using "UDP encryption", path to key file containing hex string',
+                        default='')
     return parser.parse_args()
 
 
@@ -250,6 +273,6 @@ if __name__ == '__main__':
     args = parse_args()
     demo = args.demo
     if args.udp:
-        run_udp()
+        run_udp(key=args.key)
     else:
         run(port=args.port)

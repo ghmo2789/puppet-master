@@ -1,23 +1,37 @@
 use std::net;
+use std::net::ToSocketAddrs;
+use lazy_static::lazy_static;
+use rand::Rng;
 
 // Timeout in seconds
-const SOCKET_TIMEOUT: u64 = 1;
+const SOCKET_TIMEOUT: u64 = 5;
 // UDP socket constants
-const LOCAL_HOST: &'static str = "127.0.0.1";
+const LOCAL_HOST: &'static str = "0.0.0.0";
 // This number could have been randomised to be more stealthy
-const LOCAL_PORT: &'static str = "65231";
+const LOCAL_PORT_MIN: u64 = 50000;
+const LOCAL_PORT_MAX: u64 = 65354;
 
-// Status codes used in the UDP header
+// Status codes used in the UDP header, remove comment when implemented
 const UDP_GET: u16 = 1;
-const UDP_HEAD: u16 = 2;
+// const UDP_HEAD: u16 = 2;
 const UDP_POST: u16 = 3;
-const UDP_PUT: u16 = 4;
-const UDP_DELETE: u16 = 5;
-const UDP_CONNECT: u16 = 6;
-const UDP_OPTIONS: u16 = 7;
-const UDP_TRACE: u16 = 8;
-const UDP_PATCH: u16 = 9;
+// const UDP_PUT: u16 = 4;
+// const UDP_DELETE: u16 = 5;
+// const UDP_CONNECT: u16 = 6;
+// const UDP_OPTIONS: u16 = 7;
+// const UDP_TRACE: u16 = 8;
+// const UDP_PATCH: u16 = 9;
 
+const OBFUSCATION_KEY: &'static str = env!("OBFUSCATION_KEY");
+
+lazy_static! {
+    static ref KEY: Vec<u8> = {
+        match hex::decode(OBFUSCATION_KEY) {
+            Ok(val) => val,
+            _ => Vec::new()
+        }
+    };
+}
 
 /// Struct for UDP messages
 struct UDPMessage {
@@ -90,7 +104,18 @@ impl UDPMessage {
         UDPMessage::push_buf(&mut buf, self.body.as_bytes());
         UDPMessage::push_buf(&mut buf, self.request_header.as_bytes());
 
+        if KEY.len() > 0 {
+            UDPMessage::key_xor(&mut buf);
+        }
+
         buf
+    }
+
+    /// Used to obfuscate the data. XORs the data with the defined KEY
+    fn key_xor(buf: &mut Vec<u8>) {
+        for i in 0..buf.len() {
+            buf[i] = buf[i] ^ KEY[i % KEY.len()];
+        }
     }
 
     /// Static function to create a UDPMessage from a vector of bytes
@@ -100,7 +125,11 @@ impl UDPMessage {
     ///
     /// # Errors
     /// If indexing on buffer goes out of range
-    fn from_bytes(buf: &Vec<u8>) -> Result<UDPMessage, anyhow::Error> {
+    fn from_bytes(buf: &mut Vec<u8>) -> Result<UDPMessage, anyhow::Error> {
+        if KEY.len() > 0 {
+            UDPMessage::key_xor(buf);
+        }
+
         let buf_len = buf.len();
         if buf_len < UDPMessageHeader::HEADER_LENGTH as usize {
             return Err(anyhow::Error::msg("Error when parsing message header"));
@@ -235,8 +264,9 @@ impl UDPMessageHeader {
 ///
 /// # Returns
 /// A UDP socket bound to given local address and port
-fn init_host(local_host: String, local_port: String, timeout: u64) -> net::UdpSocket {
-    let host = format!("{}:{}", local_host, local_port);
+fn init_host(local_host: String, timeout: u64) -> net::UdpSocket {
+    let random_port = rand::thread_rng().gen_range(LOCAL_PORT_MIN, LOCAL_PORT_MAX);
+    let host = format!("{}:{}", local_host, random_port.to_string());
     let socket = net::UdpSocket::bind(host).expect("Failed to init UDP socket");
     socket.set_read_timeout(Some(std::time::Duration::from_secs(timeout)))
         .expect("Failed to set timeout");
@@ -245,6 +275,14 @@ fn init_host(local_host: String, local_port: String, timeout: u64) -> net::UdpSo
 
 /// Sends a message over a UDP socket
 fn send(socket: &net::UdpSocket, receiver: String, msg: &Vec<u8>) {
+    let receiver = match receiver.to_socket_addrs().unwrap().next() {
+        Some(val) => val,
+        _ => {
+            #[cfg(debug_assertions)]
+            println!("Failed to resolve address: {}", receiver);
+            return
+        }
+    };
     match socket.send_to(&msg, receiver) {
         Ok(_) => {},
         Err(e) => {
@@ -303,7 +341,6 @@ pub fn post_request_udp(
     let mut message = UDPMessage::new(url, header, body, UDP_POST);
     let tx_buf = message.as_bytes();
     let sock = init_host(LOCAL_HOST.to_string(),
-                         LOCAL_PORT.to_string(),
                          SOCKET_TIMEOUT);
     send(&sock, format!("{}:{}", remote_host, remote_port), &tx_buf);
 
@@ -311,8 +348,8 @@ pub fn post_request_udp(
         return Ok(String::new());
     }
 
-    let rx_buf = listen(&sock);
-    let response = match UDPMessage::from_bytes(&rx_buf) {
+    let mut rx_buf = listen(&sock);
+    let response = match UDPMessage::from_bytes(&mut rx_buf) {
         Ok(val) => val,
         Err(e) => {
             #[cfg(debug_assertions)]
@@ -350,14 +387,13 @@ pub fn get_request_udp(url: String,
                                   UDP_GET);
     let tx_buf = mes.as_bytes();
     let sock = init_host(LOCAL_HOST.to_string(),
-                         LOCAL_PORT.to_string(),
                          SOCKET_TIMEOUT);
     send(&sock,
          format!("{}:{}", remote_host, remote_port),
          &tx_buf);
-    let rx_buf = listen(&sock);
+    let mut rx_buf = listen(&sock);
 
-    let response = match UDPMessage::from_bytes(&rx_buf) {
+    let response = match UDPMessage::from_bytes(&mut rx_buf) {
         Ok(val) => val,
         Err(e) => {
             #[cfg(debug_assertions)]
@@ -569,7 +605,7 @@ mod tests {
         ];
 
         for i in 0..UDP_MESSAGES.len() {
-            let mut udp_message = match UDPMessage::from_bytes(&UDP_MESSAGES[i].to_vec()) {
+            let mut udp_message = match UDPMessage::from_bytes(&mut UDP_MESSAGES[i].to_vec()) {
                 Ok(val) => val,
                 _ => continue
             };
@@ -580,17 +616,17 @@ mod tests {
     #[test]
     fn test_udp_message_from_bytes_invalid() {
         let buf = b"000";
-        match UDPMessage::from_bytes(&buf.to_vec()) {
+        match UDPMessage::from_bytes(&mut buf.to_vec()) {
             Ok(_) => assert!(false),
             Err(_) => assert!(true)
         }
         let buf = b"0000000000";
-        match UDPMessage::from_bytes(&buf.to_vec()) {
+        match UDPMessage::from_bytes(&mut buf.to_vec()) {
             Ok(_) => assert!(false),
             Err(_) => assert!(true)
         };
         let buf = b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
-        match UDPMessage::from_bytes(&buf.to_vec()) {
+        match UDPMessage::from_bytes(&mut buf.to_vec()) {
             Ok(_) => assert!(true),
             Err(_) => assert!(false)
         };
