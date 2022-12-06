@@ -118,12 +118,12 @@ def task_response():
     """
     client_id = ClientIdentifier()
 
-    # if not client_id.load_from(
-    #         lambda prop:
-    #         request.headers[prop] if prop in request.headers else None,
-    #         raise_error=False
-    # ):
-    #     return "", 400
+    if not client_id.load_from(
+            lambda prop:
+            request.headers[prop] if prop in request.headers else None,
+            raise_error=False
+    ):
+        return "", 400
 
     client_response = ClientTaskResponse()
     if not client_response.load_from(
