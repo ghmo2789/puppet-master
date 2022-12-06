@@ -1,3 +1,5 @@
+import uuid
+
 from control_server.tests.utils.generic_test_utils import get_prefix
 from control_server.src.controller import controller
 from control_server.src.data.client_data import ClientData
@@ -47,12 +49,15 @@ def test_client(client):
         "host_user": "1",
         "privileges": "1",
     }
-    client_id = "1966283-b9b8-4503-a431-6bc39046481f"
+    client_id = str(uuid.uuid4())
+    client_ip = str(uuid.uuid4())
+
     data = ClientData.load_from_dict(new_client, raise_error=True)
     new_user = IdentifyingClientData(
         client_data=data,
-        ip=client_id,
+        ip=client_ip
     )
+    new_user.set_id(client_id)
 
     controller.db.set_user(
         user_id=client_id,
@@ -65,9 +70,10 @@ def test_client(client):
     }, query_string={
         "id": client_id
     })
+    response_client = IdentifyingClientData().deserialize(response.json)
 
     assert response.status_code == 200, "Received a non-200 status code"
-    assert response.json.get("_id") == client_id, "Client ID does not match"
+    assert response_client.id == client_id, "Client ID does not match"
 
 
 
