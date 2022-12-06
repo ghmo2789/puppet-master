@@ -12,6 +12,13 @@ class ObfuscationKey:
 
     @staticmethod
     def get_key():
+        """
+        Gets the obfuscation key. If a static key is set, it will be used.
+        Otherwise, the key will be read from the file specified as
+        OBFUSCATION_KEY_FILE in the settings file. If the file does not exist,
+        no obfuscation will be used.
+        :return:
+        """
         if ObfuscationKey.static_key is not None:
             return ObfuscationKey(
                 key=ObfuscationKey.static_key
@@ -38,6 +45,14 @@ class ObfuscationKey:
 
     @staticmethod
     def set_static_key(key: bytes | None):
+        """
+        Sets the static obfuscation key to the specified key. Setting this key
+        will cause all future calls to get_key() to return an ObfuscationKey
+        with the specified key, overriding the key file specified in the
+        settings file.
+        :param key: The key to set. If None, the static key will be cleared.
+        :return: None
+        """
         ObfuscationKey.static_key = key
 
     @staticmethod
@@ -46,6 +61,12 @@ class ObfuscationKey:
             return file.read().decode('utf-8')
 
     def apply(self, data: bytes) -> bytes:
+        """
+        Applies the obfuscation key to the specified data. If the key is None,
+        the data will be returned unchanged.
+        :param data: The data to obfuscate
+        :return: The obfuscated data, or the original data if the key is None.
+        """
         if self._key is None:
             return data
 
@@ -55,6 +76,10 @@ class ObfuscationKey:
 
 
 class StaticObfuscationKey:
+    """
+    Helper class allowing a randomly generated static obfuscation key to be used
+    temporarily with Python's with statement.
+    """
     def __enter__(self):
         ObfuscationKey.set_static_key(
             key=os.urandom(1024)
