@@ -17,10 +17,11 @@ class Client(models.Model):
 
 
 class SentTask(models.Model):
-    task_id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
+    task_id = models.CharField(max_length=50, default="")
     client_id = models.ForeignKey(Client, on_delete=models.CASCADE)
     start_time = models.CharField(max_length=60)
-    finish_time = models.CharField(max_length=60)
+    status = models.CharField(max_length=60)
     task_type = models.CharField(max_length=20)
     task_info = models.CharField(max_length=100)
 
