@@ -3,6 +3,7 @@ import socket
 from control_server.src.middleware.headers.message_header import MessageHeader
 from control_server.src.middleware.messages.generic_message import \
     GenericMessage
+from control_server.src.middleware.obfuscation_key import ObfuscationKey
 
 
 def send_bytes(
@@ -23,11 +24,16 @@ def send_bytes(
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(1)
+
+    obfuscation = ObfuscationKey.get_key()
+    data = obfuscation.apply(data)
+
     sock.sendto(data, (host, port))
 
     response = None
     if buffer_size > 0:
         response, _ = sock.recvfrom(buffer_size)
+        response = obfuscation.apply(response)
 
     sock.close()
     return response
@@ -49,9 +55,13 @@ def send_bytes_receive_message(
     :return: The response, if any. None if response_length is 0 or less.
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    obfuscation = ObfuscationKey.get_key()
+    data = obfuscation.apply(data)
+
     sock.sendto(data, (host, port))
 
     response_bytes, _ = sock.recvfrom(1024)
+    response_bytes = obfuscation.apply(response_bytes)
     header = MessageHeader(data=response_bytes)
 
     response = GenericMessage(

@@ -6,6 +6,7 @@ from control_server.src.middleware.forwarding_udp_control_listener import \
 from control_server.src.middleware.generic_message_builder import \
     GenericMessageBuilder
 from control_server.src.middleware.http_method import HttpMethod
+from control_server.src.middleware.obfuscation_key import StaticObfuscationKey
 from control_server.tests.utils.udp_utils import send_bytes_receive_message
 
 host = '127.0.0.1'
@@ -48,3 +49,8 @@ def test_simple_message():
 
     assert received_message is not None
     assert received_message.status_code == 200
+
+
+def test_simple_obfuscated_message():
+    with StaticObfuscationKey():
+        test_simple_message()

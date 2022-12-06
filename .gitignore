@@ -174,7 +174,9 @@ client/venv
 __pycache__/
 local_settings.py
 .env
+obfuscation_key
 control_server/src/.env
+control_server/obfuscation_key
 web-server/.env
 web-server/django_web_server/.env
 db.sqlite3

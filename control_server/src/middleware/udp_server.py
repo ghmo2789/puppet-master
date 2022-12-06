@@ -10,6 +10,7 @@ from decouple import config
 from control_server.src.middleware.event import Event
 from control_server.src.middleware.events.udp_receive_event import \
     UdpReceiveEvent
+from control_server.src.middleware.obfuscation_key import ObfuscationKey
 
 
 class UdpServer:
@@ -29,6 +30,7 @@ class UdpServer:
         self.receive_event: Event[UdpReceiveEvent] = Event()
         self.is_bind: bool = False
         self.socket_lock = Lock()
+        self.obfuscation_key: ObfuscationKey = ObfuscationKey.get_key()
 
     def __enter__(self):
         """
@@ -110,9 +112,12 @@ class UdpServer:
         """
         try:
             data, addr = with_socket.recvfrom(self.buffer_size)
+            data = self.obfuscation_key.apply(data)
 
             response = self._handle_receive(data, addr)
+
             if response is not None:
+                response = self.obfuscation_key.apply(response)
                 with_socket.sendto(response, addr)
 
             with_socket.close()

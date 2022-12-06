@@ -10,6 +10,7 @@ from control_server.src.middleware.generic_message_builder import \
 from control_server.src.middleware.headers.message_header import MessageHeader
 from control_server.src.middleware.messages.generic_message import \
     GenericMessage
+from control_server.src.middleware.obfuscation_key import StaticObfuscationKey
 from control_server.src.middleware.udp_control_listener import \
     UdpControlListener
 from control_server.tests.utils.udp_utils import send_bytes
@@ -123,6 +124,16 @@ def test_valid_message_with_response():
 
     _assert_response(response)
     _assert_response(rc.get_result().message)
+
+
+def test_obfuscated_valid_message():
+    with StaticObfuscationKey():
+        test_valid_message()
+
+
+def test_obfuscated_valid_message_with_response():
+    with StaticObfuscationKey():
+        test_valid_message_with_response()
 
 
 def _set_response(event: MessageReceivedEvent):
