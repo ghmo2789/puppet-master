@@ -1,3 +1,4 @@
+from __future__ import annotations
 from enum import Enum
 
 
@@ -16,9 +17,11 @@ class HttpMethod(Enum):
     PATCH = 9
 
     @staticmethod
-    def from_int(value: int):
+    def from_int(value: int, raise_error: bool = True) -> HttpMethod | int:
         """
         Gets the HttpMethod from an integer.
+        :param raise_error: Whether to raise an error if the value is
+        not found
         :param value: The integer value.
         :return: The HttpMethod.
         """
@@ -26,7 +29,17 @@ class HttpMethod(Enum):
             if method.get_value() == value:
                 return method
 
-        raise ValueError('Invalid HttpMethod value.')
+        if raise_error:
+            raise ValueError('Invalid HttpMethod value.')
+
+        return value
+
+    @staticmethod
+    def to_string(method: HttpMethod | int):
+        if isinstance(method, int):
+            return str(method)
+
+        return method.name
 
     def get_value(self):
         """

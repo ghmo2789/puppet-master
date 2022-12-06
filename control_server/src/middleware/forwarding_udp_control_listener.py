@@ -1,4 +1,7 @@
 import json
+import sys
+import traceback
+from datetime import datetime
 from json import JSONDecodeError
 from typing import Callable
 from urllib.parse import urlparse
@@ -21,6 +24,7 @@ class ForwardingUdpControlListener(UdpControlListener):
     A listener that listens for UDP messages and forwards them to a given
     HTTP API endpoint. The response is then sent back to the sender.
     """
+
     def __init__(
             self,
             api_base_url: str,
@@ -65,6 +69,22 @@ class ForwardingUdpControlListener(UdpControlListener):
             .set_body(response.content.decode('utf-8')) \
             .build()
 
+    @staticmethod
+    def create_error_response(
+            error_code: int
+    ) -> GenericMessage:
+        """
+        Creates a GenericMessage with the given error code
+        :param error_code: The error code to create a response for
+        :return: The response, as a GenericMessage
+        """
+        return GenericMessageBuilder() \
+            .set_status_code(error_code) \
+            .set_url('') \
+            .set_headers('') \
+            .set_body('') \
+            .build()
+
     def _handle_message_received(self, event: MessageReceivedEvent):
         """
         Handles a received message by forwarding it and potentially replying.
@@ -73,63 +93,96 @@ class ForwardingUdpControlListener(UdpControlListener):
         """
         url_path = urlparse(event.message.url).path
         sender_ip, sender_port = event.address
+        result_status = 500
 
-        if not self.ignore_route_check and \
-                (url_path is None or not self.route_validator(url_path)):
-            raise Exception(
-                'No valid route found for url: ' + (url_path or 'None')
+        try:
+            if not self.ignore_route_check and \
+                    (url_path is None or not self.route_validator(url_path)):
+                raise Exception(
+                    'No valid route found for url: ' + (url_path or 'None')
+                )
+
+            message = event.message
+            target_url = self.api_base_url + message.url
+            headers = ForwardingUdpControlListener.get_headers(message)
+
+            forward_header_name = 'X-Forwarded-For'
+            forward_header = headers[forward_header_name] + ', ' \
+                if forward_header_name in headers else \
+                sender_ip
+
+            headers[forward_header_name] = forward_header
+
+            handlers = {
+                HttpMethod.GET: lambda request: requests.get(
+                    url=target_url,
+                    headers=headers
+                ),
+                HttpMethod.POST: lambda request: requests.post(
+                    url=target_url,
+                    headers=headers,
+                    data=request.body
+                ),
+                HttpMethod.DELETE: lambda request: requests.delete(
+                    url=target_url,
+                    headers=headers,
+                    data=request.body
+                ),
+                HttpMethod.PUT: lambda request: requests.put(
+                    url=target_url,
+                    headers=headers,
+                    data=request.body
+                ),
+                HttpMethod.HEAD: lambda request: requests.head(
+                    url=target_url,
+                    headers=headers
+                )
+            }
+
+            method = HttpMethod.from_int(message.status_code)
+            if method not in handlers:
+                raise Exception('Unsupported HTTP method')
+
+            response = handlers[method](message)
+            response_message = ForwardingUdpControlListener \
+                .create_message_response(
+                    request=message,
+                    response=response
+                )
+
+            result_status = response_message.status_code
+
+            event.set_message_response(
+                response=response_message
+            )
+        except Exception as e:
+            print(e, file=sys.stderr)
+            traceback.print_exc()
+            result_status = 500
+
+            response = ForwardingUdpControlListener \
+                .create_error_response(
+                    error_code=500
+                )
+
+            event.set_message_response(
+                response=response
+            )
+        finally:
+            time = datetime.strftime(
+                datetime.now(),
+                '%d-%b-%Y %H:%M:%S'
+            )
+            method = HttpMethod.from_int(
+                event.message.status_code,
+                raise_error=False
             )
 
-        message = event.message
-        target_url = self.api_base_url + message.url
-        headers = ForwardingUdpControlListener.get_headers(message)
+            method = HttpMethod.to_string(method)
 
-        forward_header_name = 'X-Forwarded-For'
-        forward_header = headers[forward_header_name] + ', ' \
-            if forward_header_name in headers else \
-            sender_ip
-
-        headers[forward_header_name] = forward_header
-
-        handlers = {
-            HttpMethod.GET: lambda request: requests.get(
-                url=target_url,
-                headers=headers
-            ),
-            HttpMethod.POST: lambda request: requests.post(
-                url=target_url,
-                headers=headers,
-                data=request.body
-            ),
-            HttpMethod.DELETE: lambda request: requests.delete(
-                url=target_url,
-                headers=headers,
-                data=request.body
-            ),
-            HttpMethod.PUT: lambda request: requests.put(
-                url=target_url,
-                headers=headers,
-                data=request.body
-            ),
-            HttpMethod.HEAD: lambda request: requests.head(
-                url=target_url,
-                headers=headers
-            )
-        }
-
-        method = HttpMethod.from_int(message.status_code)
-        if method not in handlers:
-            raise Exception('Unsupported HTTP method')
-
-        response = handlers[method](message)
-        response_message = ForwardingUdpControlListener.create_message_response(
-            request=message,
-            response=response
-        )
-
-        event.set_message_response(
-            response=response_message
-        )
+            print(f'{sender_ip} [{time}] UDP '
+                  f'\"{method} {event.message.url}\" '
+                  f'{result_status}')
 
     @staticmethod
     def get_headers(message: GenericMessage):

@@ -29,6 +29,7 @@ class UdpControlListener:
         :return:
         """
         self.udp_server.start()
+        self.udp_server.await_ready()
 
     def stop(self):
         """
