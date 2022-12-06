@@ -1,0 +1,13 @@
+# Environment variables used during compile time
+[env]
+# Defines what protocol the client should use, set to either "https" or "udp"
+PROTOCOL = "https"
+
+# If using HTTPS as protocol, this defines the control server URL.
+# Note that https:// should be used if traffic over https is desired
+CONTROL_SERVER_URL = "http://127.0.0.1:8080"
+
+# If using UDP as protocol, this defines the IP and port used by the control server
+REMOTE_HOST = "127.0.0.1"
+REMOTE_PORT = "65500"
+
