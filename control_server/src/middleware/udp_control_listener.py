@@ -23,12 +23,27 @@ class UdpControlListener:
         self.udp_server.receive_event += self._handle_receive_udp_event
         self.message_received: Event[MessageReceivedEvent] = Event()
 
-    def __enter__(self):
+    def start(self):
+        """
+        Starts the UDP server
+        :return:
+        """
         self.udp_server.start()
+        self.udp_server.await_ready()
+
+    def stop(self):
+        """
+        Stops the UDP server
+        :return:
+        """
+        self.udp_server.stop()
+
+    def __enter__(self):
+        self.start()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.udp_server.stop()
+        self.stop()
 
     def _handle_receive_udp_event(self, event: UdpReceiveEvent):
         header = MessageHeader(
@@ -38,17 +53,25 @@ class UdpControlListener:
             message_header=header,
             data=event.data
         )
-        self.receive_message(address=event.address, message=message)
+        self.receive_message(udp_event=event, message=message)
 
-    def receive_message(self, address: str, message: GenericMessage) -> bytes:
-        event = MessageReceivedEvent(address, message)
+    def receive_message(
+            self,
+            udp_event: UdpReceiveEvent,
+            message: GenericMessage
+    ):
+        """
+        Called when a message is received. Fires a message_received event.
+        :param udp_event: The UDP event, containing the sender's address and
+        the data
+        :param message: The message parsed from the sender's data
+        :return: Nothing
+        """
+        event = MessageReceivedEvent(
+            event=udp_event,
+            message=message
+        )
+
         self.message_received(event)
 
-        # WIP code: the following prints are used for debugging purposes, and
-        # will be removed in the future. Instead, a mechanism for returning a
-        # response will be added here instead of just returning b'1'.
-        print(f'Received message from {address}:')
-        print(f'\tURL: \t{message.url}')
-        print(f'\tBody: \t{message.body}')
-        print(f'\tHeaders: \t{message.headers}')
-        return b'1'
+        udp_event.copy_from(event)

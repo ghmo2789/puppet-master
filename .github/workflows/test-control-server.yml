@@ -49,6 +49,7 @@ jobs:
           echo "BEHIND_PROXY=False" >> .env
           echo "TRUSTED_PROXIES=172.17.0.0/16,172.18.0.0/16" >> .env
           echo "ADMIN_KEY=Some secret key" >> .env
+          echo "TEST_FORWARD_TO_HOST=https://www.blank.org/" >> .env
           echo "CI=True" >> .env
       - name: Test with pytest
         working-directory: ./control_server

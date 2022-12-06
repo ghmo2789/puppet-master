@@ -1,7 +1,7 @@
 import struct
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import OrderedDict
-from typing import Any, Callable, List, Tuple
+from typing import Any, List
 
 from control_server.src.middleware.headers.byte_property import ByteProperty
 

@@ -7,6 +7,7 @@ class StringProperty(ByteProperty):
     """
     A property that is serialized as a string
     """
+
     def __init__(
             self,
             name: str,

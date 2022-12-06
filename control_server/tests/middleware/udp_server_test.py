@@ -1,5 +1,3 @@
-import socket
-
 import pytest
 from decouple import config
 
@@ -63,8 +61,38 @@ def test_udp_server():
         response = send_bytes(
             data=b'\x00',
             host=host,
-            port=port,
-            response_length=len(response_data)
+            port=port
+        )
+
+        assert response == response_data
+        assert result.success
+
+
+def test_udp_server_twice():
+    """
+    Tests that the UDP server can receive a message
+    :return:
+    """
+    if config('CI', default=False, cast=bool):
+        pytest.skip('Skipping UDP tests on CI')
+
+    with get_udp_server() as server:
+        result = ResultContainer()
+        server.receive_event += lambda event: handle_udp_response(event, result)
+        response = send_bytes(
+            data=b'\x00',
+            host=host,
+            port=port
+        )
+
+        assert response == response_data
+        assert result.success
+
+        result.success = False
+        response = send_bytes(
+            data=b'\x00',
+            host=host,
+            port=port
         )
 
         assert response == response_data

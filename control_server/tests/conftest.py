@@ -14,6 +14,7 @@ def app():
     Creates a test client for the app, and tears it down afterwards
     :return:
     """
+    router.init()
     yield router.app
 
     if not router.router.controller.settings.mock_db:

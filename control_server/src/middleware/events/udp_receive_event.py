@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any
 
 from control_server.src.middleware.events.responding_message import \
@@ -19,3 +20,7 @@ class UdpReceiveEvent(RespondingMessage):
     @property
     def address(self) -> str:
         return self._address
+
+    def copy_from(self, other_event: UdpReceiveEvent):
+        if other_event.do_respond:
+            self.set_response(other_event.response)
