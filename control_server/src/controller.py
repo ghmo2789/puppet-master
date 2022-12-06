@@ -10,18 +10,21 @@ class Controller:
     A data class containing useful classes for the endpoints to use, such as the
     database, settings, etc.
     """
-    def __init__(self):
+    def __init__(self, lightweight_mode: bool = False):
         self._settings = WebSettings().read()
-        self._db = DatabaseBuilder()\
-            .set_mock(self._settings.mock_db)\
-            .build()
-        self._client_id_generator = ClientIdGenerator(
-            self._settings.id_key
-        )
-        self._admin_key = self._settings.admin_key
 
-        if isinstance(self._db, MockDatabase):
-            print("Using mock database")
+        if not lightweight_mode:
+            self._db = DatabaseBuilder()\
+                .set_mock(self._settings.mock_db)\
+                .build()
+            self._client_id_generator = ClientIdGenerator(
+                self._settings.id_key
+            )
+
+            if isinstance(self._db, MockDatabase):
+                print("Using mock database")
+
+        self._admin_key = self._settings.admin_key
 
     @property
     def settings(self) -> WebSettings:
