@@ -156,18 +156,27 @@ class ForwardingUdpControlListener(UdpControlListener):
                 response=response_message
             )
         except Exception as e:
+            print("An exception has occurred while processing request.",
+                  file=sys.stderr)
+
             print(e, file=sys.stderr)
             traceback.print_exc()
             result_status = 500
 
-            response = ForwardingUdpControlListener \
-                .create_error_response(
-                    error_code=500
-                )
+            try:
+                response = ForwardingUdpControlListener \
+                    .create_error_response(
+                        error_code=500
+                    )
 
-            event.set_message_response(
-                response=response
-            )
+                event.set_message_response(
+                    response=response
+                )
+            except Exception as ex:
+                print("A response could not be created for the error.",
+                      file=sys.stderr)
+                print(e, file=sys.stderr)
+                traceback.print_exc()
         finally:
             time = datetime.strftime(
                 datetime.now(),
