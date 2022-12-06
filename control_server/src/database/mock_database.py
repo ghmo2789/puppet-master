@@ -26,7 +26,8 @@ class MockDatabase(Database):
             {
                 DatabaseCollection.USERS: OrderedDict(),
                 DatabaseCollection.USER_TASKS: OrderedDict(),
-                DatabaseCollection.USER_TASK_RESPONSES: OrderedDict()
+                DatabaseCollection.USER_TASK_RESPONSES: OrderedDict(),
+                DatabaseCollection.USER_DONE_TASKS: OrderedDict()
             }
 
     def set(
@@ -35,14 +36,17 @@ class MockDatabase(Database):
             entry: IdentifyingClientData,
             entry_id: str = None,
             identifier: dict[str, Any] = None,
-            overwrite: bool = False):
+            overwrite: bool = False,
+            ignore_id: bool = False):
         Database._verify_identifier_entry_id(entry_id, identifier)
 
         if collection not in self._collections:
             self._collections[collection] = OrderedDict()
 
         collection = self._collections[collection]
-        key = HashableDict(identifier) if identifier is not None else entry_id
+        key = identifier if identifier is not None else entry_id
+        key = HashableDict(key) if isinstance(key, dict) else key
+
         exists = key in collection
 
         if overwrite or not exists:
@@ -56,7 +60,8 @@ class MockDatabase(Database):
             entry_id: str = None,
             identifier: dict[str, Any] = None) -> bool:
         collection = self._collections[collection]
-        key = HashableDict(identifier) if identifier is not None else entry_id
+        key = identifier if identifier is not None else entry_id
+        key = HashableDict(key) if isinstance(key, dict) else key
 
         if key in collection:
             del collection[key]
@@ -103,11 +108,13 @@ class MockDatabase(Database):
             identifier: Dict[str, str],
             entry_instance_creator: Callable[[], Deserializable]
     ) -> List[Deserializable]:
-        return [entry for entry in self._collections[collection].values() if
-                all(
+        collection = self._collections[collection]
+        for entry in collection.values():
+            if all(
                     identifier[key] == MockDatabase._get_attribute(entry, key)
                     for key in identifier
-                )]
+            ):
+                yield entry
 
     def set_user(
             self,

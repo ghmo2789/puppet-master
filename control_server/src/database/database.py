@@ -36,7 +36,8 @@ class Database(ABC):
             entry: Serializable,
             entry_id: str = None,
             identifier: dict[str, Any] = None,
-            overwrite: bool = False):
+            overwrite: bool = False,
+            ignore_id: bool = False):
         """
         Stores an entry with a given ID in the database.
         :param collection: The database collection to store to.
