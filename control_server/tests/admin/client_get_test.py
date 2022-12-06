@@ -11,7 +11,7 @@ def test_client_invalid_authorization(client):
     response = client.get(f"{get_prefix()}/admin/client", headers={
 
     })
-    assert response.status_code == 401
+    assert response.status_code == 401, "Received a non-401 status code"
 
 
 def test_client_missing_id(client):
@@ -22,7 +22,7 @@ def test_client_missing_id(client):
         "Authorization": controller.settings.admin_key
     })
 
-    assert response.status_code == 400
+    assert response.status_code == 400, "Received a non-400 status code"
 
 
 def test_client_invalid_id(client):
@@ -33,7 +33,7 @@ def test_client_invalid_id(client):
        "Authorization": controller.settings.admin_key
     })
 
-    assert response.status_code == 404
+    assert response.status_code == 404, "Received a non-404 status code"
 
 
 def test_client(client):
@@ -66,8 +66,8 @@ def test_client(client):
         "id": client_id
     })
 
-    assert response.status_code == 200
-    assert response.json.get("_id") == client_id
+    assert response.status_code == 200, "Received a non-200 status code"
+    assert response.json.get("_id") == client_id, "Client ID does not match"
 
 
 

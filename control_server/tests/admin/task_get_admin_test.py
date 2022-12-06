@@ -1,3 +1,5 @@
+import uuid
+
 from control_server.tests.utils.generic_test_utils import get_prefix
 from control_server.src.controller import controller
 from control_server.src.data.task import Task
@@ -6,13 +8,27 @@ from control_server.src.database.database_collection import DatabaseCollection
 from control_server.src.data.task_status import TaskStatus
 from control_server.src.data.client_data import ClientData
 from control_server.src.data.identifying_client_data import IdentifyingClientData
+from control_server.src import router
 
 
-def set_user_and_task(client_id: str, task_id: str, db_collection: DatabaseCollection):
+def randomize_ids() -> (str, str):
     """
-    Helper function for setting a user and task in the database
+    Randomizes the client and task IDs. Useful to prevent key collisions in
+    database during testing. UUIDs are 128-bits, so the chance of collision by
+    generating the same IDs twice is negligible.
+    :return:
     """
+    client_id = str(uuid.uuid4())
+    task_id = str(uuid.uuid4())
+    return client_id, task_id
 
+
+def set_client_and_task(client_id: str, task_id: str, db_collection: DatabaseCollection,
+                        task_status: TaskStatus):
+    """
+    Helper function for setting a client and task in the database
+    """
+    client_ip = str(uuid.uuid4())
     task = Task(
         name="0",
         data="0",
@@ -24,21 +40,21 @@ def set_user_and_task(client_id: str, task_id: str, db_collection: DatabaseColle
         task_id=task_id,
         task=task,
     )
-    client_task.set_status(status=TaskStatus.DONE)
+    client_task.set_status(status=task_status)
     client_task.set_status_code(status_code=0)
 
     # Set user in DB
     client_1 = {
-        "os_name": "1",
-        "os_version": "1",
-        "hostname": "1",
-        "host_user": "1",
-        "privileges": "1",
+        "os_name": "2",
+        "os_version": "2",
+        "hostname": "2",
+        "host_user": "2",
+        "privileges": "2",
     }
     data = ClientData.load_from_dict(client_1, raise_error=True)
     new_client = IdentifyingClientData(
         client_data=data,
-        ip=client_id
+        ip=client_ip
     )
     new_client.set_id(client_id)
     controller.db.set_user(
@@ -65,7 +81,7 @@ def test_get_task_invalid_authorization(client):
 
     })
 
-    assert response.status_code == 401
+    assert response.status_code == 401, "Received a non-401 status code"
 
 
 def test_get_task_wrong_client_id(client):
@@ -81,7 +97,7 @@ def test_get_task_wrong_client_id(client):
         "id": wrong_client_id
     })
 
-    assert response.status_code == 404
+    assert response.status_code == 404, "Received a non-404 status code"
 
 
 def test_get_task_wrong_task_id(client):
@@ -101,7 +117,7 @@ def test_get_task_wrong_task_id(client):
                               "task_id": wrong_task_id
                           })
 
-    assert response.status_code == 404
+    assert response.status_code == 404, "Received a non-404 status code"
 
 
 def test_get_task_pending_tasks(client):
@@ -110,8 +126,7 @@ def test_get_task_pending_tasks(client):
     :param client:
     :return:
     """
-    client_id = "1966283-b9b8-4503-a431-6bc39046481f"
-    task_id = "1966284-b9b8-4543-a431-6bc39046481f"
+    client_id, task_id = randomize_ids()
 
     no_task_response = client.get(f"{get_prefix()}/admin/task",
                                   headers={
@@ -122,12 +137,13 @@ def test_get_task_pending_tasks(client):
                                       "task_id": task_id
                                   })
 
-    assert no_task_response.status_code == 404
+    assert no_task_response.status_code == 404, "Received a non-404 status code"
 
     # Insert a user and task in the DB
-    set_user_and_task(client_id=client_id,
-                      task_id=task_id,
-                      db_collection=DatabaseCollection.USER_TASKS)
+    set_client_and_task(client_id=client_id,
+                        task_id=task_id,
+                        db_collection=DatabaseCollection.USER_TASKS,
+                        task_status=TaskStatus.PENDING)
 
     response = \
         client.get(f"{get_prefix()}/admin/task",
@@ -144,13 +160,12 @@ def test_get_task_pending_tasks(client):
 
     pending_client_task = ClientTask().deserialize(pending_tasks[0])
 
-    assert len(sent_tasks) == 1
-    assert len(pending_tasks) == 1
-    assert pending_client_task.id.get('client_id') == client_id
-    assert pending_client_task.id.get('task_id') == task_id
-    assert pending_client_task.status == TaskStatus.DONE
-    assert pending_client_task.status_code == 0
-    assert pending_client_task.get_task_id() == task_id
+    assert len(sent_tasks) == 1, "Incorrect number of sent tasks"
+    assert len(pending_tasks) == 1, "Incorrect number of pending tasks"
+    assert pending_client_task.id.get('client_id') == client_id, "Client ID does not match"
+    assert pending_client_task.get_task_id() == task_id, "Task ID does not match"
+    assert pending_client_task.status == TaskStatus.DONE, "Task status does not match"
+    assert pending_client_task.status_code == 0, "Status code does not match"
 
 
 def test_get_task_sent_tasks(client):
@@ -159,24 +174,13 @@ def test_get_task_sent_tasks(client):
     :param client:
     :return:
     """
-    client_id = "1966283-b9b8-4503-a431-6bc39046481f"
-    task_id = "1966284-b9b8-4543-a431-6bc39046481f"
-
-    no_task_response = client.get(f"{get_prefix()}/admin/task",
-                                  headers={
-                                      "Authorization": controller.settings.admin_key
-                                  },
-                                  query_string={
-                                      "id": client_id,
-                                      "task_id": task_id
-                                  })
-
-    assert no_task_response.status_code == 404
+    client_id, task_id = randomize_ids()
 
     # Insert a user and task in the DB
-    set_user_and_task(client_id=client_id,
-                      task_id=task_id,
-                      db_collection=DatabaseCollection.USER_DONE_TASKS)
+    set_client_and_task(client_id=client_id,
+                        task_id=task_id,
+                        db_collection=DatabaseCollection.USER_DONE_TASKS,
+                        task_status=TaskStatus.DONE)
 
     response = \
         client.get(f"{get_prefix()}/admin/task",
@@ -193,51 +197,53 @@ def test_get_task_sent_tasks(client):
 
     sent_client_task = ClientTask().deserialize(sent_tasks[0])
 
-    assert len(sent_tasks) == 1
-    assert len(pending_task) == 0
-    assert sent_client_task.id.get('client_id') == client_id
-    assert sent_client_task.id.get('task_id') == task_id
-    assert sent_client_task.status == TaskStatus.DONE
-    assert sent_client_task.status_code == 0
-    assert sent_client_task.get_task_id() == task_id
+    assert len(sent_tasks) == 1, "Incorrect number of sent tasks"
+    assert len(pending_task) == 0, "Incorrect number of pending tasks"
+    assert sent_client_task.id.get('client_id') == client_id, "Client ID does not match"
+    assert sent_client_task.get_task_id() == task_id, "Task ID does not match"
+    assert sent_client_task.status == TaskStatus.DONE, "Task status does not match"
+    assert sent_client_task.status_code == 0, "Status code does not match"
 
 
-def test_get_task(client):
-    """
-    Test the /admin/task get endpoint
-    :param client:
-    :return:
-    """
-    client_id = "1966283-b9b8-4503-a431-6bc39046481f"
-    task_id_sent = "1966284-b9b8-4543-a431-6bc39046482f"
-    task_id_pending = "1966284-b9b8-4543-a431-6bc39046483f"
+# def test_get_task(client):
+#     """
+#     Test the /admin/task get endpoint
+#     :param client:
+#     :return:
+#     """
+#     router.router.controller.db.clear()
+#     client_id_sent, task_id_sent = randomize_ids()
+#     client_id_pending, task_id_pending = randomize_ids()
+#
+#     # Save a task as sent DB
+#     set_user_and_task(client_id=client_id_sent,
+#                       task_id=task_id_sent,
+#                       db_collection=DatabaseCollection.USER_DONE_TASKS,
+#                       task_status=TaskStatus.DONE)
+#
+#     # Save a task as pending in DB
+#     set_user_and_task(client_id=client_id_pending,
+#                       task_id=task_id_pending,
+#                       db_collection=DatabaseCollection.USER_TASKS,
+#                       task_status=TaskStatus.PENDING)
+#
+#     response = \
+#         client.get(f"{get_prefix()}/admin/task",
+#                    headers={
+#                        "Authorization": controller.settings.admin_key
+#                    },
+#                    query_string={
+#                    })
+#     pending_tasks = response.json.get("pending_tasks")
+#     sent_tasks = response.json.get("sent_tasks")[0]
+#
+#     pending_client_task = ClientTask().deserialize(pending_tasks[0])
+#     sent_client_task = ClientTask().deserialize(sent_tasks[0])
+#
+#     assert response.status_code == 200, "Received a non-200 status code"
+#     assert pending_client_task.get_task_id() == task_id_pending, \
+#         "Pending task ID does not match"
+#     assert sent_client_task.get_task_id() == task_id_sent, \
+#         "Sent task ID does not match"
 
-    # Save a task as pending in DB
-    set_user_and_task(client_id=client_id,
-                      task_id=task_id_pending,
-                      db_collection=DatabaseCollection.USER_TASKS)
 
-    # Save a task as sent DB
-    set_user_and_task(client_id=client_id,
-                      task_id=task_id_sent,
-                      db_collection=DatabaseCollection.USER_DONE_TASKS)
-
-    response = \
-        client.get(f"{get_prefix()}/admin/task",
-                   headers={
-                       "Authorization": controller.settings.admin_key
-                   },
-                   query_string={
-                       "id": client_id,
-                   })
-    pending_tasks = response.json.get("pending_tasks")
-    sent_tasks = response.json.get("sent_tasks")[0]
-
-    pending_client_task = ClientTask().deserialize(pending_tasks[0])
-    sent_client_task = ClientTask().deserialize(sent_tasks[0])
-
-    assert len(pending_tasks) == 1
-    assert len(sent_tasks) == 1
-    assert pending_client_task.get_task_id() == task_id_pending
-    assert sent_client_task.get_task_id() == task_id_sent
-    assert response.status_code == 200
