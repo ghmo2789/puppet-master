@@ -4,10 +4,16 @@
 4 Usage::
 5     ./server.py [<port>]
 6 """
+import struct
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import json
 import argparse
+import socket
+
+_LOCAL_IP = '127.0.0.1'
+_LOCAL_PORT = 65500
+_BUFFER_SIZE = 550
 
 _INIT_CLIENT_KEYS = ['os_name', 'os_version', 'hostname', 'host_user', 'privileges']
 _INIT_CLIENT_PATH = '/control/client/init'
@@ -15,7 +21,7 @@ _INIT_CLIENT_PATH = '/control/client/init'
 _CLIENT_HEADER = 'content-type: application/json'
 _TEST_TOKEN = "12345"
 
-_TASK_RESULT_PATH = "/client/task/result"
+_TASK_RESULT_PATH = "/control/client/task/response"
 _TASK_PATH = '/control/client/task'
 _TEST_TASKS = """[
     {
@@ -58,7 +64,7 @@ _DEMO_TASKS = """[
     },
     {
         "id": "3",
-        "data": "hejhej",
+        "data": "hejhejhej",
         "max_delay": 1000,
         "min_delay": 0,
         "name": "terminal"
@@ -79,7 +85,7 @@ _DEMO_TASKS = """[
     },
     {
         "id": "6",
-        "data": "ping 192.168.1.247",
+        "data": "ping 127.0.0.1",
         "max_delay": 150,
         "min_delay": 0,
         "name": "terminal"
@@ -97,6 +103,7 @@ _DEMO_TASKS_2 = """[
 
 n_gets = 0
 demo = True
+
 
 class S(BaseHTTPRequestHandler):
     def _set_response(self):
@@ -171,6 +178,58 @@ def run(server_class=HTTPServer, handler_class=S, port=8080):
     logging.info('Stopping httpd...\n')
 
 
+def udp_init_response():
+    body = b'{"Authorization": "12345"}'
+    url_len = 0
+    req_h_len = 0
+    body_len = len(body)
+    status_code = 200
+    message_len = 9 + url_len + body_len + req_h_len
+    header = struct.pack('>HHHHH', message_len, status_code, url_len, body_len, req_h_len)
+    mes = header + body
+    return mes
+
+
+def udp_get_commands_response():
+    body = _TEST_TASKS.encode()
+    url_len = 0
+    req_h_len = 0
+    body_len = len(body)
+    status_code = 200
+    message_len = 9 + url_len + body_len + req_h_len
+    header = struct.pack('>HHHHH', message_len, status_code, url_len, body_len, req_h_len)
+    mes = header + body
+    return mes
+
+
+def run_udp():
+    server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+    server_socket.bind((_LOCAL_IP, _LOCAL_PORT))
+    while True:
+        try:
+            message, address = server_socket.recvfrom(_BUFFER_SIZE)
+            print(f'Message received from {address}:\n{message}')
+            message_len, status_code, url_len, body_len, req_h_len = struct.unpack('>HBHHH', message[0:9])
+            index = 9
+            url = message[index:index + url_len].decode('utf-8')
+            index += url_len
+            body = message[index:index + body_len].decode('utf-8')
+            index += body_len
+            req_h = message[index:index + req_h_len].decode('utf-8')
+
+            if _INIT_CLIENT_PATH in url:
+                msg = udp_init_response()
+                server_socket.sendto(msg, address)
+            elif _TASK_PATH in url:
+                msg = udp_get_commands_response()
+                server_socket.sendto(msg, address)
+            if _TASK_RESULT_PATH in url:
+                pass
+
+        except KeyboardInterrupt:
+            break
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Test server for puppet-master client")
     parser.add_argument('--port',
@@ -181,10 +240,16 @@ def parse_args():
                         action='store_true',
                         default=False,
                         help='If running in demo mode or not')
+    parser.add_argument('--udp',
+                        action='store_true',
+                        default=False)
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_args()
     demo = args.demo
-    run(port=args.port)
+    if args.udp:
+        run_udp()
+    else:
+        run(port=args.port)

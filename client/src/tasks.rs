@@ -18,6 +18,7 @@ const TERMINAL_CMD: &'static str = "terminal";
 const ABORT_CMD: &'static str = "abort";
 const DEFAULT_MIN_WAIT: u32 = 0;
 const DEFAULT_MAX_WAIT: u32 = 500;
+const ABORTED_STATUS_CODE: i32 = -3;
 
 lazy_static! {
     static ref RUNNING_TASKS: Mutex<RunningTasks> = Mutex::new(RunningTasks{ running_tasks: vec![]});
@@ -114,7 +115,7 @@ impl RunningTask {
         let option = exit_status.code();
         let exit_code = match option {
             Some(val) => val,
-            None => -1
+            _ => ABORTED_STATUS_CODE
         };
         let stdout = self.child.stdout.take();
         let stderr = self.child.stderr.take();
@@ -131,7 +132,7 @@ impl RunningTask {
                     println!("Command had no output!");
                 };
             },
-            -1 => {
+            ABORTED_STATUS_CODE => {
                 #[cfg(debug_assertions)]
                 println!("Command aborted => no output returned");
             },

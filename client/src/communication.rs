@@ -1,80 +1,29 @@
-use std::{
-    time::Duration
-};
-
-use reqwest::Client;
-use reqwest::header::CONTENT_TYPE;
+mod udp;
+mod http;
 
 use crate::models::{Task, Auth, TaskResult, SystemInformation};
+use http::{
+    get_request,
+    post_request,
+};
+use crate::communication::udp::{
+    get_request_udp,
+    post_request_udp,
+};
 
 // Note that URL is set by environment variable during compilation
+const PROTOCOL: &str = env!("PROTOCOL");
 const URL: &'static str = env!("CONTROL_SERVER_URL");
-const TIMEOUT: Duration = Duration::from_secs(2);
+const REMOTE_PORT: &'static str = env!("REMOTE_PORT");
+const REMOTE_HOST: &'static str = env!("REMOTE_HOST");
+
 const INIT_ENDPOINT: &'static str = "/control/client/init";
 const COMMAND_ENDPOINT: &'static str = "/control/client/task";
-const RESULT_ENDPOINT: &'static str = "/control/client/task/response";
-const CONTENT_HEADER_VALUE: &'static str = "application/json";
-const AUTHORIZATION_HEADER: &'static str = "Authorization";
+const RESULT_ENDPOINT: &'static str = "/client/task/result";
 
-/// Sends a post request to the control server with a JSON String as body
-///
-/// # Returns
-/// The response from the request as a String
-///
-/// # Errors
-/// This function fails if there are issues sending the request, if 200 is not returned from
-/// the server or if parsing of the request response text fails
-async fn post_request(body: String,
-                      url: &str,
-                      endpoint: &str,
-                      auth_token: &String) -> Result<String, anyhow::Error> {
-    let client = Client::builder()
-        .timeout(TIMEOUT)
-        .build()?;
-    let res = client.post(format!("{}{}", url, endpoint))
-        .header(CONTENT_TYPE, CONTENT_HEADER_VALUE)
-        .header(AUTHORIZATION_HEADER, auth_token)
-        .body(body)
-        .send()
-        .await?;
-    let code = res.status();
-    if code != 200 {
-        #[cfg(debug_assertions)]
-        println!("Failed POST: {}", code);
 
-        return Err(anyhow::Error::msg(code));
-    }
-    Ok(res.text().await?)
-}
-
-/// Send a GET request
-///
-/// # Returns
-/// Result from GET request as a String
-///
-/// # Errors
-/// Fails if there are issues sending the requests, if the return code is not 200 or if parsing
-/// of the request response text fails
-async fn get_request(url: &str,
-                     endpoint: &str,
-                     auth_token: &String) -> Result<String, anyhow::Error> {
-    let client = Client::builder()
-        .timeout(TIMEOUT)
-        .build()?;
-    let res = client.get(&format!("{}{}", url, endpoint))
-        .header(CONTENT_TYPE, CONTENT_HEADER_VALUE)
-        .header(AUTHORIZATION_HEADER, auth_token)
-        .send()
-        .await?;
-    let code = res.status();
-    if res.status() != 200 {
-        #[cfg(debug_assertions)]
-        println!("Failed GET: {}", code);
-
-        return Err(anyhow::Error::msg(code));
-    }
-    Ok(res.text().await?)
-}
+const UDP_PROTOCOL: &str = "udp";
+const HTTPS_PROTOCOL: &'static str = "https";
 
 /// Sends the clients identifying characteristics to the control server.
 ///
@@ -85,15 +34,38 @@ async fn get_request(url: &str,
 /// This function fails if there are issues sending the request, or if 200 is not returned from
 /// the server
 pub async fn send_identity(id: SystemInformation) -> Result<String, anyhow::Error> {
-    let res = post_request(serde_json::to_string(&id).unwrap(),
-                           URL,
-                           INIT_ENDPOINT,
-                           &String::from("")).await?;
+    let res = if PROTOCOL == UDP_PROTOCOL {
+        match post_request_udp(serde_json::to_string(&id).unwrap(),
+                               INIT_ENDPOINT.to_string(),
+                               &String::new(),
+                               REMOTE_HOST.to_string(),
+                               REMOTE_PORT.to_string(),
+                               true,
+        ) {
+            Ok(val) => val,
+            Err(e) => {
+                #[cfg(debug_assertions)]
+                println!("Failed to send identity: {}", e);
+                String::new()
+            }
+        }
+    } else if PROTOCOL == HTTPS_PROTOCOL {
+        post_request(serde_json::to_string(&id).unwrap(),
+                     format!("{}{}", URL, INIT_ENDPOINT),
+                     &String::from("")).await?
+    } else {
+        #[cfg(debug_assertions)]
+        println!("No valid communication protocol chosen!");
+        panic!("Invalid communication protocol");
+    };
 
     let response: Auth = serde_json::from_str(&*(res))
         .unwrap_or_else(|_error| {
             Auth { authorization: String::from("") }
         });
+
+    #[cfg(debug_assertions)]
+    println!("Authorization token: {}", response.authorization);
     Ok(response.authorization)
 }
 
@@ -107,24 +79,63 @@ pub async fn send_identity(id: SystemInformation) -> Result<String, anyhow::Erro
 /// The function fails if there are issues sending the requests or if 200 is not returned from
 /// the server
 pub async fn get_commands(token: &String) -> Result<Vec<Task>, anyhow::Error> {
-    let res = get_request(URL, COMMAND_ENDPOINT, &token).await?;
+    #[cfg(debug_assertions)]
+    println!("Get commands!");
+
+    let res = if PROTOCOL == UDP_PROTOCOL {
+        match get_request_udp(
+            COMMAND_ENDPOINT.to_string(),
+            token,
+            REMOTE_HOST.to_string(),
+            REMOTE_PORT.to_string()) {
+            Ok(val) => val,
+            Err(e) => {
+                #[cfg(debug_assertions)]
+                println!("Failed to get commands: {}", e);
+                String::new()
+            }
+        }
+    } else if PROTOCOL == HTTPS_PROTOCOL {
+        get_request(URL, COMMAND_ENDPOINT, &token).await?
+    } else {
+        #[cfg(debug_assertions)]
+        println!("No valid communication protocol chosen!");
+        panic!("Invalid communication protocol");
+    };
+
+    #[cfg(debug_assertions)]
+    println!("Get commands: {}", res);
+
     let tasks: Vec<Task> = serde_json::from_str(&*(res))
         .unwrap_or_else(|_error| {
-            #[cfg(debug_assertions)] {
-                println!("Failed to unwrap string to json");
-                println!("{}", res);
-            }
-
             Vec::new()
         });
     Ok(tasks)
 }
 
+/// Sends a task result to the control server
+///
+/// # Errors
+/// If communication occurs
 pub async fn send_task_result(tr: &TaskResult, auth_token: &String) -> Result<(), anyhow::Error> {
-    post_request(serde_json::to_string(tr).unwrap(),
-                 URL,
-                 RESULT_ENDPOINT,
-                 auth_token).await?;
+    if PROTOCOL == UDP_PROTOCOL {
+        post_request_udp(
+            serde_json::to_string(tr).unwrap(),
+            RESULT_ENDPOINT.to_string(),
+            auth_token,
+            REMOTE_HOST.to_string(),
+            REMOTE_PORT.to_string(),
+            false)?;
+    } else if PROTOCOL == HTTPS_PROTOCOL {
+        post_request(serde_json::to_string(tr).unwrap(),
+                     format!("{}{}", URL, RESULT_ENDPOINT),
+                     auth_token).await?;
+    } else {
+        #[cfg(debug_assertions)]
+        println!("No valid communication protocol chosen!");
+        panic!("Invalid communication protocol");
+    }
+
     Ok(())
 }
 
@@ -148,19 +159,6 @@ mod tests {
                 assert_eq!(val, String::from("12345"));
             }
             Err(_) => assert!(false)
-        };
-    }
-
-    #[actix_rt::test]
-    async fn test_post_request_invalid_url() {
-        let url = "https://1.2.3.4";
-
-        match post_request(String::from("hej"),
-                           url,
-                           INIT_ENDPOINT,
-                           &String::from("")).await {
-            Ok(_val) => assert!(false),
-            Err(_) => assert!(true)
         };
     }
 
@@ -203,16 +201,6 @@ mod tests {
                 }
             }
             Err(_) => assert!(false)
-        }
-    }
-
-    #[actix_rt::test]
-    async fn test_get_request_invalid_url() {
-        let url = "http://1.2.3.4";
-        let auth = &String::from("12345");
-        match get_request(url, COMMAND_ENDPOINT, auth).await {
-            Ok(_) => assert!(false),
-            Err(_) => assert!(true)
         }
     }
 
