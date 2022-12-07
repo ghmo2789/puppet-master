@@ -1,5 +1,6 @@
 import socket
 
+from control_server.src.middleware.compression.compression import Compression
 from control_server.src.middleware.headers.message_header import MessageHeader
 from control_server.src.middleware.messages.generic_message import \
     GenericMessage
@@ -39,22 +40,25 @@ def send_bytes(
     return response
 
 
-def send_bytes_receive_message(
-        data: bytes,
+def send_receive_message(
+        message: GenericMessage,
         host: str,
         port: int
 ) -> GenericMessage:
     """
     Sends bytes to a host and port and returns the response
-    :param data: The data to send
+    :param message: The message to send
     :param host: The host to send to
     :param port: The port to send to
-    :param response_length: The length of the response. If 0, no response is
-    expected. The method will wait until at least response_length bytes are
-    received.
     :return: The response, if any. None if response_length is 0 or less.
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    compression = Compression.get_default()
+    data = message.to_bytes(
+        compression=compression
+    )
+
     obfuscation = ObfuscationKey.get_key()
     data = obfuscation.apply(data)
 
@@ -64,9 +68,14 @@ def send_bytes_receive_message(
     response_bytes = obfuscation.apply(response_bytes)
     header = MessageHeader(data=response_bytes)
 
+    header_bytes = response_bytes[:MessageHeader.size()]
+    data_bytes = response_bytes[MessageHeader.size():]
+
+    data_bytes = compression.decompress(data_bytes)
+
     response = GenericMessage(
         message_header=header,
-        data=response_bytes
+        data=header_bytes + data_bytes
     )
 
     sock.close()

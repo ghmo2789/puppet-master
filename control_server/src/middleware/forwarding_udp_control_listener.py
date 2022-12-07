@@ -138,7 +138,8 @@ class ForwardingUdpControlListener(UdpControlListener):
             result_status = response_message.status_code
 
             event.set_message_response(
-                response=response_message
+                response=response_message,
+                compression=self.compression
             )
         except Exception as e:
             ForwardingUdpControlListener.log_error(
@@ -154,7 +155,8 @@ class ForwardingUdpControlListener(UdpControlListener):
                     )
 
                 event.set_message_response(
-                    response=response
+                    response=response,
+                    compression=self.compression
                 )
             except Exception as e2:
                 ForwardingUdpControlListener.log_error(

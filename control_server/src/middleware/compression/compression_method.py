@@ -19,5 +19,5 @@ class CompressionMethod(Enum):
         """
         import brotli
         return \
-            lambda data: brotli.compress(data, 11), \
+            lambda data: brotli.compress(data, quality=11), \
             lambda data: brotli.decompress(data)

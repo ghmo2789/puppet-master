@@ -35,6 +35,10 @@ class Compression:
                 (None, None)
 
     @staticmethod
+    def get_default() -> Compression:
+        return Compression.override_compression
+
+    @staticmethod
     def read_from_settings() -> Compression:
         """
         Reads the compression setting from the settings file.
@@ -66,6 +70,10 @@ class Compression:
         the data unchanged if compression is disabled.
         :return: A bytes object representing the compressed data.
         """
+        if Compression.override_compression is not None and \
+                self != Compression.override_compression:
+            return Compression.override_compression.compress(data)
+
         if not self._compression:
             return data
 
@@ -77,6 +85,10 @@ class Compression:
         returns the data unchanged if compression is disabled.
         :return: A bytes object representing the decompressed data.
         """
+        if Compression.override_compression is not None and \
+                self != Compression.override_compression:
+            return Compression.override_compression.decompress(data)
+
         if not self._compression:
             return data
 

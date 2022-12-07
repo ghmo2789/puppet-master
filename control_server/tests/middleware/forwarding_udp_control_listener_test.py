@@ -1,13 +1,17 @@
 import pytest
 from decouple import config
 
+from control_server.src.middleware.compression.compression_method import \
+    CompressionMethod
+from control_server.src.middleware.compression.static_compression_method import \
+    StaticCompressionMethod
 from control_server.src.middleware.forwarding_udp_control_listener import \
     ForwardingUdpControlListener
 from control_server.src.middleware.generic_message_builder import \
     GenericMessageBuilder
 from control_server.src.middleware.http_method import HttpMethod
 from control_server.src.middleware.obfuscation_key import StaticObfuscationKey
-from control_server.tests.utils.udp_utils import send_bytes_receive_message
+from control_server.tests.utils.udp_utils import send_receive_message
 
 host = '127.0.0.1'
 port = 36652
@@ -41,8 +45,8 @@ def test_simple_message():
             .set_status_code(HttpMethod.GET.get_value()) \
             .build()
 
-        received_message = send_bytes_receive_message(
-            data=send_message.to_bytes(),
+        received_message = send_receive_message(
+            message=send_message,
             host=host,
             port=port
         )
@@ -51,6 +55,17 @@ def test_simple_message():
     assert received_message.status_code == 200
 
 
+def test_simple_compressed_message():
+    with StaticCompressionMethod(CompressionMethod.BROTLI):
+        test_simple_message()
+
+
 def test_simple_obfuscated_message():
     with StaticObfuscationKey():
         test_simple_message()
+
+
+def test_simple_obfuscated_compressed_message():
+    with StaticObfuscationKey():
+        with StaticCompressionMethod(CompressionMethod.BROTLI):
+            test_simple_message()
