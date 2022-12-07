@@ -4,7 +4,7 @@ from control_server.src import router
 
 """
 This file contains fixtures that are used by multiple test files, and are set up
-by pytest. 
+by pytest.
 """
 
 

@@ -172,7 +172,7 @@ class ForwardingUdpControlListener(UdpControlListener):
                 event.set_message_response(
                     response=response
                 )
-            except Exception as ex:
+            except Exception:
                 print("A response could not be created for the error.",
                       file=sys.stderr)
                 print(e, file=sys.stderr)

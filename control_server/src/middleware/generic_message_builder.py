@@ -46,10 +46,10 @@ class GenericMessageBuilder:
 
     def build(self):
         header = MessageHeader(
-            message_length=
-            MessageHeader.size() + self.url_length +
-            self.body_length +
-            self.headers_length,
+            message_length=MessageHeader.size() +
+                self.url_length +
+                self.body_length +
+                self.headers_length,
             url_length=self.url_length,
             body_length=self.body_length,
             headers_length=self.headers_length,
