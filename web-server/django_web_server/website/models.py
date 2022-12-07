@@ -36,5 +36,5 @@ class SentTask(models.Model):
 class Notification(AbstractNotification):
     text = models.CharField(max_length=100, default="")
 
-    def __str__(self):
-        return text
+    #def __str__(self):
+    #    return self.text

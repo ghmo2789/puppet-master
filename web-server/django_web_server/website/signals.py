@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save
 from notifications.signals import notify
-from .models import SentTask
+from .models import SentTask, Client
 
 def my_handler(sender, instance, created, **kwargs):
     notify.send(instance, verb='senttask saved')

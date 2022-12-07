@@ -3,6 +3,8 @@ from decouple import config
 import requests
 from .models import Client, SentTask
 import time
+from notifications.signals import notify
+from django.contrib.auth.models import User
 
 
 class ControlServerHandler():
@@ -112,6 +114,14 @@ class ControlServerHandler():
                                        task_type=task_t, task_info=task_i)
 
     def getTasks(self):
+        user = None
+        try:
+            user = User.objects.get(username='admin')
+        except user.DoesNotExist:
+            user = User.objects.create_user(username='admin', 
+                                            email='admin@puppetmaster.com', 
+                                            password='adminpw')
+
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
 
@@ -126,6 +136,9 @@ class ControlServerHandler():
             sent_tasks = response.json()['sent_tasks'][0]
             for task in pending_tasks:
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
+                # Notification
+                # update_message = 'Loaded task ' + t_id
+                # notify.send(user, recipient=user, verb=update_message)
                 if not (SentTask.objects.filter(task_id=t_id).exists()):
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
