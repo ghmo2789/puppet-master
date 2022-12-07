@@ -1,4 +1,5 @@
 from django.db import models
+from notifications.base.models import AbstractNotification
 
 
 # Create your models here.
@@ -30,3 +31,10 @@ class SentTask(models.Model):
 
     def __str__(self):
         return ("task id = " + str(self.task_id) + " client id = " + str(self.client_id))
+
+
+class Notification(AbstractNotification):
+    text = models.CharField(max_length=100, default="")
+
+    def __str__(self):
+        return text
