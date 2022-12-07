@@ -14,6 +14,7 @@ class MessageHeader(ByteConvertible):
     size. Useful as it has a fixed size, which makes it easy to read the
     rest of the message without knowing its length prior to receiving.
     """
+    _header_size: int | None = None
 
     def __init__(
             self,
@@ -66,5 +67,9 @@ class MessageHeader(ByteConvertible):
 
     @staticmethod
     def size():
-        sample_header = MessageHeader()
-        return struct.calcsize(sample_header.binary_format)
+        if MessageHeader._header_size is None:
+            sample_header = MessageHeader()
+            MessageHeader._header_size = \
+                struct.calcsize(sample_header.binary_format)
+
+        return MessageHeader._header_size

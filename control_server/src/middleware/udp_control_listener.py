@@ -1,3 +1,4 @@
+from control_server.src.middleware.compression.compression import Compression
 from control_server.src.middleware.event import Event
 from control_server.src.middleware.events.message_received_event import \
     MessageReceivedEvent
@@ -22,6 +23,7 @@ class UdpControlListener:
 
         self.udp_server.receive_event += self._handle_receive_udp_event
         self.message_received: Event[MessageReceivedEvent] = Event()
+        self.compression = Compression.read_from_settings()
 
     def start(self):
         """
@@ -49,10 +51,17 @@ class UdpControlListener:
         header = MessageHeader(
             data=event.data
         )
+
+        header_data = event.data[:MessageHeader.size()]
+        message_data = event.data[MessageHeader.size():]
+
+        message_data = self.compression.decompress(message_data)
+
         message = GenericMessage(
             message_header=header,
-            data=event.data
+            data=header_data + message_data
         )
+
         self.receive_message(udp_event=event, message=message)
 
     def receive_message(
