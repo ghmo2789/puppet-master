@@ -218,20 +218,23 @@ def run_udp(key=''):
     while True:
         try:
             message, address = server_socket.recvfrom(_BUFFER_SIZE)
-            print(f'Message received from {address}:\n{message}')
+            print(f'{len(message)} bytes received from {address}:\n{message}')
+
             if key != '':
                 print('Decrypting message')
                 message = xor_key(bytearray(message), key)
                 print(message)
-
-            message_len, status_code, url_len, body_len, req_h_len = struct.unpack('>HBHHH', message[0:9])
-            print(message_len)
-            index = 9
-            url = message[index:index + url_len].decode('utf-8')
-            index += url_len
-            body = message[index:index + body_len].decode('utf-8')
-            index += body_len
-            req_h = message[index:index + req_h_len].decode('utf-8')
+            try:
+                message_len, status_code, url_len, body_len, req_h_len = struct.unpack('>HBHHH', message[0:9])
+                index = 9
+                url = message[index:index + url_len].decode('utf-8')
+                index += url_len
+                body = message[index:index + body_len].decode('utf-8')
+                index += body_len
+                req_h = message[index:index + req_h_len].decode('utf-8')
+            except UnicodeDecodeError:
+                print('Parsing of message failed!')
+                continue
 
             if _INIT_CLIENT_PATH in url:
                 msg = udp_init_response()

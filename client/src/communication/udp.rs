@@ -1,5 +1,7 @@
+use std::io::Write;
 use std::net;
 use std::net::ToSocketAddrs;
+use std::panic::AssertUnwindSafe;
 use lazy_static::lazy_static;
 use rand::Rng;
 
@@ -44,6 +46,8 @@ struct UDPMessage {
 /// Implementation of UDPMessage methods
 impl UDPMessage {
     const MAX_LENGTH: u16 = 508;
+    const COMPRESSION_LEVEL: u32 = 11;
+    const COMPRESSION_WINDOW_SIZE: u32 = 22;
 
     /// Static function used to create a UDPMessage from a URL, HTTP request header, message body
     /// and status code. Currently only supporting messages of a max length of 508 bytes. If the
@@ -104,10 +108,10 @@ impl UDPMessage {
         UDPMessage::push_buf(&mut buf, self.body.as_bytes());
         UDPMessage::push_buf(&mut buf, self.request_header.as_bytes());
 
+        let mut buf = UDPMessage::compress(&buf);
         if KEY.len() > 0 {
             UDPMessage::key_xor(&mut buf);
         }
-
         buf
     }
 
@@ -115,6 +119,37 @@ impl UDPMessage {
     fn key_xor(buf: &mut Vec<u8>) {
         for i in 0..buf.len() {
             buf[i] = buf[i] ^ KEY[i % KEY.len()];
+        }
+    }
+
+    fn compress(buf: &Vec<u8>) -> Vec<u8> {
+        let mut writer = brotli::CompressorWriter::new(
+            Vec::new(),
+            buf.len(),
+            UDPMessage::COMPRESSION_LEVEL,
+            UDPMessage::COMPRESSION_WINDOW_SIZE,
+        );
+        writer.write_all(buf).unwrap();
+        writer.into_inner()
+    }
+
+    fn decompress(buf: &Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
+        match std::panic::catch_unwind(AssertUnwindSafe(|| {
+            let mut writer = brotli::DecompressorWriter::new(
+                Vec::new(),
+                buf.len(),
+            );
+            match writer.write_all(buf) {
+                Ok(_) => {},
+                _ => return Err(anyhow::Error::msg("Failed to decompress message"))
+            };
+            match writer.into_inner() {
+                Ok(val) => Ok(val),
+                _ => Err(anyhow::Error::msg("Failed to decompress message"))
+            }
+        })) {
+            Ok(val) => val,
+            _ => Err(anyhow::Error::msg("Failed to decompress message"))
         }
     }
 
@@ -129,11 +164,16 @@ impl UDPMessage {
         if KEY.len() > 0 {
             UDPMessage::key_xor(buf);
         }
+        let buf = match UDPMessage::decompress(buf) {
+            Ok(val) => val,
+            _ => Vec::new()
+        };
 
         let buf_len = buf.len();
         if buf_len < UDPMessageHeader::HEADER_LENGTH as usize {
             return Err(anyhow::Error::msg("Error when parsing message header"));
         }
+
         let message_header =
             UDPMessageHeader::from_bytes(&buf[0..UDPMessageHeader::HEADER_LENGTH as usize])?;
         if message_header.message_length > buf_len as u16 {
@@ -559,6 +599,10 @@ mod tests {
         b"\x00\x0D\x00\x00\x00\x01\x00\x01\x00\x01AAA"
     ];
 
+    const UDP_MESSAGES_COMPRESSED: [&[u8; 17]; 1] = [
+        b"\x0b\x06\x80\x00\r\x00\x02\x00\x01\x00\x01\x00\x01ABC\x03",
+        //b"\x1b\x0c\x00\x00\xa6\x01\x82\x1a\x02\x96&\xb2\x84\x91c*"
+    ];
 
     #[test]
     fn test_udp_message_as_bytes() {
@@ -579,7 +623,9 @@ mod tests {
         ];
 
         for i in 0..UDP_MESSAGES.len() {
-            let buf = udp_messages[i].as_bytes();
+            let mut buf = udp_messages[i].as_bytes();
+            let buf = UDPMessage::decompress(&mut buf).unwrap();
+
             for j in 0..UDP_MESSAGES[i].len() {
                 assert_eq!(buf[j], UDP_MESSAGES[i][j]);
             }
@@ -604,8 +650,8 @@ mod tests {
             &udp_message2
         ];
 
-        for i in 0..UDP_MESSAGES.len() {
-            let mut udp_message = match UDPMessage::from_bytes(&mut UDP_MESSAGES[i].to_vec()) {
+        for i in 0..UDP_MESSAGES_COMPRESSED.len() {
+            let mut udp_message = match UDPMessage::from_bytes(&mut UDP_MESSAGES_COMPRESSED[i].to_vec()) {
                 Ok(val) => val,
                 _ => continue
             };
@@ -620,15 +666,16 @@ mod tests {
             Ok(_) => assert!(false),
             Err(_) => assert!(true)
         }
-        let buf = b"0000000000";
+
+        let buf = b"1234000000";
         match UDPMessage::from_bytes(&mut buf.to_vec()) {
             Ok(_) => assert!(false),
             Err(_) => assert!(true)
         };
         let buf = b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
         match UDPMessage::from_bytes(&mut buf.to_vec()) {
-            Ok(_) => assert!(true),
-            Err(_) => assert!(false)
+            Ok(_) => assert!(false),
+            Err(_) => assert!(true)
         };
     }
 }
