@@ -26,3 +26,13 @@
   background-color: black;
   border-color: black;
 }
+
+#notifications-popup {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  height: 200px;
+  width: 200px;
+  border-radius: 2px;
+  border-color: red;
+}

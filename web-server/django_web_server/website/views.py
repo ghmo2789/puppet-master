@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from .forms import clientForm
 from .models import Client, SentTask, Notification
 from .filters import ClientFilter, TaskFilter
@@ -75,3 +75,14 @@ def tasks(request):
     context = {'tasks': TaskFilter(request.GET, queryset=SentTask.objects.all().order_by('-id')),
                'notifications': Notification.objects.all() }
     return render(request, 'website/tasks.html', context)
+
+
+def updated_tasks(request):
+    controlServer = ControlServerHandler()
+    updatedTaskStatus = controlServer.getUpdatedTaskStatus()
+    updatedTaskList = {
+        'tasks': updatedTaskStatus
+    }
+
+    return JsonResponse(updatedTaskList)
+

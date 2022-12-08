@@ -114,14 +114,6 @@ class ControlServerHandler():
                                        task_type=task_t, task_info=task_i)
 
     def getTasks(self):
-        user = None
-        try:
-            user = User.objects.get(username='admin')
-        except user.DoesNotExist:
-            user = User.objects.create_user(username='admin', 
-                                            email='admin@puppetmaster.com', 
-                                            password='adminpw')
-
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
 
@@ -155,6 +147,38 @@ class ControlServerHandler():
                     self.__saveTask(t_id, c_id, task_t, task_i, t_status)
                 else:
                     SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
+    
+    def getUpdatedTaskStatus(self):
+        requestUrl = "https://" + self.url + self.prefix + "/admin/task"
+        requestHeaders = {'Authorization': self.authorization}
+
+        data = {
+            "id": "",
+        }
+        response = requests.get(url=requestUrl, headers=requestHeaders, params=data)
+
+        updated_tasks = []
+
+        status_code = response.status_code
+        if status_code == 200:
+            sent_tasks = response.json()['sent_tasks'][0]
+            for task in sent_tasks:
+                t_id = task['_id']['task_id'] + task['_id']['client_id']
+                if (SentTask.objects.filter(task_id=t_id).exists()):
+                    t_sent_status = task['status'].replace("_", " ")
+                    t_current_status = SentTask.objects.get(task_id=t_id).status
+                    print(f'sent status: {t_sent_status}, current status: {t_current_status}')
+                    if t_sent_status != t_current_status and t_sent_status == 'done':
+                        SentTask.objects.filter(task_id=t_id).update(status=t_sent_status)
+                        new_updated_task = {
+                            'task_id': t_id,
+                            'new_status': t_sent_status
+                        }
+                        updated_tasks.append(new_updated_task)
+
+        print(f'list of updated tasks: {updated_tasks}')
+
+        return updated_tasks
 
     def sendTasks(self, request):
         client_ids = request.POST.getlist('select')
