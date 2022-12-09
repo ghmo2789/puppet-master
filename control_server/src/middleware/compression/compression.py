@@ -77,6 +77,9 @@ class Compression:
         if not self._compression:
             return data
 
+        if len(data) < 1:
+            return data
+
         return self._compressor(data)
 
     def decompress(self, data: bytes):
@@ -90,6 +93,9 @@ class Compression:
             return Compression.override_compression.decompress(data)
 
         if not self._compression:
+            return data
+
+        if len(data) < 1:
             return data
 
         return self._decompressor(data)

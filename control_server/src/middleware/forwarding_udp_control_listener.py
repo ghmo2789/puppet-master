@@ -97,22 +97,6 @@ class ForwardingUdpControlListener(UdpControlListener):
             .set_body(response.content.decode('utf-8')) \
             .build()
 
-    @staticmethod
-    def create_error_response(
-            error_code: int
-    ) -> GenericMessage:
-        """
-        Creates a GenericMessage with the given error code
-        :param error_code: The error code to create a response for
-        :return: The response, as a GenericMessage
-        """
-        return GenericMessageBuilder() \
-            .set_status_code(error_code) \
-            .set_url('') \
-            .set_headers('') \
-            .set_body('') \
-            .build()
-
     def _handle_message_received(self, event: MessageReceivedEvent):
         """
         Handles a received message by forwarding it and potentially replying.
@@ -149,7 +133,7 @@ class ForwardingUdpControlListener(UdpControlListener):
             result_status = 500
 
             try:
-                response = ForwardingUdpControlListener \
+                response = UdpControlListener \
                     .create_error_response(
                         error_code=500
                     )

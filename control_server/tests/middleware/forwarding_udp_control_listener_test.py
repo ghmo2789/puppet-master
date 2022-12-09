@@ -55,6 +55,34 @@ def test_simple_message():
     assert received_message.status_code == 200
 
 
+def test_simple_message_wrong_checksum():
+    """
+    Tests that a valid message is received correctly
+    :return:
+    """
+    if config('CI', default=False, cast=bool):
+        pytest.skip('Skipping UDP tests on CI')
+
+    with get_control_listener():
+        send_message = GenericMessageBuilder() \
+            .set_url('/') \
+            .set_body('') \
+            .set_headers('') \
+            .set_status_code(HttpMethod.GET.get_value()) \
+            .set_checksum(110) \
+            .build()
+
+        received_message = send_receive_message(
+            message=send_message,
+            host=host,
+            port=port,
+            recalculate_checksum=False
+        )
+
+    assert received_message is not None
+    assert received_message.status_code == 400
+
+
 def test_simple_compressed_message():
     with StaticCompressionMethod(CompressionMethod.BROTLI):
         test_simple_message()

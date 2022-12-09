@@ -34,6 +34,10 @@ class MessageHeader(ByteConvertible):
                                           data_format='H'
                                       ),
                                       ByteProperty(
+                                          name='checksum',
+                                          data_format='H'
+                                      ),
+                                      ByteProperty(
                                           name='url_length',
                                           data_format='H'
                                       ),
@@ -51,6 +55,7 @@ class MessageHeader(ByteConvertible):
         if copy_from_header is None:
             self.message_length: int = -1
             self.status_code: int = -1
+            self.checksum: int = -1
             self.url_length: int = -1
             self.body_length: int = -1
             self.headers_length: int = -1
@@ -64,6 +69,10 @@ class MessageHeader(ByteConvertible):
 
         for (key, value) in kwargs.items():
             setattr(self, key, value)
+
+    def with_checksum(self, checksum: int) -> MessageHeader:
+        self.checksum = checksum
+        return self
 
     @staticmethod
     def size():

@@ -40,13 +40,17 @@ def send_bytes(
     return response
 
 
-def send_receive_message(
+def \
+        send_receive_message(
         message: GenericMessage,
         host: str,
-        port: int
+        port: int,
+        recalculate_checksum: bool = True
 ) -> GenericMessage:
     """
     Sends bytes to a host and port and returns the response
+    :param recalculate_checksum: Whether to recalculate the checksum of the
+    message before sending it
     :param message: The message to send
     :param host: The host to send to
     :param port: The port to send to
@@ -56,7 +60,8 @@ def send_receive_message(
 
     compression = Compression.get_default()
     data = message.to_bytes(
-        compression=compression
+        compression=compression,
+        recalculate_checksum=recalculate_checksum
     )
 
     obfuscation = ObfuscationKey.get_key()

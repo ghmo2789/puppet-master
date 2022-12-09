@@ -7,20 +7,22 @@ from control_server.tests.utils.header_utils import HeaderUtils
 
 datasets: List[Tuple[bytes, Dict[str, Any]]] = [
     (
-        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
         {
             'message_length': 0,
             'status_code': 0,
+            'checksum': 0,
             'url_length': 0,
             'body_length': 0,
             'headers_length': 0
         }
     ),
     (
-        b'\x00\x01\x00\x02\x00\x03\x00\x04\x00\x05',
+        b'\x00\x01\x00\x02\x00\xFF\x00\x03\x00\x04\x00\x05',
         {
             'message_length': 1,
             'status_code': 2,
+            'checksum': 255,
             'url_length': 3,
             'body_length': 4,
             'headers_length': 5
