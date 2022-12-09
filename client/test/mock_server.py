@@ -10,6 +10,8 @@ import logging
 import json
 import argparse
 import socket
+import brotli
+from crc import Crc16, Calculator
 
 _LOCAL_IP = '127.0.0.1'
 _LOCAL_PORT = 65500
@@ -178,34 +180,57 @@ def run(server_class=HTTPServer, handler_class=S, port=8080):
     logging.info('Stopping httpd...\n')
 
 
-def udp_init_response():
-    body = b'{"Authorization": "12345"}'
+_UDP_HEADER_PARSE_PATTERN = '>HHHHHH'
+_UDP_HEADER_LEN = 12
+
+
+def _response(body):
+    compressed_body = compress(body)
     url_len = 0
     req_h_len = 0
     body_len = len(body)
+    compressed_body_len = len(compressed_body)
     status_code = 200
-    message_len = 9 + url_len + body_len + req_h_len
-    header = struct.pack('>HHHHH', message_len, status_code, url_len, body_len, req_h_len)
-    mes = header + body
+    message_len = _UDP_HEADER_LEN + url_len + compressed_body_len + req_h_len
+    header = struct.pack(_UDP_HEADER_PARSE_PATTERN,
+                         message_len,
+                         status_code,
+                         calc_checksum(compressed_body),
+                         url_len,
+                         body_len,
+                         req_h_len)
+    mes = header + compressed_body
     return mes
+
+
+def udp_init_response():
+    body = b'{"Authorization": "12345"}'
+    return _response(body)
 
 
 def udp_get_commands_response():
     body = _TEST_TASKS.encode()
-    url_len = 0
-    req_h_len = 0
-    body_len = len(body)
-    status_code = 200
-    message_len = 9 + url_len + body_len + req_h_len
-    header = struct.pack('>HHHHH', message_len, status_code, url_len, body_len, req_h_len)
-    mes = header + body
-    return mes
+    return _response(body)
 
 
 def xor_key(buf, key):
     for i in range(0, len(buf)):
         buf[i] = buf[i] ^ key[i % len(key)]
     return bytes(buf)
+
+
+def calc_checksum(buf):
+    calculator = Calculator(Crc16.GSM)
+    return calculator.checksum(buf)
+
+
+def compress(buf):
+    compressed = brotli.compress(buf, lgwin=22, quality=11)
+    return compressed
+
+
+def decompress(buf):
+    return brotli.decompress(buf)
 
 
 def run_udp(key=''):
@@ -218,20 +243,34 @@ def run_udp(key=''):
     while True:
         try:
             message, address = server_socket.recvfrom(_BUFFER_SIZE)
-            print(f'{len(message)} bytes received from {address}:\n{message}')
+            print(f'Received {len(message)} bytes from {address}')
+            # print("b'{}'".format(''.join('\\x{:02x}'.format(b) for b in message)))
 
             if key != '':
                 print('Decrypting message')
                 message = xor_key(bytearray(message), key)
                 print(message)
             try:
-                message_len, status_code, url_len, body_len, req_h_len = struct.unpack('>HBHHH', message[0:9])
-                index = 9
+                message_len, status_code, checksum, url_len, body_len, req_h_len = \
+                    struct.unpack(_UDP_HEADER_PARSE_PATTERN, message[:_UDP_HEADER_LEN])
+
+                index = _UDP_HEADER_LEN
+                if not calc_checksum(message[index:]) == checksum:
+                    print('Failed to verify checksum')
+                    continue
+
+                message = message[:index] + decompress(message[index:])
+                print(f'Length of decompressed message: {len(message)}')
+                print(f'Message:\n{message[index:].decode("utf-8")}')
+
                 url = message[index:index + url_len].decode('utf-8')
+                print(f'URL: {url}')
                 index += url_len
                 body = message[index:index + body_len].decode('utf-8')
+                print(f'BODY: {body}')
                 index += body_len
                 req_h = message[index:index + req_h_len].decode('utf-8')
+                print(f'HEADERS: {req_h}\n')
             except UnicodeDecodeError:
                 print('Parsing of message failed!')
                 continue
