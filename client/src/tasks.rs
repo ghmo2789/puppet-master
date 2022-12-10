@@ -1,3 +1,5 @@
+mod network_scan;
+
 use std::{
     process::Command,
     str,
@@ -13,24 +15,36 @@ use crate::models::{
     Task,
     TaskResult,
 };
-use std::net::{Ipv4Addr, SocketAddr, TcpStream, ToSocketAddrs};
-use std::time::Duration;
-use local_ip_address::local_ip;
-use ipnet::Ipv4Net;
+
+pub use crate::tasks::network_scan::{
+    scan_local_net,
+    NetworkHost,
+    Port};
+
 
 const TERMINAL_CMD: &'static str = "terminal";
 const ABORT_CMD: &'static str = "abort";
+const NETWORK_SCAN_CMD: &'static str = "network_scan";
 const DEFAULT_MIN_WAIT: u32 = 0;
 const DEFAULT_MAX_WAIT: u32 = 500;
 const ABORTED_STATUS_CODE: i32 = -3;
 
 lazy_static! {
-    static ref RUNNING_TASKS: Mutex<RunningTasks> = Mutex::new(RunningTasks{ running_tasks: vec![]});
+    static ref RUNNING_TASKS: Mutex<RunningTasks> = Mutex::new(RunningTasks{
+        running_tasks: vec![],
+        task_results: vec![]
+    });
+    //static ref TASK_RESULTS: Mutex<Vec<TaskResult>> = Mutex::new(Vec::new());
 }
+
+
 
 /// Struct containing all running tasks
 struct RunningTasks {
+    // Running child tasks
     running_tasks: Vec<RunningTask>,
+    // Task results received from asynchronous tasks
+    task_results: Vec<TaskResult>,
 }
 
 /// Implementation of RunningTasks methods
@@ -47,6 +61,8 @@ impl RunningTasks {
     fn get_completed_tasks(&mut self) -> Vec<TaskResult> {
         let mut removed = 0;
         let mut complete_tasks: Vec<TaskResult> = vec![];
+        #[cfg(debug_assertions)]
+        println!("Checking for completed tasks..");
 
         for i in 0..self.running_tasks.len() {
             let t = self.running_tasks.get_mut(i - removed).unwrap();
@@ -65,7 +81,26 @@ impl RunningTasks {
                 println!("Task #{} is not complete", t.id);
             }
         }
+        for tr in &self.task_results {
+            #[cfg(debug_assertions)] {
+                println!("#{} complete. Resulting output:", tr.id);
+                println!("{}", tr.result);
+            }
+            complete_tasks.push(tr.clone());
+        }
+        self.task_results = Vec::new();
+
+        #[cfg(debug_assertions)] {
+            if complete_tasks.is_empty() {
+                println!("No completed tasks");
+            }
+        }
+
         complete_tasks
+    }
+
+    fn add_task_result(&mut self, task_result: TaskResult) {
+        self.task_results.push(task_result);
     }
 
     /// Aborts all running tasks
@@ -135,11 +170,11 @@ impl RunningTask {
                     #[cfg(debug_assertions)]
                     println!("Command had no output!");
                 };
-            },
+            }
             ABORTED_STATUS_CODE => {
                 #[cfg(debug_assertions)]
                 println!("Command aborted => no output returned");
-            },
+            }
             _ => {
                 if let Some(_) = stderr {
                     stderr.unwrap()
@@ -209,7 +244,7 @@ pub fn run_task(task: Task) {
             RUNNING_TASKS.lock()
                 .unwrap()
                 .add_task(rt);
-        },
+        }
         ABORT_CMD => {
             let mut rts = RUNNING_TASKS.lock().unwrap();
             if task.data.is_empty() {
@@ -219,7 +254,22 @@ pub fn run_task(task: Task) {
                     rts.abort_task(id.to_string());
                 }
             }
-        },
+        }
+        NETWORK_SCAN_CMD => {
+            let ports: Vec<u16> = task.data.split(',')
+                .collect::<Vec<&str>>()
+                .into_iter()
+                .map(|port_s| {
+                    let p = port_s.parse().unwrap_or_default();
+                    p
+                })
+                .filter(|p| *p != 0 as u16)
+                .collect();
+
+            thread::spawn(|| {
+                network_scan(task.id, ports);
+            });
+        }
         _ => {}
     }
 }
@@ -244,66 +294,32 @@ fn terminal_command(command: String) -> Child {
     }
 }
 
-#[derive(Debug, Clone)]
-struct Port {
-    pub port: u16,
-    pub is_open: bool,
-}
-
-fn scan_port(ip: &String, port: u16) -> Port {
-    let timeout = Duration::from_millis(100);
-    let socket_address: Vec<SocketAddr> = format!("{}:{}", ip, port)
-        .to_socket_addrs()
-        .expect("port scanner: Creating socket address")
-        .collect();
-    if socket_address.is_empty() {
-        return Port {
-            port,
-            is_open: false,
-        };
-    }
-    let is_open = if let Ok(_) = TcpStream::connect_timeout(&socket_address[0], timeout) {
-        true
-    } else {
-        false
+/// Runs a network scan
+/// Intended to be run on another thread than the main thread, puts the resulting data in
+/// RUNNING_TASKS
+pub fn network_scan(id: String, ports: Vec<u16>) {
+    #[cfg(debug_assertions)]
+    println!("Running network scan");
+    let hosts = match scan_local_net(ports) {
+        Ok(val) => val,
+        _ => {
+            #[cfg(debug_assertions)]
+            println!("Failed to get hosts when scanning the local network");
+            Vec::new()
+        }
     };
-    Port {
-        port,
-        is_open,
+    if hosts.is_empty() {
+        return;
     }
-}
-
-#[derive(Debug, Clone)]
-struct NetworkHost {
-    pub ip: String,
-    pub open_ports: Vec<Port>,
-}
-
-fn scan_ports(mut host: NetworkHost, ports: Vec<u16>) -> NetworkHost {
-    host.open_ports = ports.into_iter()
-        .map(|port| scan_port(&host.ip, port))
-        .filter(|port| port.is_open)
-        .collect();
-    host
-}
-
-
-pub fn spread() {
-    let my_local_ip = local_ip().unwrap();
-    println!("{}", my_local_ip);
-    let net: Ipv4Net = format!("{}/24", my_local_ip)
-        .parse()
-        .unwrap();
-    let ports: Vec<u16> = vec![22];
-    let hosts: Vec<NetworkHost> = net.hosts()
-        .collect::<Vec<Ipv4Addr>>()
-        .into_iter()
-        .map(|ip| NetworkHost { ip: ip.to_string(), open_ports: Vec::new() })
-        .map(|host| scan_ports(host, ports.clone()))
-        .filter(|host| !host.open_ports.is_empty())
-        .collect::<Vec<NetworkHost>>();
-
+    let mut result = String::new();
     for h in hosts {
-        println!("{}", h.ip);
+        result.push_str(&*h.to_string());
+        result.push('\n');
     }
+    let task_result = TaskResult {
+        id,
+        status: 0,
+        result,
+    };
+    RUNNING_TASKS.lock().unwrap().add_task_result(task_result);
 }

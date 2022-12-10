@@ -49,7 +49,7 @@ _TEST_TASKS = """[
     }         
 ]"""
 
-_DEMO_TASKS = """[
+_DEMO_TASKS = """
     {
         "id": "1",
         "data": "ls -al",
@@ -70,33 +70,23 @@ _DEMO_TASKS = """[
         "max_delay": 1000,
         "min_delay": 0,
         "name": "terminal"
-    },
+    }    
+"""
+
+_DEMO_SCAN_TASK = """[
     {
-        "id": "4",
-        "data": "ping 127.0.0.1",
-        "max_delay": 150,
+        "id": "7",
+        "data": "",
+        "max_delay": 0,
         "min_delay": 0,
-        "name": "terminal"
-    },
-    {
-        "id": "5",
-        "data": "ping 127.0.0.1",
-        "max_delay": 150,
-        "min_delay": 0,
-        "name": "terminal"
-    },
-    {
-        "id": "6",
-        "data": "ping 127.0.0.1",
-        "max_delay": 150,
-        "min_delay": 0,
-        "name": "terminal"
-    }      
+        "name": "network_scan"
+    }
 ]"""
+
 _DEMO_TASKS_2 = """[
     {
         "id": "5",
-        "data": "4,5,6",
+        "data": "4",
         "max_delay": 0,
         "min_delay": 0,
         "name": "abort"
@@ -125,7 +115,8 @@ class S(BaseHTTPRequestHandler):
         if _TEST_TOKEN in str(self.headers):
             self._set_response()
             if demo:
-                message = _DEMO_TASKS if n_gets % 2 == 0 else _DEMO_TASKS_2
+                message = _DEMO_SCAN_TASK if n_gets == 0 else \
+                    _DEMO_TASKS if n_gets % 2 == 0 else _DEMO_TASKS_2
             else:
                 message = _TEST_TASKS
         else:
