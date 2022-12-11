@@ -28,7 +28,7 @@
         </div>
         <div class="website-info-box text-bg-dark p-3" id="website-map">
           <h2>Map</h2>
-          <div id="mapid" style='height: 200px'></div>
+          <div id="mapid" style='height: 300px'></div>
         </div>
       </div>
       
@@ -36,6 +36,7 @@
       <div class="w3-container">
         <form method="GET">
           {{ filter.form.os_name }}
+          {{ filter.form.hostname }}
           <button class="w3-button w3-black" type="submit">Apply Filter</button>
         </form>
       </div>
@@ -108,10 +109,12 @@
         // Event listeners
         for(let i = 0; i < data.length; i++) {
           document.getElementById(data[i]).addEventListener("click", toggleSubmit);
+          document.getElementById(data[i]).addEventListener("click", toggleMarker);
         }
         document.getElementById("task_selection").addEventListener("change", enableButton); 
         document.getElementById("command_text").addEventListener("input", enableButton);
         document.getElementById("send_task").addEventListener("click", sendAlert);
+        document.getElementById("master_checkbox").addEventListener("click", toggleMarker);
         
         toggleSubmit();
 
