@@ -1,4 +1,5 @@
 from typing import cast, List
+from datetime import datetime
 
 from flask import request, jsonify
 from control_server.src.controller import controller
@@ -163,6 +164,11 @@ def post_client_tasks():
     min_delay = incoming.get('min_delay')
     max_delay = incoming.get('max_delay')
 
+    # Current date and time
+    now = datetime.now()
+    date = now.strftime('%Y-%m-%d')
+    time = now.strftime('%H:%M')
+
     if clients_id is None or task_data is None:
         return 'Missing ID or task', 400
 
@@ -170,7 +176,9 @@ def post_client_tasks():
         name=task_name,
         data=task_data,
         min_delay=int(min_delay),
-        max_delay=int(max_delay)
+        max_delay=int(max_delay),
+        date=date,
+        time=time,
     )
 
     new_task.generate_id()

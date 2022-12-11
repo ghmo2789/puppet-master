@@ -15,13 +15,17 @@ class Task(DataClass, Serializable, Deserializable):
             name: str = None,
             data: str = None,
             min_delay: int = None,
-            max_delay: int = None):
+            max_delay: int = None,
+            date: str = None,
+            time: str = None):
         super().__init__()
         self.name: str = name
         self.data: str = data
         self.min_delay: int = min_delay
         self.max_delay: int = max_delay
         self.id: str | None = None
+        self.date: str = date
+        self.time: str = time
 
     def generate_id(self):
         self.id = str(uuid.uuid4())
