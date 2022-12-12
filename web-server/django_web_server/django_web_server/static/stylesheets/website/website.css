@@ -5,17 +5,18 @@
 }
 
 #website-statistics {
-  margin: 0 5% 0 10%;
+  margin: 0 0% 0 3%;
+  width: 30%;
 }
 
 #website-map {
-  margin: 0 10% 0 5%;
+  margin: 0 3% 0 4%;
+  width: 60%;
 }
 
 .website-info-box {
-  width: 35%;
   float: left;
-  height: 300px;
+  height: 400px;
   border: 1px #111111;
   border-radius: 2px;
   background-color: #212529;

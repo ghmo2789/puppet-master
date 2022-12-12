@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django_filters"
+    "django_filters",
+    "django.contrib.gis.geoip2"
 ]
 
 MIDDLEWARE = [
@@ -124,3 +125,5 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+GEOIP_PATH = os.path.join(BASE_DIR, 'website/geodata')

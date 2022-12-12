@@ -15,6 +15,17 @@
       <h1>Task History</h1>
     </div>
 
+    <!-- Task filter -->
+    <div class="w3-container">
+      <form method="GET">
+        {{ tasks.form.client_id__ip }}
+        {{ tasks.form.status }}
+        {{ tasks.form.task_type }}
+        <button class="w3-button w3-black" type="submit">Apply Filter</button>
+      </form>
+    </div>
+
+
     <!-- Tasks table -->
     <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0">
@@ -28,7 +39,7 @@
             </tr>
             <form method="post" >
             {% csrf_token %}
-            {% for i in tasks%}
+            {% for i in tasks.qs%}
             <tr>
                 <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}"></td> 
                 <td>{{i.client_id.ip}}</td>
@@ -53,7 +64,7 @@
 
       // Initialize data for javascript
       let data = [];
-      {% for i in tasks %}
+      {% for i in tasks.qs %}
         data.push({{i.id}});
       {% endfor %}
 
