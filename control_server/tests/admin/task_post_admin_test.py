@@ -37,9 +37,9 @@ def set_client(client_id: str, client_ip: str):
         ip=client_ip
     )
     new_client.set_id(client_id)
-    controller.db.set_user(
-        user_id=client_id,
-        user=new_client,
+    controller.db.set_client(
+        client_id=client_id,
+        client=new_client,
         overwrite=True
     )
 
@@ -123,7 +123,7 @@ def test_post_task(client):
     client_task = cast(
         ClientTask,
         controller.db.get_one(
-            collection=DatabaseCollection.USER_TASKS,
+            collection=DatabaseCollection.CLIENT_TASKS,
             identifier={
                 "_id.task_id": task_id
             },

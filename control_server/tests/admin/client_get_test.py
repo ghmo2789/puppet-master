@@ -53,15 +53,15 @@ def test_client(client):
     client_ip = str(uuid.uuid4())
 
     data = ClientData.load_from_dict(new_client, raise_error=True)
-    new_user = IdentifyingClientData(
+    new_client = IdentifyingClientData(
         client_data=data,
         ip=client_ip
     )
-    new_user.set_id(client_id)
+    new_client.set_id(client_id)
 
-    controller.db.set_user(
-        user_id=client_id,
-        user=new_user,
+    controller.db.set_client(
+        client_id=client_id,
+        client=new_client,
         overwrite=True
     )
 
