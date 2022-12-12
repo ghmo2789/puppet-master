@@ -26,7 +26,8 @@ class MockDatabase(Database):
             {
                 DatabaseCollection.USERS: OrderedDict(),
                 DatabaseCollection.USER_TASKS: OrderedDict(),
-                DatabaseCollection.USER_TASK_RESPONSES: OrderedDict()
+                DatabaseCollection.USER_TASK_RESPONSES: OrderedDict(),
+                DatabaseCollection.USER_DONE_TASKS: OrderedDict()
             }
 
     def set(

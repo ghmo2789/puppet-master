@@ -110,6 +110,7 @@ def task(done=False):
 
 def task_response():
     """
+    TODO: Function comment is not correct
     Endpoint handing the client task request
     :return: A list of tasks, if any, and a status code representing whether
     the request was successful or not, and why it may have been unsuccessful
