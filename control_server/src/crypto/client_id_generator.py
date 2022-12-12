@@ -23,7 +23,7 @@ class ClientIdGenerator:
             cast=Csv(
                 strip=' '
             ),
-            default='*'
+            default='^.*$'
         )
 
         self.key_regex = [re.compile(key) for key in self.keys]
