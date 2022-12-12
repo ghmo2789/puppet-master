@@ -47,7 +47,7 @@ def assert_no_responses():
     :return: Nothing.
     """
     existing = list(controller.db.get_all(
-        collection=DatabaseCollection.USER_TASK_RESPONSES,
+        collection=DatabaseCollection.CLIENT_TASK_RESPONSES,
         identifier={
             "client_id": client_id,
             "task_id": task_id
@@ -71,7 +71,7 @@ def get_responses() -> ClientTaskResponseCollection:
     return cast(
         ClientTaskResponseCollection,
         controller.db.get_one(
-            collection=DatabaseCollection.USER_TASK_RESPONSES,
+            collection=DatabaseCollection.CLIENT_TASK_RESPONSES,
             identifier={
                 "client_id": client_id,
                 "task_id": task_id
@@ -96,7 +96,7 @@ def test_task_response(client):
     task_response = get_task_response()
 
     controller.db.set(
-        collection=DatabaseCollection.USER_DONE_TASKS,
+        collection=DatabaseCollection.CLIENT_DONE_TASKS,
         identifier={
             "client_id": client_id,
             "task_id": task_id
@@ -139,7 +139,7 @@ def test_task_two_responses(client):
     number = 10
 
     controller.db.set(
-        collection=DatabaseCollection.USER_DONE_TASKS,
+        collection=DatabaseCollection.CLIENT_DONE_TASKS,
         identifier={
             "client_id": client_id,
             "task_id": task_id

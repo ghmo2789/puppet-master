@@ -27,7 +27,7 @@ def client():
     if client_id is None or len(client_id) == 0:
         return 'Missing client id', 400
 
-    client_info = controller.db.get_user(
+    client_info = controller.db.get_client(
         client_id,
     )
     if client_info is None:
@@ -49,7 +49,7 @@ def all_clients():
     all_clients_db = cast(
         List[IdentifyingClientData],
         list(controller.db.get_all(
-            collection=DatabaseCollection.USERS,
+            collection=DatabaseCollection.CLIENTS,
             identifier={},
             entry_instance_creator=lambda: cast(
                 Deserializable,
@@ -93,7 +93,7 @@ def get_client_tasks():
     # Wrong client id or bad formatting
     if client_id is not None and len(client_id) > 0:
         # Check if client exist in DB
-        client_info = controller.db.get_user(
+        client_info = controller.db.get_client(
             client_id
         )
 
@@ -110,7 +110,7 @@ def get_client_tasks():
     all_tasks_db = cast(
         List[ClientTask],
         list(controller.db.get_all(
-            collection=DatabaseCollection.USER_TASKS,
+            collection=DatabaseCollection.CLIENT_TASKS,
             identifier=key,
             entry_instance_creator=lambda: cast(
                 Deserializable,
@@ -123,7 +123,7 @@ def get_client_tasks():
     all_done_tasks = cast(
         List[ClientTask],
         list(controller.db.get_all(
-            collection=DatabaseCollection.USER_DONE_TASKS,
+            collection=DatabaseCollection.CLIENT_DONE_TASKS,
             identifier=key,
             entry_instance_creator=lambda: cast(
                 Deserializable,
@@ -180,7 +180,7 @@ def post_client_tasks():
 
     # Check if client exist
     for current_client in clients_id.split(','):
-        client_exist = controller.db.get_user(current_client.strip())
+        client_exist = controller.db.get_client(current_client.strip())
 
         if client_exist is None:
             return 'Client does not exist', 404
@@ -198,7 +198,7 @@ def post_client_tasks():
         new_client_task.set_status(TaskStatus.PENDING)
 
         controller.db.set(
-            collection=DatabaseCollection.USER_TASKS,
+            collection=DatabaseCollection.CLIENT_TASKS,
             entry_id=new_client_task.id,
             entry=new_client_task,
             overwrite=True

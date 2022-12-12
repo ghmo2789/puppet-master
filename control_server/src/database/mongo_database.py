@@ -31,9 +31,8 @@ class MongoDatabase(Database):
         )
 
         self._db = self._client[self._credentials.mongo_database]
-        self._user_collection_name = "clients"
 
-        self._db[DatabaseCollection.USER_TASKS].create_index(
+        self._db[DatabaseCollection.CLIENT_TASKS].create_index(
             [
                 ('client_id', pymongo.TEXT),
                 ('task_id', pymongo.TEXT),
@@ -122,28 +121,28 @@ class MongoDatabase(Database):
             instance = entry_instance_creator()
             yield instance.deserialize(data_dict=dict(document))
 
-    def set_user(
+    def set_client(
             self,
-            user_id: str,
-            user: IdentifyingClientData,
+            client_id: str,
+            client: IdentifyingClientData,
             overwrite: bool = False):
         self.set(
-            collection=DatabaseCollection.USERS,
-            entry_id=user_id,
-            entry=user,
+            collection=DatabaseCollection.CLIENTS,
+            entry_id=client_id,
+            entry=client,
             overwrite=overwrite
         )
 
-    def delete_user(self, user_id: str) -> bool:
+    def delete_client(self, client_id: str) -> bool:
         return self.delete(
-            collection=DatabaseCollection.USERS,
-            entry_id=user_id
+            collection=DatabaseCollection.CLIENTS,
+            entry_id=client_id
         )
 
-    def get_user(self, user_id: str) -> IdentifyingClientData | None:
+    def get_client(self, client_id: str) -> IdentifyingClientData | None:
         return self.get_one(
-            collection=DatabaseCollection.USERS,
-            entry_id=user_id,
+            collection=DatabaseCollection.CLIENTS,
+            entry_id=client_id,
             entry_instance=IdentifyingClientData()
         )
 

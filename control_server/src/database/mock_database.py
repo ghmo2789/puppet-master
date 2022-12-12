@@ -24,9 +24,9 @@ class MockDatabase(Database):
                 OrderedDict[str | HashableDict, Deserializable]
             ] = \
             {
-                DatabaseCollection.USERS: OrderedDict(),
-                DatabaseCollection.USER_TASKS: OrderedDict(),
-                DatabaseCollection.USER_TASK_RESPONSES: OrderedDict()
+                DatabaseCollection.CLIENTS: OrderedDict(),
+                DatabaseCollection.CLIENT_TASKS: OrderedDict(),
+                DatabaseCollection.CLIENT_TASK_RESPONSES: OrderedDict()
             }
 
     def set(
@@ -115,30 +115,30 @@ class MockDatabase(Database):
             ):
                 yield entry
 
-    def set_user(
+    def set_client(
             self,
-            user_id: str,
-            user: IdentifyingClientData,
+            client_id: str,
+            client: IdentifyingClientData,
             overwrite: bool = False):
         self.set(
-            DatabaseCollection.USERS,
-            entry_id=user_id,
-            entry=user,
+            DatabaseCollection.CLIENTS,
+            entry_id=client_id,
+            entry=client,
             overwrite=overwrite
         )
 
-    def delete_user(self, user_id: str) -> bool:
+    def delete_client(self, client_id: str) -> bool:
         return self.delete(
-            collection=DatabaseCollection.USERS,
-            entry_id=user_id
+            collection=DatabaseCollection.CLIENTS,
+            entry_id=client_id
         )
 
-    def get_user(self, user_id: str) -> IdentifyingClientData:
+    def get_client(self, client_id: str) -> IdentifyingClientData:
         return cast(
             IdentifyingClientData,
             self.get_one(
-                collection=DatabaseCollection.USERS,
-                entry_id=user_id,
+                collection=DatabaseCollection.CLIENTS,
+                entry_id=client_id,
                 entry_instance=IdentifyingClientData()
             )
         )

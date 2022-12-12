@@ -47,9 +47,9 @@ def init():
 
     client_id = str(client_id)
 
-    controller.db.set_user(
-        user_id=client_id,
-        user=identifying_client_data,
+    controller.db.set_client(
+        client_id=client_id,
+        client=identifying_client_data,
         overwrite=True)
 
     return jsonify({
@@ -72,8 +72,8 @@ def task(done=False):
     ):
         return "", 400
 
-    source_collection = DatabaseCollection.USER_TASKS if not done \
-        else DatabaseCollection.USER_DONE_TASKS
+    source_collection = DatabaseCollection.CLIENT_TASKS if not done \
+        else DatabaseCollection.CLIENT_DONE_TASKS
 
     tasks = cast(
         List[ClientTask],
@@ -92,14 +92,14 @@ def task(done=False):
         for retrieved_task in tasks:
             retrieved_task.set_status(TaskStatus.IN_PROGRESS)
             controller.db.set(
-                DatabaseCollection.USER_DONE_TASKS,
+                DatabaseCollection.CLIENT_DONE_TASKS,
                 entry_id=retrieved_task.id,
                 entry=retrieved_task,
                 overwrite=True
             )
 
             controller.db.delete(
-                DatabaseCollection.USER_TASKS,
+                DatabaseCollection.CLIENT_TASKS,
                 entry_id=retrieved_task.id
             )
 
@@ -138,7 +138,7 @@ def task_response():
     client_task = cast(
         ClientTask,
         controller.db.get_one(
-            DatabaseCollection.USER_DONE_TASKS,
+            DatabaseCollection.CLIENT_DONE_TASKS,
             identifier=task_key,
             entry_instance=ClientTask()
         )
@@ -156,7 +156,7 @@ def task_response():
     existing_response = cast(
         ClientTaskResponseCollection,
         controller.db.get_one(
-            DatabaseCollection.USER_TASK_RESPONSES,
+            DatabaseCollection.CLIENT_TASK_RESPONSES,
             identifier=identifying_response.id,
             entry_instance=cast(Deserializable, identifying_response)
         )
@@ -180,7 +180,7 @@ def task_response():
 
     # Update responses in database
     controller.db.set(
-        DatabaseCollection.USER_TASK_RESPONSES,
+        DatabaseCollection.CLIENT_TASK_RESPONSES,
         identifier=existing_response.id,
         entry=existing_response,
         overwrite=True
@@ -188,7 +188,7 @@ def task_response():
 
     client_task.set_status_code(client_response.status)
     controller.db.set(
-        DatabaseCollection.USER_DONE_TASKS,
+        DatabaseCollection.CLIENT_DONE_TASKS,
         identifier=task_key,
         entry=client_task,
         overwrite=True,
