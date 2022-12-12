@@ -1,6 +1,7 @@
 import pytest
 from decouple import config
 
+from control_server.src.middleware.compression.compression import Compression
 from control_server.src.middleware.compression.compression_method import \
     CompressionMethod
 from control_server.src.middleware.compression.static_compression_method import \
@@ -10,6 +11,8 @@ from control_server.src.middleware.forwarding_udp_control_listener import \
 from control_server.src.middleware.generic_message_builder import \
     GenericMessageBuilder
 from control_server.src.middleware.http_method import HttpMethod
+from control_server.src.middleware.messages.generic_message import \
+    GenericMessage
 from control_server.src.middleware.obfuscation_key import StaticObfuscationKey
 from control_server.tests.utils.udp_utils import send_receive_message
 
@@ -51,6 +54,7 @@ def test_simple_message():
             port=port
         )
 
+    _assert_checksum(received_message)
     assert received_message is not None
     assert received_message.status_code == 200
 
@@ -79,8 +83,15 @@ def test_simple_message_wrong_checksum():
             recalculate_checksum=False
         )
 
+    _assert_checksum(received_message)
     assert received_message is not None
     assert received_message.status_code == 400
+
+
+def _assert_checksum(message: GenericMessage):
+    assert message.calculate_checksum(
+        compression=Compression.read_from_settings()
+    ) == message.checksum
 
 
 def test_simple_compressed_message():
