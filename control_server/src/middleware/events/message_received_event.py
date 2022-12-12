@@ -23,5 +23,6 @@ class MessageReceivedEvent(UdpReceiveEvent):
             response: GenericMessage,
             compression: Compression = None):
         self.set_response(response.to_bytes(
-            compression=compression
+            compression=compression,
+            recalculate_checksum=True
         ))
