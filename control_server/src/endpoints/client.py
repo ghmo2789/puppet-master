@@ -110,10 +110,8 @@ def task(done=False):
 
 def task_response():
     """
-    TODO: Function comment is not correct
-    Endpoint handing the client task request
-    :return: A list of tasks, if any, and a status code representing whether
-    the request was successful or not, and why it may have been unsuccessful
+    Endpoint handing the client task response request, which stores the response
+    in the database
     """
     client_id = ClientIdentifier()
 
@@ -158,7 +156,7 @@ def task_response():
         ClientTaskResponseCollection,
         controller.db.get_one(
             DatabaseCollection.CLIENT_TASK_RESPONSES,
-            identifier=identifying_response.id,
+            entry_id=identifying_response.id,
             entry_instance=cast(Deserializable, identifying_response)
         )
     )
@@ -182,7 +180,7 @@ def task_response():
     # Update responses in database
     controller.db.set(
         DatabaseCollection.CLIENT_TASK_RESPONSES,
-        identifier=existing_response.id,
+        entry_id=existing_response.id,
         entry=existing_response,
         overwrite=True
     )
