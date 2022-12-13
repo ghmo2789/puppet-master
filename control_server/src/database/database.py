@@ -22,7 +22,8 @@ class Database(ABC):
     @staticmethod
     def _verify_identifier_entry_id(
             entry_id: str,
-            identifier: dict[str, Any]):
+            identifier: dict[str, Any]
+    ):
         if entry_id is not None and identifier is not None:
             raise ValueError("Cannot specify both entry_id and identifier")
 
@@ -37,14 +38,16 @@ class Database(ABC):
             entry_id: str = None,
             identifier: dict[str, Any] = None,
             overwrite: bool = False,
-            ignore_id: bool = False):
+            ignore_id: bool = False
+    ):
         """
         Stores an entry with a given ID in the database.
+        :param ignore_id: Whether to ignore the _id of the entry when storing.
         :param collection: The database collection to store to.
         :param entry_id: The ID of the entry to store.
         :param identifier: The identifier of the entry to store.
         :param entry: The entry to store
-        :param overwrite: Whether to overwrite the user if it already exists
+        :param overwrite: Whether to overwrite the client if it already exists
         :return: Nothing.
         """
         raise NotImplementedError
@@ -54,7 +57,8 @@ class Database(ABC):
             self,
             collection: DatabaseCollection,
             entry_id: str = None,
-            identifier: dict[str, Any] = None) -> bool:
+            identifier: dict[str, Any] = None
+    ) -> bool:
         """
         Deletes the entry with the given ID from the specified database
         collection.
@@ -71,7 +75,8 @@ class Database(ABC):
             collection: DatabaseCollection,
             entry_id: str = None,
             identifier: dict[str, Any] = None,
-            entry_instance: Deserializable = None) -> Deserializable | None:
+            entry_instance: Deserializable = None
+    ) -> Deserializable | None:
         """
         Retrieves an entry with a given ID from a specified database collection.
         :param collection: The collection of the database to get an entry from.
@@ -102,35 +107,36 @@ class Database(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def set_user(
+    def set_client(
             self,
-            user_id: str,
-            user: IdentifyingClientData,
-            overwrite: bool = False):
+            client_id: str,
+            client: IdentifyingClientData,
+            overwrite: bool = False
+    ):
         """
-        Stores the user with a given ID in the database.
-        :param user_id: The user ID to use as a key.
-        :param user: The user to store
-        :param overwrite: Whether to overwrite the user if it already exists
+        Stores the client with a given ID in the database.
+        :param client_id: The client ID to use as a key.
+        :param client: The client to store
+        :param overwrite: Whether to overwrite the client if it already exists
         :return: Nothing.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def delete_user(self, user_id: str) -> bool:
+    def delete_client(self, client_id: str) -> bool:
         """
-        Deletes the user with a given ID from the database.
-        :param user_id: The user ID of the user to delete
-        :return: Whether the user was deleted from the database.
+        Deletes the client with a given ID from the database.
+        :param client_id: The client ID of the client to delete
+        :return: Whether the client was deleted from the database.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def get_user(self, user_id: str) -> IdentifyingClientData:
+    def get_client(self, client_id: str) -> IdentifyingClientData:
         """
-        Retrieves the user with a given ID from the database.
-        :param user_id: The user ID to use as a key.
-        :return: The user with the given ID.
+        Retrieves the client with a given ID from the database.
+        :param client_id: The client ID to use as a key.
+        :return: The client with the given ID.
         """
         raise NotImplementedError
 

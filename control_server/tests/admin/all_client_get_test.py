@@ -83,14 +83,14 @@ def test_all_client_with_clients(client):
     new_client_1.set_id(client_1_id)
     new_client_2.set_id(client_2_id)
 
-    controller.db.set_user(
-        user_id=client_1_id,
-        user=new_client_1,
+    controller.db.set_client(
+        client_id=client_1_id,
+        client=new_client_1,
         overwrite=True,
     )
-    controller.db.set_user(
-        user_id=client_2_id,
-        user=new_client_2,
+    controller.db.set_client(
+        client_id=client_2_id,
+        client=new_client_2,
         overwrite=True
     )
 

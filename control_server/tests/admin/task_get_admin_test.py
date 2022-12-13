@@ -43,7 +43,7 @@ def set_client_and_task(client_id: str, task_id: str, db_collection: DatabaseCol
     client_task.set_status(status=task_status)
     client_task.set_status_code(status_code=0)
 
-    # Set user in DB
+    # Set client in DB
     client_1 = {
         "os_name": "2",
         "os_version": "2",
@@ -57,9 +57,9 @@ def set_client_and_task(client_id: str, task_id: str, db_collection: DatabaseCol
         ip=client_ip
     )
     new_client.set_id(client_id)
-    controller.db.set_user(
-        user_id=client_id,
-        user=new_client,
+    controller.db.set_client(
+        client_id=client_id,
+        client=new_client,
         overwrite=True
     )
 
@@ -139,10 +139,10 @@ def test_get_task_pending_tasks(client):
 
     assert no_task_response.status_code == 404, "Received a non-404 status code"
 
-    # Insert a user and task in the DB
+    # Insert a client and task in the DB
     set_client_and_task(client_id=client_id,
                         task_id=task_id,
-                        db_collection=DatabaseCollection.USER_TASKS,
+                        db_collection=DatabaseCollection.CLIENT_TASKS,
                         task_status=TaskStatus.PENDING)
 
     response = \
@@ -176,10 +176,10 @@ def test_get_task_sent_tasks(client):
     """
     client_id, task_id = randomize_ids()
 
-    # Insert a user and task in the DB
+    # Insert a client and task in the DB
     set_client_and_task(client_id=client_id,
                         task_id=task_id,
-                        db_collection=DatabaseCollection.USER_DONE_TASKS,
+                        db_collection=DatabaseCollection.CLIENT_DONE_TASKS,
                         task_status=TaskStatus.DONE)
 
     response = \

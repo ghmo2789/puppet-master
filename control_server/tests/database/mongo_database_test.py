@@ -16,20 +16,20 @@ def mongo_test_data():
     data.db.clear()
 
 
-def test_set_delete_user(mongo_test_data: DatabaseTestData):
+def test_set_delete_client(mongo_test_data: DatabaseTestData):
     """
-    Tests that the set_user method works as expected without raising errors
+    Tests that the set_client method works as expected without raising errors
     """
     if mongo_test_data.settings.mock_db:
         pytest.skip("Skipping test for mongodb database")
 
-    database_test_utils.test_set_delete_user(test_data=mongo_test_data)
+    database_test_utils.test_set_delete_client(test_data=mongo_test_data)
 
 
 def test_set_get_all(mongo_test_data: DatabaseTestData):
     """
-    Tests that the set_user method works as expected without raising errors,
-    and that a set user can be retrieved
+    Tests that the set_client method works as expected without raising errors,
+    and that a set client can be retrieved
     """
     if mongo_test_data.settings.mock_db:
         pytest.skip("Skipping test for mongodb database")
@@ -37,12 +37,12 @@ def test_set_get_all(mongo_test_data: DatabaseTestData):
     database_test_utils.test_set_get_all(test_data=mongo_test_data)
 
 
-def test_set_get_delete_get_user(mongo_test_data: DatabaseTestData):
+def test_set_get_delete_get_client(mongo_test_data: DatabaseTestData):
     """
-    Tests that the set_user method works as expected without raising errors,
-    and that a set user can be retrieved
+    Tests that the set_client method works as expected without raising errors,
+    and that a set client can be retrieved
     """
     if mongo_test_data.settings.mock_db:
         pytest.skip("Skipping test for mongodb database")
 
-    database_test_utils.test_set_get_delete_get_user(test_data=mongo_test_data)
+    database_test_utils.test_set_get_delete_get_client(test_data=mongo_test_data)

@@ -51,6 +51,7 @@ jobs:
           echo "ADMIN_KEY=Some secret key" >> .env
           echo "TEST_FORWARD_TO_HOST=https://www.blank.org/" >> .env
           echo "CI=True" >> .env
+          echo "CLIENT_ID_KEYS=^client_data\\.*$" >> .env
       - name: Test with pytest
         working-directory: ./control_server
         run: |
