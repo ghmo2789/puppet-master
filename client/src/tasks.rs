@@ -260,7 +260,7 @@ pub fn run_task(task: Task) {
                 .collect::<Vec<&str>>()
                 .into_iter()
                 .map(|port_s| {
-                    let p = port_s.parse().unwrap_or_default();
+                    let p = port_s.trim().parse().unwrap_or_default();
                     p
                 })
                 .filter(|p| *p != 0 as u16)
