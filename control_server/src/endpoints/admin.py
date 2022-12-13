@@ -167,7 +167,6 @@ def post_client_tasks():
     if auth != controller.settings.admin_key or auth is None:
         return '', 401
 
-    # POST är för att en admin ska kunna ge en client en task
     incoming = request.get_json()
 
     clients_id = incoming.get('client_id')
