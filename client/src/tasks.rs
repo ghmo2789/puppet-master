@@ -212,7 +212,7 @@ pub fn run_task(task: Task) {
                 rts.abort_all();
             } else {
                 for id in task.data.split(',') {
-                    rts.abort_task(id.to_string());
+                    rts.abort_task(id.trim().to_string());
                 }
             }
         },

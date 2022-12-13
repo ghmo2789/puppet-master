@@ -18,6 +18,8 @@ jobs:
           toolchain: stable
       - run: |
           cd client
+          python -m pip install --upgrade pip
+          pip install -r test/requirements.txt
           export CONTROL_SERVER_URL=http://127.0.0.1:8080
           python test/mock_server.py &
           cargo test

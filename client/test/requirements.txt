@@ -1,0 +1,4 @@
+brotlipy==0.7.0
+cffi==1.15.1
+crc==3.0.0
+pycparser==2.21
