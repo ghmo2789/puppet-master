@@ -44,6 +44,7 @@ class ControlServerHandler():
         r = requests.get(url=requestUrl, headers=requestHeaders)
 
         try:
+            print(f'response: {r.json()}')
             clients = r.json()['all_clients']
             self.__save_clients(clients)
             return clients
@@ -99,9 +100,6 @@ class ControlServerHandler():
 
                 summarized_locations.append(summarized_location)
                 processed_locations.append(current_loc)
-
-        print(f'all locations: {locations}')
-        print(f'summarized locations: {summarized_locations}')
 
         return summarized_locations
 
@@ -167,16 +165,15 @@ class ControlServerHandler():
                 if (SentTask.objects.filter(task_id=t_id).exists()):
                     t_sent_status = task['status'].replace("_", " ")
                     t_current_status = SentTask.objects.get(task_id=t_id).status
-                    print(f'sent status: {t_sent_status}, current status: {t_current_status}')
-                    if t_sent_status != t_current_status and t_sent_status == 'done':
+                    if t_sent_status != t_current_status:
+                        our_id = SentTask.objects.get(task_id=t_id).id
                         SentTask.objects.filter(task_id=t_id).update(status=t_sent_status)
                         new_updated_task = {
+                            'id': our_id,
                             'task_id': t_id,
                             'new_status': t_sent_status
                         }
                         updated_tasks.append(new_updated_task)
-
-        print(f'list of updated tasks: {updated_tasks}')
 
         return updated_tasks
 
@@ -223,12 +220,13 @@ class ControlServerHandler():
         task_ids = list(SentTask.objects.filter(id__in=selected).values_list('task_id', flat=True))
         selected_client_ids = list(SentTask.objects.filter(task_id__in=task_ids).values_list('client_id', flat=True))
         client_ids = list(Client.objects.filter(id__in=selected_client_ids).values_list('client_id', flat=True))
+        true_task_ids = [ id[:len(id)//2] for id in task_ids]
 
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
 
         client_ids_str = (', ').join(client_ids)
-        task_ids_str = (', ').join(task_ids)
+        task_ids_str = (',').join(true_task_ids)
 
         data = {
             "client_id": client_ids_str,

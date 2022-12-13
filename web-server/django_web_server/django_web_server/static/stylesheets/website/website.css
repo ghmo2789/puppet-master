@@ -27,12 +27,30 @@
   border-color: black;
 }
 
-#notifications-popup {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  height: 200px;
-  width: 200px;
-  border-radius: 2px;
-  border-color: red;
+#notis {
+  position: absolute;
+  color: white;
+  right: 15px;
+  top: 60px;
+  height: 70px;
+  width: 250px;
+  background-color: #212529;
+  border-radius: 8px;
+  visibility: hidden;
+}
+
+#notis-header {
+  background-color: black;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+#notis-header > p, #notis-content > p {
+  text-align: center;
+  padding: 2px;
+  margin-bottom: 0;
+}
+
+#notis-content > p {
+  margin-top: 5px;
 }

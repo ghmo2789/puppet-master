@@ -5,14 +5,19 @@
       <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}">
       <link rel="stylesheet" href="{% static 'w3/w3.css' %}">
       <link rel="stylesheet" href="{% static 'website/website.css' %}">
-    
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-      
-      
   </head>
   <body class="bg-dark text-white">
     <!-- Navbar -->
     {% block nav %}{% include 'website/navbar.html' %}{% endblock nav %}
+
+    <div id="notis">
+      <div id="notis-header">
+        <p>Task Updated</p>
+      </div>
+      <div id="notis-content">
+          <p id="notis-content-p">You have a notification!</p>
+      </div>
+    </div>
 
     <!-- Heading -->
     <div class="w3-container"> 
@@ -35,6 +40,7 @@
         <table class="table table-dark table-striped table-hover mb-0">
             <tr style="background-color: black;"> 
               <td><input type="checkbox" name="select_all" value="1" id="master_checkbox" onclick="select_all()"></td>
+              <td>Task ID</td>
               <td>Client IP</td>
               <td>Start Time</td>
               <td>Status</td>
@@ -46,9 +52,10 @@
             {% for i in tasks.qs%}
             <tr>
                 <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}"></td> 
+                <td>{{i.id}}</td>
                 <td>{{i.client_id.ip}}</td>
                 <td>{{i.start_time}}</td>
-                <td>{{i.status}}</td>
+                <td id="status:{{i.task_id}}">{{i.status}}</td>
                 <td>{{i.task_type}}</td>
                 <td>{{i.task_info}}</td>
             </tr>
@@ -64,24 +71,6 @@
       </div>
       </form>
 
-      <!-- Test notifications -->
-      <div id='notifications-popup'>
-        <ul id='notice-list'>
-        </ul>
-      </div>
-
-      <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
-          <div class="toast-header">
-            <svg class="bd-placeholder-img rounded me-2" width="20" height="20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid slice" focusable="false"><rect width="100%" height="100%" fill="#007aff"></rect></svg>
-        
-            <strong class="me-auto">Bootstrap</strong>
-            <small class="text-muted">11 mins ago</small>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-          </div>
-          <div class="toast-body">
-            Hello, world! This is a toast message.
-          </div>
-        </div>
 
     <script type="text/javascript">
 
@@ -139,15 +128,24 @@
                 'X-CSRFToken': csrf_token, 
               }}).then((response) => response.json())
                   .then((data) => {
-                    console.log(data)
                     tasks_list = data.tasks
                     for (i = 0; i < tasks_list.length; i++) {
                       var task = tasks_list[i];
-                      var text = 'Task ' + task.task_id + ' new status ' + task.new_status;
-                      var ul = document.getElementById("notice-list");
-                      var li = document.createElement("li");
-                      li.appendChild(document.createTextNode(text));
-                      ul.appendChild(li);
+                      var our_id = task.id;
+                      var task_id = task.task_id;
+                      var new_status = task.new_status;
+                      var elem_id = 'status:' + task_id;
+                      var status_element = document.getElementById(elem_id);
+                      status_element.innerHTML = new_status;
+                      var alert_text = 'Task ' + our_id + ' is now ' + new_status;
+                      var notis = document.getElementById('notis')
+                      var notis_content = document.getElementById('notis-content-p');
+                      notis_content.innerHTML = alert_text;
+                      //notis.style.visibility = 'show';
+                      document.getElementById('notis').style.visibility = "visible";
+                      setTimeout(function(){
+                        document.getElementById('notis').style.visibility = "hidden"
+                      }, 10000);
                     }
                   });
         }
