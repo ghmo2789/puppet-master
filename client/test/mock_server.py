@@ -5,11 +5,14 @@
 5     ./server.py [<port>]
 6 """
 import struct
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import json
 import argparse
 import socket
+import brotli
+from crc import Crc16, Calculator
 
 _LOCAL_IP = '127.0.0.1'
 _LOCAL_PORT = 65500
@@ -178,34 +181,67 @@ def run(server_class=HTTPServer, handler_class=S, port=8080):
     logging.info('Stopping httpd...\n')
 
 
-def udp_init_response():
-    body = b'{"Authorization": "12345"}'
+_UDP_HEADER_PARSE_PATTERN = '>HHHHHH'
+_UDP_HEADER_LEN = 12
+_CHECKSUM_MSB = 4
+_CHECKSUM_LSB = 5
+
+
+def _response(body):
+    compressed_body = compress(body)
     url_len = 0
     req_h_len = 0
     body_len = len(body)
+    compressed_body_len = len(compressed_body)
     status_code = 200
-    message_len = 9 + url_len + body_len + req_h_len
-    header = struct.pack('>HHHHH', message_len, status_code, url_len, body_len, req_h_len)
-    mes = header + body
+    message_len = _UDP_HEADER_LEN + url_len + compressed_body_len + req_h_len
+    header = struct.pack(_UDP_HEADER_PARSE_PATTERN,
+                         message_len,
+                         status_code,
+                         0,
+                         url_len,
+                         body_len,
+                         req_h_len)
+    # Set checksum
+    mes = bytearray(header + compressed_body)
+    checksum = calc_checksum(mes)
+    print(checksum)
+    mes[_CHECKSUM_LSB] = checksum & 0x00FF
+    mes[_CHECKSUM_MSB] = (checksum >> 8) & 0x00FF
     return mes
+
+
+def udp_init_response():
+    body = b'{"Authorization": "12345"}'
+    return _response(body)
 
 
 def udp_get_commands_response():
     body = _TEST_TASKS.encode()
-    url_len = 0
-    req_h_len = 0
-    body_len = len(body)
-    status_code = 200
-    message_len = 9 + url_len + body_len + req_h_len
-    header = struct.pack('>HHHHH', message_len, status_code, url_len, body_len, req_h_len)
-    mes = header + body
-    return mes
+    return _response(body)
 
 
 def xor_key(buf, key):
     for i in range(0, len(buf)):
         buf[i] = buf[i] ^ key[i % len(key)]
     return bytes(buf)
+
+
+def calc_checksum(buf):
+    buf = bytearray(buf)
+    buf[_CHECKSUM_MSB] = 0
+    buf[_CHECKSUM_LSB] = 0
+    calculator = Calculator(Crc16.GSM)
+    return calculator.checksum(buf)
+
+
+def compress(buf):
+    compressed = brotli.compress(buf, lgwin=22, quality=11)
+    return compressed
+
+
+def decompress(buf):
+    return brotli.decompress(buf)
 
 
 def run_udp(key=''):
@@ -218,20 +254,37 @@ def run_udp(key=''):
     while True:
         try:
             message, address = server_socket.recvfrom(_BUFFER_SIZE)
-            print(f'Message received from {address}:\n{message}')
+            print(f'Received {len(message)} bytes from {address}')
+            print("b'{}'".format(''.join('\\x{:02x}'.format(b) for b in message)))
+
             if key != '':
                 print('Decrypting message')
                 message = xor_key(bytearray(message), key)
                 print(message)
+            try:
+                message_len, status_code, checksum, url_len, body_len, req_h_len = \
+                    struct.unpack(_UDP_HEADER_PARSE_PATTERN, message[:_UDP_HEADER_LEN])
 
-            message_len, status_code, url_len, body_len, req_h_len = struct.unpack('>HBHHH', message[0:9])
-            print(message_len)
-            index = 9
-            url = message[index:index + url_len].decode('utf-8')
-            index += url_len
-            body = message[index:index + body_len].decode('utf-8')
-            index += body_len
-            req_h = message[index:index + req_h_len].decode('utf-8')
+                index = _UDP_HEADER_LEN
+                if not calc_checksum(bytearray(message)) == checksum:
+                    print('Failed to verify checksum')
+                    continue
+
+                message = message[:index] + decompress(message[index:])
+                print(f'Length of decompressed message: {len(message)}')
+                print(f'Message:\n{message[index:].decode("utf-8")}')
+
+                url = message[index:index + url_len].decode('utf-8')
+                print(f'URL: {url}')
+                index += url_len
+                body = message[index:index + body_len].decode('utf-8')
+                print(f'BODY: {body}')
+                index += body_len
+                req_h = message[index:index + req_h_len].decode('utf-8')
+                print(f'HEADERS: {req_h}\n')
+            except UnicodeDecodeError:
+                print('Parsing of message failed!')
+                continue
 
             if _INIT_CLIENT_PATH in url:
                 msg = udp_init_response()
@@ -272,7 +325,6 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     demo = args.demo
-    if args.udp:
-        run_udp(key=args.key)
-    else:
-        run(port=args.port)
+    t = threading.Thread(target=run_udp, args=[args.key])
+    t.start()
+    run(port=args.port)
