@@ -52,7 +52,7 @@ def set_task_response(client_id: str, task_id: str):
     # Creat a task response
     client_response = ClientTaskResponse(
         task_id=task_id,
-        result="hello Uppsala\n",
+        result="hello Uppsala",
         status=0
     )
 
@@ -120,9 +120,12 @@ def test_task_output(client):
         "id": client_id,
         "task_id": task_id
     })
-    task_response = response.json.get("task_responses")
+    task_response = response.json.get("task_responses")[0]
+    # task_response_db = ClientTaskResponseCollection().deserialize(task_response[0])
+    # print(task_response_db)
     assert response.status_code == 200, "Received a non-200 status code"
-    assert task_response[0].get("task_id") == task_id, "Task ID does not match"
-    assert task_response[0].get("client_id") == client_id, "Client ID does not match"
-    assert task_response[0].get("status").get("status") == 0, "Status code does not match"
+    assert task_response["_id"].get("task_id") == task_id, "Task ID does not match"
+    assert task_response["_id"].get("client_id") == client_id, "Client ID does not match"
+    assert task_response["responses"][0].get("status") == 0, "Status code does not match"
+    assert task_response["responses"][0].get("id") == task_id, "Task ID does not match"
 

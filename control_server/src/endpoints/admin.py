@@ -396,10 +396,7 @@ def get_task_output():
     all_task_response = list(
         controller.db.get_all(
             collection=DatabaseCollection.CLIENT_TASK_RESPONSES,
-            identifier={
-                'client_id': client_id,
-                'task_id': task_id
-            },
+            identifier=key,
             entry_instance_creator=cast(
                 Deserializable,
                 ClientTaskResponseCollection
