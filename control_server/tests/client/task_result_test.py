@@ -49,8 +49,8 @@ def assert_no_responses():
     existing = list(controller.db.get_all(
         collection=DatabaseCollection.CLIENT_TASK_RESPONSES,
         identifier={
-            "client_id": client_id,
-            "task_id": task_id
+            "_id.client_id": client_id,
+            "_id.task_id": task_id
         },
         entry_instance_creator=cast(
             Deserializable,

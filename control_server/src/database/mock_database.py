@@ -79,6 +79,9 @@ class MockDatabase(Database):
         collection = self._collections[collection]
 
         if entry_id is not None:
+            if isinstance(entry_id, dict):
+                entry_id = HashableDict(entry_id)
+
             return collection[entry_id] if entry_id in collection else None
         else:
             return next(
