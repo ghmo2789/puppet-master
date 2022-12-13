@@ -10,7 +10,7 @@ from control_server.src.data.identifying_client_data import \
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.client_task import ClientTask
 from control_server.src.data.task import Task
-from control_server.src.data.client_task_response import ClientTaskResponse
+from control_server.src.data.client_task_response_collection import ClientTaskResponseCollection
 
 
 def client():
@@ -245,18 +245,18 @@ def get_task_output():
     if task_id is not None or len(task_id) > 0:
         key['_id.task_id'] = task_id
 
-    all_task_response = cast(
-        List[ClientTaskResponse],
-        list(
-            controller.db.get_all(
-                collection=DatabaseCollection.CLIENT_TASK_RESPONSES,
-                identifier=key,
-                entry_instance_creator=lambda: cast(
-                    Deserializable,
-                    ClientTaskResponse()
-                )
-            ))
-    )
+    all_task_response = list(
+        controller.db.get_all(
+            collection=DatabaseCollection.CLIENT_TASK_RESPONSES,
+            identifier={
+                'client_id': client_id,
+                'task_id': task_id
+            },
+            entry_instance_creator=cast(
+                Deserializable,
+                ClientTaskResponseCollection
+            )
+        ))
 
     return jsonify({
         'task_responses': [current_response.serialize()
