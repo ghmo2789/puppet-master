@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import cast, List
 
 from flask import request, jsonify
@@ -33,28 +34,43 @@ def init():
 
     # Generate a client id from the client data
     client_ip = get_ip(request)
+    now = datetime.now().isoformat()
     identifying_client_data = IdentifyingClientData(
         client_data=data,
-        ip=client_ip
+        ip=client_ip,
+        last_seen=now,
+        first_seen=now
     )
 
     client_id = controller.client_id_generator.generate(identifying_client_data)
 
     if client_id is None:
-        print(f"Failed to generate client id for client with IP "
-              f"{request.remote_addr}.")
+        print(
+            f"Failed to generate client id for client with IP "
+            f"{request.remote_addr}."
+        )
         return "", 500  # If unsuccessful, return 500 Internal Server Error
 
     client_id = str(client_id)
 
+    existing_client = controller.db.get_client(
+        client_id=client_id
+    )
+
+    identifying_client_data.first_seen = \
+        (existing_client or identifying_client_data).first_seen or now
+
     controller.db.set_client(
         client_id=client_id,
         client=identifying_client_data,
-        overwrite=True)
+        overwrite=True
+    )
 
-    return jsonify({
-        'Authorization': client_id
-    }), 200
+    return jsonify(
+        {
+            'Authorization': client_id
+        }
+    ), 200
 
 
 def task(done=False):
@@ -77,13 +93,18 @@ def task(done=False):
 
     tasks = cast(
         List[ClientTask],
-        list(controller.db.get_all(
-            source_collection,
-            identifier={
-                "_id.client_id": client_id.authorization
-            },
-            entry_instance_creator=lambda: cast(Deserializable, ClientTask())
-        ))
+        list(
+            controller.db.get_all(
+                source_collection,
+                identifier={
+                    "_id.client_id": client_id.authorization
+                },
+                entry_instance_creator=lambda: cast(
+                    Deserializable,
+                    ClientTask()
+                )
+            )
+        )
     )
 
     serialized_result = [found_task.task.serialize() for found_task in tasks]
