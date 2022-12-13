@@ -232,7 +232,7 @@ def get_task_output():
     }
 
     # Wrong client id or bad formatting
-    if client_id is None and len(client_id) > 0:
+    if client_id is not None and len(client_id) > 0:
         client_info = controller.db.get_client(
             client_id
         )
@@ -240,9 +240,9 @@ def get_task_output():
         if client_info is None:
             return 'Client does not exists', 404
 
-    key['_id.client_id'] = client_id
+        key['_id.client_id'] = client_id
 
-    if task_id is not None or len(task_id) > 0:
+    if task_id is not None and len(task_id) > 0:
         key['_id.task_id'] = task_id
 
     all_task_response = list(
