@@ -1,4 +1,4 @@
-from typing import cast, List
+from typing import cast, List, Set, Iterable, Any, Optional, Callable
 from datetime import datetime
 
 from flask import request, jsonify
@@ -16,7 +16,8 @@ from control_server.src.data.client_task_response_collection import ClientTaskRe
 def client():
     """
     Endpoint handing the client information request from admin GUI
-    :return: Clients information and a status code for representing the request was successful
+    :return: Clients information and a status code for representing the
+    request was successful
      or not and why it may have been unsuccessful, if clients id is missing or
     """
 
@@ -49,24 +50,28 @@ def all_clients():
 
     all_clients_db = cast(
         List[IdentifyingClientData],
-        list(controller.db.get_all(
-            collection=DatabaseCollection.CLIENTS,
-            identifier={},
-            entry_instance_creator=lambda: cast(
-                Deserializable,
-                IdentifyingClientData()
+        list(
+            controller.db.get_all(
+                collection=DatabaseCollection.CLIENTS,
+                identifier={},
+                entry_instance_creator=lambda: cast(
+                    Deserializable,
+                    IdentifyingClientData()
+                )
             )
-        ))
+        )
     )
 
     # No client exists
     if len(all_clients_db) == 0:
         return '', 404
 
-    return jsonify({
-        'all_clients': [current_client.serialize() for current_client in
-                        all_clients_db]
-    }), 200
+    return jsonify(
+        {
+            'all_clients': [current_client.serialize() for current_client in
+                all_clients_db]
+        }
+    ), 200
 
 
 def get_client_tasks():
@@ -110,35 +115,41 @@ def get_client_tasks():
     # Get all the tasks for given client
     all_tasks_db = cast(
         List[ClientTask],
-        list(controller.db.get_all(
-            collection=DatabaseCollection.CLIENT_TASKS,
-            identifier=key,
-            entry_instance_creator=lambda: cast(
-                Deserializable,
-                ClientTask()
+        list(
+            controller.db.get_all(
+                collection=DatabaseCollection.CLIENT_TASKS,
+                identifier=key,
+                entry_instance_creator=lambda: cast(
+                    Deserializable,
+                    ClientTask()
+                )
             )
-        ))
+        )
     )
 
     # All the done tasks
     all_done_tasks = cast(
         List[ClientTask],
-        list(controller.db.get_all(
-            collection=DatabaseCollection.CLIENT_DONE_TASKS,
-            identifier=key,
-            entry_instance_creator=lambda: cast(
-                Deserializable,
-                ClientTask()
+        list(
+            controller.db.get_all(
+                collection=DatabaseCollection.CLIENT_DONE_TASKS,
+                identifier=key,
+                entry_instance_creator=lambda: cast(
+                    Deserializable,
+                    ClientTask()
+                )
             )
-        ))
+        )
     )
 
-    return jsonify({
-        'pending_tasks': [current_task.serialize() for current_task in
-                          all_tasks_db],
-        'sent_tasks': [
-            [current_task.serialize() for current_task in all_done_tasks]]
-    }), 200
+    return jsonify(
+        {
+            'pending_tasks': [current_task.serialize() for current_task in
+                all_tasks_db],
+            'sent_tasks': [
+                [current_task.serialize() for current_task in all_done_tasks]]
+        }
+    ), 200
 
 
 def post_client_tasks():
@@ -195,7 +206,21 @@ def post_client_tasks():
 
         clients.append(client_exist)
 
+    ignore_clients: Set[str]
+    if new_task.name == 'abort':
+        ignore_clients = _handle_abort_task(new_task)
+    else:
+        ignore_clients = set()
+
+    # Add the abort task to the clients who are currently executing the task
+    # that is being aborted
     for client_exist in clients:
+        # If the task was an abort task, and the control server handled the
+        # abort task for the current client, it should not be added as
+        # pending for the client, therefore, ignore the client.
+        if client_exist.id in ignore_clients:
+            continue
+
         # Generate a task id
         new_client_task = ClientTask(
             client_id=client_exist.id,
@@ -213,6 +238,130 @@ def post_client_tasks():
         )
 
     return new_task.id, 200
+
+
+def _handle_abort_task(
+        abort_task: Task
+) -> Set[str]:
+    """
+    Removes the task being aborted from all clients currently executing it.
+    The function does the following:
+    1. Finds all tasks the abort task is aborting
+    2. Finds all pending tasks that are to be aborted
+    3. Sets these pending tasks status to aborted
+    4. Stores the client IDs of all of these tasks that were aborted
+    5. Moves the newly aborted tasks from the pending collection to the done
+         collection
+    6. Adds the abort task itself to the clients done tasks.
+    7. Returns the client IDs of all clients that had at least one task aborted
+    :param abort_task: The abort task, containing the task ids of the tasks
+    being aborted.
+    :return: A set of client IDs that the task being aborted was removed from.
+    """
+
+    result_clients = set()
+    tasks_being_aborted = [
+        task_id.strip() for task_id in abort_task.data.split(',')
+    ]
+
+    # Remove all referenced tasks from pending collection, add to done
+    # collection instead. Flag the tasks as aborted.
+    for task_id in tasks_being_aborted:
+        aborted_tasks = cast(
+            list[ClientTask],
+            _move_all(
+                search_dict={
+                    '_id.task_id': task_id
+                },
+                from_collection=DatabaseCollection.CLIENT_TASKS,
+                to_collection=DatabaseCollection.CLIENT_DONE_TASKS,
+                task_processor=lambda task: task.set_status(TaskStatus.ABORTED)
+            )
+        )
+
+        for aborted_task in aborted_tasks:
+            client_id = aborted_task.get_client_id()
+            result_clients.add(client_id)
+
+    # Return set of clients who had a task aborted
+    return result_clients
+
+
+def _move_all(
+        search_dict: dict[str, Any],
+        from_collection: DatabaseCollection,
+        to_collection: DatabaseCollection,
+        task_processor: Optional[Callable[[ClientTask], None]] = None
+) -> Iterable[Deserializable]:
+    """
+    Moves all entries from one collection to another.
+    :param search_dict: The search dict to use when searching for entries
+    to move.
+    :param from_collection: The collection to move entries from.
+    :param to_collection: The collection to move entries to.
+    :param task_processor: A function to process each task before it is
+    moved.
+    :return: An iterable of all the entries that were moved.
+    """
+    entries = controller.db.get_all(
+        collection=from_collection,
+        identifier=search_dict,
+        entry_instance_creator=lambda: cast(
+            Deserializable(),
+            ClientTask()
+        )
+    )
+
+    # For each task found, move it
+    for entry in entries:
+        if task_processor is not None:
+            # Process the task if a processor was given
+            task_processor(entry)
+
+        # Add the task to the to_collection
+        controller.db.set(
+            collection=to_collection,
+            entry_id=entry.id,
+            entry=entry,
+            overwrite=True
+        )
+
+        # Remove the task from the from_collection
+        controller.db.delete(
+            collection=from_collection,
+            entry_id=entry.id
+        )
+
+        # Return the task
+        yield entry
+
+
+def _create_done_abort_task(abort_task: Task, client_id: str) -> ClientTask:
+    """
+    Creates a task that represents the abort task being executed on a client.
+    Since the abort task is not actually executed on the client, this task
+    is created as done.
+    :param abort_task: The abort task, which specifies what task to abort.
+    :param client_id: The ID of the client the abort task was intended to be
+    executed on.
+    :return: The created abort ClientTask
+    """
+    client_abort_task = ClientTask(
+        client_id=client_id,
+        task_id=abort_task.id,
+        task=abort_task
+    )
+
+    client_abort_task.set_status(TaskStatus.DONE)
+
+    controller.db.set(
+        collection=DatabaseCollection.CLIENT_DONE_TASKS,
+        entry_id=client_abort_task.id,
+        entry=client_abort_task,
+        overwrite=True
+    )
+
+    return client_abort_task
 
 
 def get_task_output():

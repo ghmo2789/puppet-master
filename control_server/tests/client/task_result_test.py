@@ -73,8 +73,8 @@ def get_responses() -> ClientTaskResponseCollection:
         controller.db.get_one(
             collection=DatabaseCollection.CLIENT_TASK_RESPONSES,
             identifier={
-                "client_id": client_id,
-                "task_id": task_id
+                "_id.client_id": client_id,
+                "_id.task_id": task_id
             },
             entry_instance=cast(
                 Deserializable,
@@ -119,7 +119,7 @@ def test_task_response(client):
     collection = get_responses()
 
     assert response.status_code == 200, "Received non-200 status code"
-    assert collection.client_id == client_id, "Client ID does not match"
+    assert collection.get_client_id() == client_id, "Client ID does not match"
 
     assert collection.responses[-1].result == task_response.result, \
         "Incorrect result for response"
@@ -170,7 +170,7 @@ def test_task_two_responses(client):
 
     collection = get_responses()
     assert len(collection.responses) == number, "Incorrect number of responses"
-    assert collection.client_id == client_id, "Client ID does not match"
+    assert collection.get_client_id() == client_id, "Client ID does not match"
 
     for index in range(number):
         assert \
