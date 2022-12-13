@@ -1,3 +1,5 @@
+from control_server.src.middleware.checksum import Checksum
+from control_server.src.middleware.compression.compression import Compression
 from control_server.src.middleware.headers.message_header import MessageHeader
 from control_server.src.middleware.messages.generic_message import \
     GenericMessage
@@ -12,6 +14,7 @@ class GenericMessageBuilder:
         self.body_length: int = -1
         self.headers_length: int = -1
         self.status_code: int = -1
+        self.checksum: int = -1
 
     def set_url(self, url: str):
         self.url = url
@@ -44,10 +47,15 @@ class GenericMessageBuilder:
         self.status_code = status_code
         return self
 
+    def set_checksum(self, checksum: int):
+        self.checksum = checksum
+        return self
+
     def build(self):
         header = MessageHeader(
             message_length=
-            MessageHeader.size() + self.url_length +
+            MessageHeader.size() +
+            self.url_length +
             self.body_length +
             self.headers_length,
             url_length=self.url_length,
@@ -56,9 +64,17 @@ class GenericMessageBuilder:
             status_code=self.status_code
         )
 
-        return GenericMessage(
+        message = GenericMessage(
             message_header=header,
             url=self.url,
             body=self.body,
             headers=self.headers
         )
+
+        if self.checksum == -1:
+            message.checksum = 0
+            message.checksum = message.calculate_checksum()
+        else:
+            message.checksum = self.checksum
+
+        return message

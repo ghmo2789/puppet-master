@@ -7,6 +7,8 @@ from control_server.src.middleware.headers.byte_property import ByteProperty
 
 
 class ByteConvertible(ABC):
+    _type_sizes: dict[str, int] = {}
+
     """
     A class that can be converted to and from bytes
     """
@@ -14,14 +16,39 @@ class ByteConvertible(ABC):
             self,
             endianness: str = '!',
             serialized_properties: List[ByteProperty] = None):
+        self.endianness: str = endianness
         self._binary_format: str = endianness
         self._serialized_properties: OrderedDict[str, ByteProperty] = \
             OrderedDict()
+        self.offsets = {}
+        self.sizes = {}
 
+        index = 0
         if serialized_properties is not None:
             for prop in serialized_properties:
+                size = ByteConvertible._get_type_size(prop.data_format)
+
+                self.offsets[prop.name] = index
+                self.sizes[prop.name] = size
+
                 self._serialized_properties[prop.name] = prop
                 self._binary_format += prop.data_format
+                index += size
+
+    def offset_of(self, prop_name: str) -> int:
+        return self.offsets[prop_name]
+
+    def size_of(self, prop_name: str) -> int:
+        return self.sizes[prop_name]
+
+    @staticmethod
+    def _get_type_size(data_type: str):
+        if data_type in ByteConvertible._type_sizes:
+            return ByteConvertible._type_sizes[data_type]
+
+        size = struct.calcsize(data_type)
+        ByteConvertible._type_sizes[data_type] = size
+        return size
 
     @property
     def binary_format(self) -> str:

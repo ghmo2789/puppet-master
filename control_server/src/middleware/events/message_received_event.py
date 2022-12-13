@@ -1,3 +1,4 @@
+from control_server.src.middleware.compression.compression import Compression
 from control_server.src.middleware.events.udp_receive_event import \
     UdpReceiveEvent
 from control_server.src.middleware.messages.generic_message import \
@@ -17,5 +18,11 @@ class MessageReceivedEvent(UdpReceiveEvent):
 
         self.message: GenericMessage = message
 
-    def set_message_response(self, response: GenericMessage):
-        self.set_response(response.to_bytes())
+    def set_message_response(
+            self,
+            response: GenericMessage,
+            compression: Compression = None):
+        self.set_response(response.to_bytes(
+            compression=compression,
+            recalculate_checksum=True
+        ))

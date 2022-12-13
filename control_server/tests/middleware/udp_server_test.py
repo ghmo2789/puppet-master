@@ -3,6 +3,7 @@ from decouple import config
 
 from control_server.src.middleware.events.udp_receive_event import \
     UdpReceiveEvent
+from control_server.src.middleware.obfuscation_key import StaticObfuscationKey
 from control_server.src.middleware.udp_server import UdpServer
 from control_server.tests.utils.udp_utils import send_bytes
 
@@ -17,6 +18,7 @@ class ResultContainer:
     """
     Class to hold whether the result was successfully received
     """
+
     def __init__(self):
         self.success = False
 
@@ -97,3 +99,13 @@ def test_udp_server_twice():
 
         assert response == response_data
         assert result.success
+
+
+def test_obfuscated_udp_server():
+    with StaticObfuscationKey():
+        test_udp_server()
+
+
+def test_obfuscated_udp_server_twice():
+    with StaticObfuscationKey():
+        test_udp_server_twice()

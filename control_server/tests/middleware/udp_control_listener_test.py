@@ -10,6 +10,7 @@ from control_server.src.middleware.generic_message_builder import \
 from control_server.src.middleware.headers.message_header import MessageHeader
 from control_server.src.middleware.messages.generic_message import \
     GenericMessage
+from control_server.src.middleware.obfuscation_key import StaticObfuscationKey
 from control_server.src.middleware.udp_control_listener import \
     UdpControlListener
 from control_server.tests.utils.udp_utils import send_bytes
@@ -18,10 +19,17 @@ url_data = 'A'
 body_data = 'B'
 header_data = 'C'
 
-message_bytes = b'\x00\x0C\x00\xFF\x00\x01\x00\x01\x00\x01' + \
-                url_data.encode('utf-8') + \
-                body_data.encode('utf-8') + \
-                header_data.encode('utf-8')
+message_bytes = \
+    b'\x00\x0C\x00\xFF\x99\x90\x00\x01\x00\x01\x00\x01' + \
+    url_data.encode('utf-8') + \
+    body_data.encode('utf-8') + \
+    header_data.encode('utf-8')
+
+message_bytes_wrong_checksum = \
+    b'\x00\x0C\x00\xFF\x99\x91\x00\x01\x00\x01\x00\x01' + \
+    url_data.encode('utf-8') + \
+    body_data.encode('utf-8') + \
+    header_data.encode('utf-8')
 
 host = '127.0.0.1'
 port = 36652
@@ -85,6 +93,28 @@ def test_valid_message():
     _assert_response(rc.get_result().message)
 
 
+def test_wrong_checksum():
+    """
+    Tests that a valid message is received correctly
+    :return:
+    """
+    if config('CI', default=False, cast=bool):
+        pytest.skip('Skipping UDP tests on CI')
+
+    rc: ResultContainer[MessageReceivedEvent] = ResultContainer()
+    with get_control_listener() as listener:
+        listener.message_received += lambda event: rc.set_result(event)
+
+        send_bytes(
+            data=message_bytes_wrong_checksum,
+            host=host,
+            port=port,
+            buffer_size=0
+        )
+
+    assert rc.get_result() is None
+
+
 def test_valid_message_with_response():
     """
     Tests that a valid message is received correctly
@@ -123,6 +153,16 @@ def test_valid_message_with_response():
 
     _assert_response(response)
     _assert_response(rc.get_result().message)
+
+
+def test_obfuscated_valid_message():
+    with StaticObfuscationKey():
+        test_valid_message()
+
+
+def test_obfuscated_valid_message_with_response():
+    with StaticObfuscationKey():
+        test_valid_message_with_response()
 
 
 def _set_response(event: MessageReceivedEvent):

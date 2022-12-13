@@ -9,10 +9,11 @@ from control_server.tests.utils.header_utils import HeaderUtils
 
 datasets: List[Tuple[bytes, Dict[str, Any]]] = [
     (
-        b'\x00\x00\x00\x00\x00\x01\x00\x01\x00\x01AAA',
+        b'\x00\x00\x00\x00\x00\x01\x00\x01\x00\x01\x00\x01AAA',
         {
             'message_length': 0,
             'status_code': 0,
+            'checksum': 1,
             'url_length': 1,
             'body_length': 1,
             'headers_length': 1,
@@ -22,10 +23,11 @@ datasets: List[Tuple[bytes, Dict[str, Any]]] = [
         }
     ),
     (
-        b'\x00\x01\x00\x02\x00\x01\x00\x01\x00\x01ABC',
+        b'\x00\x01\x00\x02\x00\x01\x00\x01\x00\x01\x00\x01ABC',
         {
             'message_length': 1,
             'status_code': 2,
+            'checksum': 1,
             'url_length': 1,
             'body_length': 1,
             'headers_length': 1,
@@ -35,11 +37,12 @@ datasets: List[Tuple[bytes, Dict[str, Any]]] = [
         }
     ),
     (
-        b'\x00s\x00\x00\x00(\x00*\x00\x18http://127.0.0.1:8080/client/task/result' +
+        b'\x00s\x00\x00\x00\x01\x00(\x00*\x00\x18http://127.0.0.1:8080/client/task/result' +
         b'{"id":"2","status":0,"result":"Hejsan!\\n"}"Authorization": "12345"',
         {
             'message_length': 115,
             'status_code': 0,
+            'checksum': 1,
             'url_length': 40,
             'body_length': 42,
             'headers_length': 24,
@@ -49,12 +52,13 @@ datasets: List[Tuple[bytes, Dict[str, Any]]] = [
         }
     ),
     (
-        b'\x00\x9d\x00\x00\x00)\x00k\x00\x00http://127.0.0.1:8080/control/client/' +
+        b'\x00\x9d\x00\x00\x00\x01\x00)\x00k\x00\x00http://127.0.0.1:8080/control/client/' +
         b'init{"os_name":"macOS","os_version":"12.6.1","hostname":"johans-mbp' +
         b'-5","host_user":"johan","privileges":"null"}',
         {
             'message_length': 157,
             'status_code': 0,
+            'checksum': 1,
             'url_length': 41,
             'body_length': 107,
             'headers_length': 0,
