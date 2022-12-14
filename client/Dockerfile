@@ -15,4 +15,6 @@ ENV OBFUSCATION_KEY=$OBFUSCATION_KEY
 WORKDIR /usr/src/client
 COPY . .
 
-RUN cargo run --release
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/home/root/app/target \
+    cargo install --path .
