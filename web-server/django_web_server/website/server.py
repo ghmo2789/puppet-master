@@ -27,6 +27,9 @@ class ControlServerHandler():
                 Client.objects.filter(client_id=saved_client).delete()
 
         for client in clients:
+            first_seen = client['first_seen']
+            print(type(first_seen))
+            print(first_seen)
             if not (Client.objects.filter(client_id=client['_id']).exists()):
                 client_data = client['client_data']
                 c = Client(client_id=client['_id'],
@@ -166,6 +169,7 @@ class ControlServerHandler():
                     t_sent_status = task['status'].replace("_", " ")
                     t_current_status = SentTask.objects.get(task_id=t_id).status
                     if t_sent_status != t_current_status:
+                        # TODO: Update in our database
                         our_id = SentTask.objects.get(task_id=t_id).id
                         SentTask.objects.filter(task_id=t_id).update(status=t_sent_status)
                         new_updated_task = {
