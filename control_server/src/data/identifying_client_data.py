@@ -31,6 +31,9 @@ class IdentifyingClientData(Serializable, Deserializable):
     def get_first_seen(self) -> datetime:
         return datetime.fromisoformat(self.first_seen)
 
+    def set_last_seen(self, time: datetime):
+        self.last_seen = time.isoformat()
+
     def get_last_seen(self) -> datetime:
         return datetime.fromisoformat(self.last_seen)
 

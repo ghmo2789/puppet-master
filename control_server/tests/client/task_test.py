@@ -1,5 +1,7 @@
 from control_server.src.controller import controller
 from control_server.src.data.client_task import ClientTask
+from control_server.src.data.identifying_client_data import \
+    IdentifyingClientData
 from control_server.src.data.task import Task
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.tests.utils.generic_test_utils import get_prefix
@@ -30,6 +32,13 @@ def test_task(client):
         client_id=client_id,
         task_id=task.id,
         task=task
+    )
+
+    controller.db.set(
+        collection=DatabaseCollection.CLIENTS,
+        entry_id=client_id,
+        entry=IdentifyingClientData(),
+        overwrite=True
     )
 
     controller.db.set(
@@ -75,3 +84,36 @@ def test_task(client):
         assert response_task.data == task.data
         assert response_task.min_delay == task.min_delay
         assert response_task.max_delay == task.max_delay
+
+
+def test_task_last_seen(client):
+    """
+    Tests that requesting tasks from the server updates the last_seen property
+    of the client in the database.
+    :param client:
+    :return:
+    """
+    client_id = "1966283-b9b8-4502-a431-5bc39046471f"
+
+    controller.db.set(
+        collection=DatabaseCollection.CLIENTS,
+        entry_id=client_id,
+        entry=IdentifyingClientData(),
+        overwrite=True
+    )
+
+    pre_client = controller.db.get_client(
+        client_id=client_id
+    )
+
+    response = client.get(f"{get_prefix()}/client/task", headers={
+        "Authorization": client_id
+    })
+
+    post_client = controller.db.get_client(
+        client_id=client_id
+    )
+
+    assert response.status_code == 200
+    assert pre_client.last_seen is None
+    assert post_client.last_seen is not None
