@@ -1,3 +1,5 @@
+import uuid
+
 from control_server.src.controller import controller
 from control_server.src.data.client_task import ClientTask
 from control_server.src.data.identifying_client_data import \
@@ -93,7 +95,7 @@ def test_task_last_seen(client):
     :param client:
     :return:
     """
-    client_id = "1966283-b9b8-4502-a431-5bc39046471f"
+    client_id = str(uuid.uuid4())
 
     controller.db.set(
         collection=DatabaseCollection.CLIENTS,
