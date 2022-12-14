@@ -104,9 +104,11 @@ def test_task_last_seen(client):
         overwrite=True
     )
 
-    pre_client = controller.db.get_client(
+    # aliasing occurs with classes stored in mock DB, therefore, get the ID save
+    # the last_seen property before getting the client from the DB again
+    pre_last_seen = controller.db.get_client(
         client_id=client_id
-    )
+    ).last_seen
 
     response = client.get(f"{get_prefix()}/client/task", headers={
         "Authorization": client_id
@@ -117,5 +119,5 @@ def test_task_last_seen(client):
     )
 
     assert response.status_code == 200
-    assert pre_client.last_seen is None
+    assert pre_last_seen is None
     assert post_client.last_seen is not None
