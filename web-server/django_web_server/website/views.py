@@ -86,3 +86,12 @@ def updated_tasks(request):
 
     return JsonResponse(updatedTaskList)
 
+def updated_client_status(request):
+    controlServer = ControlServerHandler()
+    updatedclientStatus = controlServer.getUpdatedClientStatus()
+    updatedClientList = {
+        'clients': updatedclientStatus
+    }
+
+    return JsonResponse(updatedClientList)
+

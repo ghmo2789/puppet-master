@@ -27,7 +27,6 @@ class ControlServerHandler():
                 Client.objects.filter(client_id=saved_client).delete()
 
         for client in clients:
-            print(f'client: {client}')
             if not (Client.objects.filter(client_id=client['_id']).exists()):
                 client_data = client['client_data']
                 c = Client(client_id=client['_id'],
@@ -53,7 +52,6 @@ class ControlServerHandler():
         r = requests.get(url=requestUrl, headers=requestHeaders)
 
         try:
-            print(f'response: {r.json()}')
             clients = r.json()['all_clients']
             self.__save_clients(clients)
             return clients
@@ -184,6 +182,34 @@ class ControlServerHandler():
                         updated_tasks.append(new_updated_task)
 
         return updated_tasks
+
+    def getUpdatedClientStatus(self):
+        requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
+        requestHeaders = {'Authorization': self.authorization}
+        r = requests.get(url=requestUrl, headers=requestHeaders)
+
+        try:
+            clients = r.json()['all_clients']
+            updated_clients = []
+            for client in clients:
+                client_id = client['_id']
+                new_last_seen_date = client['last_seen'][0:10]
+                new_last_seen_time = client['last_seen'][11:19]
+                c = Client.objects.get(client_id=client_id)
+                if c.last_seen_date != new_last_seen_date or c.last_seen_time != new_last_seen_time:
+                    c.last_seen_date = new_last_seen_date
+                    c.last_seen_time = new_last_seen_time
+                    new_c = {
+                        'client_id': client_id,
+                        'new_last_seen_date': new_last_seen_date,
+                        'new_last_seen_time': new_last_seen_time
+                    }
+                    updated_clients.append(new_c)
+            return updated_clients
+        except ValueError as e:
+            print("Server issues" + str(e))
+            return []
+
 
     def sendTasks(self, request):
         client_ids = request.POST.getlist('select')
