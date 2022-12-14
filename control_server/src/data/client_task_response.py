@@ -1,3 +1,5 @@
+from typing import Dict
+
 from control_server.src.data.anonymous_client_task_response import \
     AnonymousClientTaskResponse
 
