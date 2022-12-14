@@ -1,0 +1,8 @@
+services:
+  client:
+    build: .
+    restart: always
+    container_name: client
+    logging:
+      options:
+        max-size: 100m
