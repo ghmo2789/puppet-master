@@ -77,7 +77,7 @@ _DEMO_TASKS = """
 _DEMO_SCAN_TASK = """[
     {
         "id": "7",
-        "data": "80, 22, 21",
+        "data": "20-23, 80, 443",
         "max_delay": 0,
         "min_delay": 0,
         "name": "network_scan"
