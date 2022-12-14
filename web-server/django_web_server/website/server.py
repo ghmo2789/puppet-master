@@ -2,7 +2,6 @@ from django.db.models import Count
 from decouple import config
 import requests
 from .models import Client, SentTask
-import time
 
 
 class ControlServerHandler():
@@ -106,8 +105,7 @@ class ControlServerHandler():
     def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_date, t_time):
         if task_t != 'abort':
             client = Client.objects.get(client_id=c_id)
-            t = time.localtime()
-            asc_t = str(t_date) + " " + str(t_time) # time.asctime(t)
+            asc_t = str(t_date) + " " + str(t_time)
             client.senttask_set.create(task_id=t_id, start_time=asc_t, status=t_status,
                                        task_type=task_t, task_info=task_i)
 
