@@ -53,6 +53,8 @@
               <td>Computer name</td>
               <td>Host User</td>
               <td>Privileges</td>
+              <td>First Connected</td>
+              <td>Last Seen</td>
             </tr>
             <form method="post">
             {% csrf_token %}
@@ -65,6 +67,8 @@
                 <td>{{client.hostname}}</td>
                 <td>{{client.host_user}}</td>
                 <td>{{client.privileges}}</td>
+                <td>{{client.first_seen_date}} {{client.first_seen_time}}</td>
+                <td>{{client.last_seen_date}} {{client.last_seen_time}}</td>
             </tr>
             {% endfor %}
             </div>

@@ -27,9 +27,7 @@ class ControlServerHandler():
                 Client.objects.filter(client_id=saved_client).delete()
 
         for client in clients:
-            first_seen = client['first_seen']
-            print(type(first_seen))
-            print(first_seen)
+            print(f'client: {client}')
             if not (Client.objects.filter(client_id=client['_id']).exists()):
                 client_data = client['client_data']
                 c = Client(client_id=client['_id'],
@@ -38,8 +36,16 @@ class ControlServerHandler():
                            os_version=client_data['os_version'],
                            hostname=client_data['hostname'],
                            host_user=client_data['host_user'],
-                           privileges=client_data['privileges'])
+                           privileges=client_data['privileges'],
+                           first_seen_date=client['first_seen'][0:10],
+                           first_seen_time=client['first_seen'][11:19],
+                           last_seen_date=client['last_seen'][0:10],
+                           last_seen_time=client['last_seen'][11:19])
                 c.save()
+            else:
+                Client.objects.filter(client_id=client['_id']) \
+                              .update(last_seen_date=client['last_seen'][0:10],
+                                      last_seen_time=client['last_seen'][11:19])
 
     def getClients(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
@@ -57,7 +63,9 @@ class ControlServerHandler():
 
     def getStatistics(self):
         num_clients = Client.objects.all().count()
-        top_os = Client.objects.annotate(c=Count('os_name')).order_by('-c').first().os_name
+        top_os = 'None'
+        if num_clients > 0:
+            top_os = Client.objects.annotate(c=Count('os_name')).order_by('-c').first().os_name
         statistics = {'num_clients': num_clients,
                       'top_os': top_os,
                       'errors': self.errors}
@@ -129,9 +137,6 @@ class ControlServerHandler():
             sent_tasks = response.json()['sent_tasks'][0]
             for task in pending_tasks:
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
-                # Notification
-                # update_message = 'Loaded task ' + t_id
-                # notify.send(user, recipient=user, verb=update_message)
                 if not (SentTask.objects.filter(task_id=t_id).exists()):
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
@@ -169,7 +174,6 @@ class ControlServerHandler():
                     t_sent_status = task['status'].replace("_", " ")
                     t_current_status = SentTask.objects.get(task_id=t_id).status
                     if t_sent_status != t_current_status:
-                        # TODO: Update in our database
                         our_id = SentTask.objects.get(task_id=t_id).id
                         SentTask.objects.filter(task_id=t_id).update(status=t_sent_status)
                         new_updated_task = {

@@ -12,9 +12,15 @@ class Client(models.Model):
     hostname = models.CharField(max_length=50, default="")
     host_user = models.CharField(max_length=50, default="")
     privileges = models.CharField(max_length=50, default="")
+    first_seen_date = models.CharField(max_length=50, default="")
+    first_seen_time = models.CharField(max_length=50, default="")
+    last_seen_date = models.CharField(max_length=50, default="")
+    last_seen_time = models.CharField(max_length=50, default="")
 
     def __str__(self):
-        return str(self.client_id)
+        return "Id: " + str(self.client_id) + \
+               "First seen: " + self.first_seen_date + " " + self.first_seen_time + \
+               "Last seen: " + self.last_seen_date + " " + self.last_seen_time
 
 
 class SentTask(models.Model):
