@@ -4,13 +4,11 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - PROTOCOL=${PROTOCOL}
-        - CONTROL_SERVER_URL=${CONTROL_SERVER_URL}
-        - REMOTE_HOST=${REMOTE_HOST}
-        - REMOTE_PORT=${REMOTE_PORT}
-        - OBFUSCATION_KEY=${OBFUSCATION_KEY}
-        - CLIENT_HTTP_HOST=${CLIENT_HTTP_HOST}
-        - CLIENT_HTTP_IP=${CLIENT_HTTP_IP}
+        - PROTOCOL=${CLIENT_PROTOCOL}
+        - CONTROL_SERVER_URL=${CLIENT_CONTROL_SERVER_URL}
+        - REMOTE_HOST=${CLIENT_UDP_HOST}
+        - REMOTE_PORT=${CLIENT_UDP_PORT}
+        - OBFUSCATION_KEY=${CLIENT_OBFUSCATION_KEY}
     command: client
     restart: always
     container_name: client
