@@ -9,5 +9,5 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-ENV FLASK_APP=src/router.py
-CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]
+ENV FLASK_APP=src/router.py:init
+CMD [ "python3", "-u", "-m" , "flask", "run", "--host=0.0.0.0"]

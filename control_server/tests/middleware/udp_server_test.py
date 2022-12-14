@@ -1,10 +1,9 @@
-import socket
-
 import pytest
 from decouple import config
 
 from control_server.src.middleware.events.udp_receive_event import \
     UdpReceiveEvent
+from control_server.src.middleware.obfuscation_key import StaticObfuscationKey
 from control_server.src.middleware.udp_server import UdpServer
 from control_server.tests.utils.udp_utils import send_bytes
 
@@ -19,6 +18,7 @@ class ResultContainer:
     """
     Class to hold whether the result was successfully received
     """
+
     def __init__(self):
         self.success = False
 
@@ -63,9 +63,49 @@ def test_udp_server():
         response = send_bytes(
             data=b'\x00',
             host=host,
-            port=port,
-            response_length=len(response_data)
+            port=port
         )
 
         assert response == response_data
         assert result.success
+
+
+def test_udp_server_twice():
+    """
+    Tests that the UDP server can receive a message
+    :return:
+    """
+    if config('CI', default=False, cast=bool):
+        pytest.skip('Skipping UDP tests on CI')
+
+    with get_udp_server() as server:
+        result = ResultContainer()
+        server.receive_event += lambda event: handle_udp_response(event, result)
+        response = send_bytes(
+            data=b'\x00',
+            host=host,
+            port=port
+        )
+
+        assert response == response_data
+        assert result.success
+
+        result.success = False
+        response = send_bytes(
+            data=b'\x00',
+            host=host,
+            port=port
+        )
+
+        assert response == response_data
+        assert result.success
+
+
+def test_obfuscated_udp_server():
+    with StaticObfuscationKey():
+        test_udp_server()
+
+
+def test_obfuscated_udp_server_twice():
+    with StaticObfuscationKey():
+        test_udp_server_twice()

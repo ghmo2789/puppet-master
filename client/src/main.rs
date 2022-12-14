@@ -1,3 +1,5 @@
+extern crate core;
+
 use std::{
     thread,
     time,
@@ -93,4 +95,6 @@ async fn main() -> Result<(), anyhow::Error> {
         call_home(&token).await;
         thread::sleep(POLL_SLEEP);
     }
+
+    // Ok(())
 }

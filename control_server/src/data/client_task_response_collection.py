@@ -17,15 +17,19 @@ class ClientTaskResponseCollection(DataClass, Deserializable, Serializable):
             task_id: str = None,
             responses: list[AnonymousClientTaskResponse] = None):
         super().__init__()
-        self.client_id: str = client_id
-        self.task_id: str = task_id
         self.responses: list[AnonymousClientTaskResponse] = \
             responses if responses is not None else []
 
         self._id = {
-            "client_id": self.client_id,
-            "task_id": self.task_id
+            "client_id": client_id,
+            "task_id": task_id
         }
+
+    def get_client_id(self):
+        return self.id["client_id"]
+
+    def get_task_id(self):
+        return self.id["task_id"]
 
     @property
     def id(self):
