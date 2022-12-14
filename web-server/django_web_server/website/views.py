@@ -1,13 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, JsonResponse
 from .forms import clientForm
-from .models import Client, SentTask, Notification
+from .models import Client, SentTask
 from .filters import ClientFilter, TaskFilter
 from .server import ControlServerHandler
 import json
-from notifications.signals import notify
-from django.contrib.auth.models import User
-from django.contrib.auth import login
 
 
 def kill_task(request):
@@ -18,18 +15,6 @@ def kill_task(request):
 def index(request):
     controlServer = ControlServerHandler()
     controlServer.getClients()
-    user = None
-    try:
-        user = User.objects.get(username='admin')
-    except user.DoesNotExist:
-        user = User.objects.create_user(username='admin', 
-                                        email='admin@puppetmaster.com', 
-                                        password='adminpw')
-    
-    login(request, user)
-
-    # notify.send(user, recipient=user, verb='you reached level 10')
-
     tasks = [{'name': "Write command"}, {'name': "Open browser"}]
 
     if request.method == 'POST':
@@ -58,22 +43,11 @@ def tasks(request):
     controlServer = ControlServerHandler()
     controlServer.getTasks()
 
-    user = None
-    try:
-        user = User.objects.get(username='admin')
-    except user.DoesNotExist:
-        user = User.objects.create_user(username='admin', 
-                                        email='admin@puppetmaster.com', 
-                                        password='adminpw')
-    
-    login(request, user)
-
     if request.method == 'POST':
         controlServer.killTask(request)
         return HttpResponseRedirect(request.path_info)
 
-    context = {'tasks': TaskFilter(request.GET, queryset=SentTask.objects.all().order_by('-id')),
-               'notifications': Notification.objects.all() }
+    context = {'tasks': TaskFilter(request.GET, queryset=SentTask.objects.all().order_by('-id'))}
     return render(request, 'website/tasks.html', context)
 
 
@@ -86,6 +60,7 @@ def updated_tasks(request):
 
     return JsonResponse(updatedTaskList)
 
+
 def updated_client_status(request):
     controlServer = ControlServerHandler()
     updatedclientStatus = controlServer.getUpdatedClientStatus()
@@ -94,4 +69,3 @@ def updated_client_status(request):
     }
 
     return JsonResponse(updatedClientList)
-

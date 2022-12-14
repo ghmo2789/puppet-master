@@ -3,4 +3,3 @@ django-leaflet==0.28.3
 python-decouple==3.6
 django-filter==22.1
 requests==2.26.0
-django-notifications-hq==1.7.0

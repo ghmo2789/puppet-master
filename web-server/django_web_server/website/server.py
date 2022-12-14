@@ -3,8 +3,6 @@ from decouple import config
 import requests
 from .models import Client, SentTask
 import time
-from notifications.signals import notify
-from django.contrib.auth.models import User
 
 
 class ControlServerHandler():
@@ -151,7 +149,7 @@ class ControlServerHandler():
                     self.__saveTask(t_id, c_id, task_t, task_i, t_status)
                 else:
                     SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
-    
+
     def getUpdatedTaskStatus(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
@@ -210,7 +208,6 @@ class ControlServerHandler():
             print("Server issues" + str(e))
             return []
 
-
     def sendTasks(self, request):
         client_ids = request.POST.getlist('select')
         task_t = request.POST.getlist('option')[0]
@@ -254,7 +251,7 @@ class ControlServerHandler():
         task_ids = list(SentTask.objects.filter(id__in=selected).values_list('task_id', flat=True))
         selected_client_ids = list(SentTask.objects.filter(task_id__in=task_ids).values_list('client_id', flat=True))
         client_ids = list(Client.objects.filter(id__in=selected_client_ids).values_list('client_id', flat=True))
-        true_task_ids = [ id[:len(id)//2] for id in task_ids]
+        true_task_ids = [id[:len(id)//2] for id in task_ids]
 
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}

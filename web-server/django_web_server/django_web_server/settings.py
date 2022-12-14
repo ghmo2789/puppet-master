@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_filters",
     "django.contrib.gis.geoip2",
-    "notifications",
 ]
 
 MIDDLEWARE = [
@@ -128,5 +127,3 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 GEOIP_PATH = os.path.join(BASE_DIR, 'website/geodata')
-
-NOTIFICATIONS_NOTIFICATION_MODEL = 'website.Notification'
