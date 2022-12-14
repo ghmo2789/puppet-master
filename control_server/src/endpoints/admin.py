@@ -10,6 +10,7 @@ from control_server.src.data.identifying_client_data import \
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.client_task import ClientTask
 from control_server.src.data.task import Task
+from control_server.src.data.client_task_response_collection import ClientTaskResponseCollection
 
 
 def client():
@@ -166,7 +167,6 @@ def post_client_tasks():
     if auth != controller.settings.admin_key or auth is None:
         return '', 401
 
-    # POST är för att en admin ska kunna ge en client en task
     incoming = request.get_json()
 
     clients_id = incoming.get('client_id')
@@ -361,3 +361,49 @@ def _create_done_abort_task(abort_task: Task, client_id: str) -> ClientTask:
     )
 
     return client_abort_task
+
+
+def get_task_output():
+    """
+    Endpoint handling a tasks output given the tasks output or client id.
+    :return: A list of task response.
+    """
+    auth = request.headers.get('Authorization')
+    if auth != controller.settings.admin_key or auth is None:
+        return '', 401
+
+    client_id = request.args.get('id')
+    task_id = request.args.get('task_id')
+
+    key = {
+
+    }
+
+    # Wrong client id or bad formatting
+    if client_id is not None and len(client_id) > 0:
+        client_info = controller.db.get_client(
+            client_id
+        )
+
+        if client_info is None:
+            return 'Client does not exists', 404
+
+        key['_id.client_id'] = client_id
+
+    if task_id is not None and len(task_id) > 0:
+        key['_id.task_id'] = task_id
+
+    all_task_response = list(
+        controller.db.get_all(
+            collection=DatabaseCollection.CLIENT_TASK_RESPONSES,
+            identifier=key,
+            entry_instance_creator=lambda: cast(
+                Deserializable(),
+                ClientTaskResponseCollection()
+            )
+        ))
+
+    return jsonify({
+        'task_responses': [current_response.serialize()
+                           for current_response in all_task_response]
+    }), 200

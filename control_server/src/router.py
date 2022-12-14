@@ -78,6 +78,11 @@ class Router:
                 f'{pref}/admin/task',
                 admin.post_client_tasks,
                 ['POST']
+            ),
+            RouteDestination(
+                f'{pref}/admin/taskoutput',
+                admin.get_task_output,
+                ['GET']
             )
         ]
 
