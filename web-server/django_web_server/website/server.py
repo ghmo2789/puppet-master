@@ -2,6 +2,7 @@ from django.db.models import Count
 from decouple import config
 import requests
 from .models import Client, SentTask
+import json
 
 
 class ControlServerHandler():
@@ -102,13 +103,34 @@ class ControlServerHandler():
 
         return summarized_locations
 
-    def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_date, t_time):
+    def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_date, t_time, t_output):
         if task_t != 'abort':
             client = Client.objects.get(client_id=c_id)
             asc_t = str(t_date) + " " + str(t_time)
             client.senttask_set.create(task_id=t_id, start_time=asc_t, status=t_status,
-                                       task_type=task_t, task_info=task_i)
+                                       task_type=task_t, task_info=task_i, task_output=t_output)
 
+    
+    def getTaskOutput(self, task_id, client_id):
+        output_string = ""
+        has_output = "False"
+        requestUrl = "https://" + self.url + self.prefix + "/admin/taskoutput"
+        requestHeaders = {'Authorization': self.authorization}
+        data = {
+            "id": str(client_id),
+            "task_id": str(task_id),
+        }
+        response = requests.get(url=requestUrl, headers=requestHeaders, params=data)
+        status_code = response.status_code
+        if status_code == 200:
+            output_string = str(response.json()['task_responses'][0]['responses'][0]['result']) .replace("\n", "<br>")
+            has_output = "True"
+        else:
+            print(status_code)
+        full_output = '{"output": "' + output_string + '" , "has_output": "' + has_output + '"}'
+        output_json = json.loads(full_output)
+        return output_json
+    
     def getTasks(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
@@ -120,10 +142,10 @@ class ControlServerHandler():
 
         status_code = response.status_code
         if status_code == 200:
-            print(response.json())
             pending_tasks = response.json()['pending_tasks']
             sent_tasks = response.json()['sent_tasks'][0]
             for task in pending_tasks:
+                t_output = self.getTaskOutput(task['_id']['task_id'], task['_id']['client_id'])
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
                 if not (SentTask.objects.filter(task_id=t_id).exists()):
                     c_id = task['_id']['client_id']
@@ -132,8 +154,9 @@ class ControlServerHandler():
                     t_date = task['task']['date']
                     t_time = task['task']['time']
                     t_status = 'Pending'
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time, t_output)
             for task in sent_tasks:
+                t_output = self.getTaskOutput(task['_id']['task_id'], task['_id']['client_id'])
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
                 if not (SentTask.objects.filter(task_id=t_id).exists()):
                     c_id = task['_id']['client_id']
@@ -142,7 +165,7 @@ class ControlServerHandler():
                     t_date = task['task']['date']
                     t_time = task['task']['time']
                     t_status = task['status'].replace("_", " ")
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time, t_output)
                 else:
                     SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
 
