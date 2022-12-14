@@ -5,6 +5,7 @@
 5     ./server.py [<port>]
 6 """
 import struct
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import json
@@ -173,6 +174,8 @@ def run(server_class=HTTPServer, handler_class=S, port=8080):
 
 _UDP_HEADER_PARSE_PATTERN = '>HHHHHH'
 _UDP_HEADER_LEN = 12
+_CHECKSUM_MSB = 4
+_CHECKSUM_LSB = 5
 
 
 def _response(body):
@@ -186,11 +189,16 @@ def _response(body):
     header = struct.pack(_UDP_HEADER_PARSE_PATTERN,
                          message_len,
                          status_code,
-                         calc_checksum(compressed_body),
+                         0,
                          url_len,
                          body_len,
                          req_h_len)
-    mes = header + compressed_body
+    # Set checksum
+    mes = bytearray(header + compressed_body)
+    checksum = calc_checksum(mes)
+    print(checksum)
+    mes[_CHECKSUM_LSB] = checksum & 0x00FF
+    mes[_CHECKSUM_MSB] = (checksum >> 8) & 0x00FF
     return mes
 
 
@@ -211,6 +219,9 @@ def xor_key(buf, key):
 
 
 def calc_checksum(buf):
+    buf = bytearray(buf)
+    buf[_CHECKSUM_MSB] = 0
+    buf[_CHECKSUM_LSB] = 0
     calculator = Calculator(Crc16.GSM)
     return calculator.checksum(buf)
 
@@ -235,7 +246,7 @@ def run_udp(key=''):
         try:
             message, address = server_socket.recvfrom(_BUFFER_SIZE)
             print(f'Received {len(message)} bytes from {address}')
-            # print("b'{}'".format(''.join('\\x{:02x}'.format(b) for b in message)))
+            print("b'{}'".format(''.join('\\x{:02x}'.format(b) for b in message)))
 
             if key != '':
                 print('Decrypting message')
@@ -246,7 +257,7 @@ def run_udp(key=''):
                     struct.unpack(_UDP_HEADER_PARSE_PATTERN, message[:_UDP_HEADER_LEN])
 
                 index = _UDP_HEADER_LEN
-                if not calc_checksum(message[index:]) == checksum:
+                if not calc_checksum(bytearray(message)) == checksum:
                     print('Failed to verify checksum')
                     continue
 
@@ -305,7 +316,6 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     demo = args.demo
-    if args.udp:
-        run_udp(key=args.key)
-    else:
-        run(port=args.port)
+    t = threading.Thread(target=run_udp, args=[args.key])
+    t.start()
+    run(port=args.port)

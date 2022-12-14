@@ -90,7 +90,7 @@ impl UDPMessage {
         let mut message_header = UDPMessageHeader {
             message_length: message_body.len() as u16,
             status_code: self.status_code,
-            checksum: UDPMessage::calculate_checksum(&mut message_body),
+            checksum: 0,
             url_length: self.endpoint.len() as u16,
             body_length: self.body.len() as u16,
             request_header_length: self.request_header.len() as u16,
@@ -100,6 +100,11 @@ impl UDPMessage {
         let mut buf: Vec<u8> = vec![];
         UDPMessage::push_buf(&mut buf, &mut message_header.as_bytes().to_vec());
         UDPMessage::push_buf(&mut buf, &mut message_body);
+
+        // Calculating and setting the checksum of message
+        let checksum = UDPMessage::calculate_checksum(&mut buf);
+        buf[UDPMessageHeader::CHECKSUM_MSB] = (checksum >> 8) as u8;
+        buf[UDPMessageHeader::CHECKSUM_LSB] = checksum as u8;
 
         // If key is defined, "encrypt" using the key
         if KEY.len() > 0 {
@@ -203,14 +208,20 @@ impl UDPMessage {
         let message_header = UDPMessage::extract_message_header(buf)?;
 
         // Verify checksum
-        let mut cur_index = UDPMessageHeader::HEADER_LENGTH as usize;
-        let mut message = buf[cur_index..buf.len()].to_vec();
+        let mut message = buf.to_vec();
+        // Resetting checksum to 0 to enable calculation of checksum
+        message[UDPMessageHeader::CHECKSUM_MSB] = 0;
+        message[UDPMessageHeader::CHECKSUM_LSB] = 0;
         let checksum = UDPMessage::calculate_checksum(&mut message);
         if checksum != message_header.checksum {
+            #[cfg(debug_assertions)]
+            println!("Checksum failed: {} != {}", checksum, message_header.checksum);
             return Err(anyhow::Error::msg("Checksum of message is not valid"));
         }
 
         // Decompress
+        let mut cur_index = UDPMessageHeader::HEADER_LENGTH as usize;
+        message = message[cur_index..message.len()].to_vec();
         let buf = match UDPMessage::decompress(&mut message) {
             Ok(val) => val,
             _ => Vec::new()
@@ -322,20 +333,19 @@ impl UDPMessageHeader {
         if (buf.len() as u16) < UDPMessageHeader::HEADER_LENGTH {
             return Err(anyhow::Error::msg("To short buffer!"));
         }
-
         let header = UDPMessageHeader {
-            message_length: (buf[UDPMessageHeader::MESSAGE_LEN_MSB] as u16) << 8 |
-                buf[UDPMessageHeader::MESSAGE_LEN_LSB] as u16,
-            status_code: (buf[UDPMessageHeader::STATUS_CODE_MSB] as u16) << 8 |
-                buf[UDPMessageHeader::STATUS_CODE_LSB] as u16,
-            checksum: (buf[UDPMessageHeader::CHECKSUM_MSB] as u16) << 8 |
-                buf[UDPMessageHeader::CHECKSUM_LSB] as u16,
-            url_length: (buf[UDPMessageHeader::URL_LEN_MSB] as u16) << 8 |
-                buf[UDPMessageHeader::URL_LEN_LSB] as u16,
-            body_length: (buf[UDPMessageHeader::BODY_LEN_MSB] as u16) << 8 |
-                buf[UDPMessageHeader::BODY_LEN_LSB] as u16,
-            request_header_length: (buf[UDPMessageHeader::MSG_HEADER_LEN_MSB] as u16) << 8 |
-                buf[UDPMessageHeader::MSG_HEADER_LEN_LSB] as u16,
+            message_length: (buf[UDPMessageHeader::MESSAGE_LEN_MSB].clone() as u16) << 8 |
+                buf[UDPMessageHeader::MESSAGE_LEN_LSB].clone() as u16,
+            status_code: (buf[UDPMessageHeader::STATUS_CODE_MSB].clone() as u16) << 8 |
+                buf[UDPMessageHeader::STATUS_CODE_LSB].clone() as u16,
+            checksum: (buf[UDPMessageHeader::CHECKSUM_MSB].clone() as u16) << 8 |
+                buf[UDPMessageHeader::CHECKSUM_LSB].clone() as u16,
+            url_length: (buf[UDPMessageHeader::URL_LEN_MSB].clone() as u16) << 8 |
+                buf[UDPMessageHeader::URL_LEN_LSB].clone() as u16,
+            body_length: (buf[UDPMessageHeader::BODY_LEN_MSB].clone() as u16) << 8 |
+                buf[UDPMessageHeader::BODY_LEN_LSB].clone() as u16,
+            request_header_length: (buf[UDPMessageHeader::MSG_HEADER_LEN_MSB].clone() as u16) << 8 |
+                buf[UDPMessageHeader::MSG_HEADER_LEN_LSB].clone() as u16,
         };
         Ok(header)
     }
@@ -358,13 +368,17 @@ impl UDPMessageHeader {
 ///
 /// # Returns
 /// A UDP socket bound to given local address and port
-fn init_host(local_host: String, timeout: u64) -> net::UdpSocket {
+fn init_host(local_host: String, timeout: u64) -> Result<net::UdpSocket, anyhow::Error> {
     let random_port = rand::thread_rng().gen_range(LOCAL_PORT_MIN, LOCAL_PORT_MAX);
+
     let host = format!("{}:{}", local_host, random_port.to_string());
-    let socket = net::UdpSocket::bind(host).expect("Failed to init UDP socket");
+    let socket = match net::UdpSocket::bind(host) {
+        Ok(val) => val,
+        _ => return Err(anyhow::Error::msg("Failed to initialise socket"))
+    };
     socket.set_read_timeout(Some(std::time::Duration::from_secs(timeout)))
         .expect("Failed to set timeout");
-    socket
+    Ok(socket)
 }
 
 /// Sends a message over a UDP socket
@@ -437,7 +451,7 @@ pub fn post_request_udp(
     let mut message = UDPMessage::new(url, header, body, UDP_POST);
     let tx_buf = message.as_bytes();
     let sock = init_host(LOCAL_HOST.to_string(),
-                         SOCKET_TIMEOUT);
+                         SOCKET_TIMEOUT)?;
     send(&sock, format!("{}:{}", remote_host, remote_port), &tx_buf);
 
     // If not expecting response, return
@@ -491,7 +505,7 @@ pub fn get_request_udp(url: String,
                                   UDP_GET);
     let tx_buf = mes.as_bytes();
     let sock = init_host(LOCAL_HOST.to_string(),
-                         SOCKET_TIMEOUT);
+                         SOCKET_TIMEOUT)?;
     send(&sock,
          format!("{}:{}", remote_host, remote_port),
          &tx_buf);
@@ -636,8 +650,8 @@ mod tests {
         assert_eq!(status_code, udp_message.status_code);
     }
 
-    const INIT_MESSAGE_BYTES: &[u8] = b"\x00\x5c\x00\x03\x6c\xb8\x00\x14\x00\x6b\x00\x00\x1b\x7e\x00\xa0\x8c\xd4\x63\x4d\x19\x1c\x09\xa2\x9d\xd3\x7e\xfb\xff\x47\xb1\xac\x06\xed\xc2\x22\x05\x65\x94\x2c\x3a\x7d\x3a\x39\x70\xfa\xe1\x7b\x12\xa6\xa9\x64\xfc\x2d\x77\xe2\xd5\x73\x14\x16\x2a\xeb\xb3\x99\x97\x5d\x7a\x3f\xe7\x3d\x22\x10\xab\xf6\x94\x41\x60\x66\x24\x9c\xd7\xa8\x0e\xac\x80\xba\x77\x9e\x51\xf7\x93\xd5\xae\x04\x41\xc5\x21\x71\x40\xa4\x86\x08\x59\x33";
-    const GET_TASKS_MESSAGES_BYTES: &[u8] = b"\x00\x2a\x00\x01\x36\xe4\x00\x14\x00\x00\x00\x18\x1b\x2b\x00\xf8\x05\x52\x39\x22\x6d\x0e\xa4\xd9\x27\x43\x1b\xe8\x60\x22\x07\xee\xad\xe8\x66\x6f\x24\x4a\x89\x45\x23\x19\x2d\x38\xcb\xfd\xec\xfe\xd3\x7e\x45\x64\xf5\x00";
+    const INIT_MESSAGE_BYTES: &[u8] = b"\x00\x5c\x00\x03\x5e\xe2\x00\x14\x00\x6b\x00\x00\x1b\x7e\x00\xa0\x8c\xd4\x63\x4d\x19\x1c\x09\xa2\x9d\xd3\x7e\xfb\xff\x47\xb1\xac\x06\xed\xc2\x22\x05\x65\x94\x2c\x3a\x7d\x3a\x39\x70\xfa\xe1\x7b\x12\xa6\xa9\x64\xfc\x2d\x77\xe2\xd5\x73\x14\x16\x2a\xeb\xb3\x99\x97\x5d\x7a\x3f\xe7\x3d\x22\x10\xab\xf6\x94\x41\x60\x66\x24\x9c\xd7\xa8\x0e\xac\x80\xba\x77\x9e\x51\xf7\x93\xd5\xae\x04\x41\xc5\x21\x71\x40\xa4\x86\x08\x59\x33";
+    const GET_TASKS_MESSAGES_BYTES: &[u8] = b"\x00\x2a\x00\x01\x0b\xa8\x00\x14\x00\x00\x00\x18\x1b\x2b\x00\xf8\x05\x52\x39\x22\x6d\x0e\xa4\xd9\x27\x43\x1b\xe8\x60\x22\x07\xee\xad\xe8\x66\x6f\x24\x4a\x89\x45\x23\x19\x2d\x38\xcb\xfd\xec\xfe\xd3\x7e\x45\x64\xf5\x00";
     const UDP_BYTE_MESSAGES: [&[u8]; 2] = [
         INIT_MESSAGE_BYTES,
         GET_TASKS_MESSAGES_BYTES

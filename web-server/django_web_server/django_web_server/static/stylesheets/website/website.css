@@ -1,0 +1,28 @@
+
+#website-info {
+  padding: 40px 0 40px 0;
+  overflow: auto;
+}
+
+#website-statistics {
+  margin: 0 0% 0 3%;
+  width: 30%;
+}
+
+#website-map {
+  margin: 0 3% 0 4%;
+  width: 60%;
+}
+
+.website-info-box {
+  float: left;
+  height: 400px;
+  border: 1px #111111;
+  border-radius: 2px;
+  background-color: #212529;
+}
+
+#website-kill-btn {
+  background-color: black;
+  border-color: black;
+}
