@@ -59,7 +59,7 @@
              
           {% for client in filter.qs %}
             <tr id="{{client.client_id}}" style="cursor: pointer;">
-                <td><input type="checkbox" name="select" value='{{client.client_id}}' id="{{client.id}}"></td> 
+                <td><input style="cursor: pointer;" type="checkbox" name="select" value='{{client.client_id}}' id="{{client.id}}" onclick= "event.stopPropagation();"></td> 
                 <td>{{client.ip}}</td>
                 <td>{{client.os_name}} v. {{client.os_version}}</td>
                 <td>{{client.hostname}}</td>
@@ -103,16 +103,18 @@
         // Initialize data for javascript
         let data = [];
         let div_ids = []; 
-      {% for i in filter.qs %}
+        {% for i in filter.qs %}
         data.push({{i.id}}); 
         div_ids.push("{{i.client_id}}");
-      {% endfor %}
+        {% endfor %}
       
         // Event listeners
         for(let i = 0; i < data.length; i++) {
           document.getElementById(data[i]).addEventListener("click", toggleSubmit);
           document.getElementById(data[i]).addEventListener("click", toggleMarker);
+          //document.getElementById(data[i]).addEventListener("click", stopImmediatePropagation);
           document.getElementById(div_ids[i]).addEventListener("click", () => {checkboxDiv(data[i])});
+          document.getElementById(div_ids[i]).addEventListener("click", toggleMarker);
           document.getElementById(div_ids[i]).addEventListener("click", toggleSubmit);
         }
         document.getElementById("submit").addEventListener("change", enableButton); 
@@ -125,11 +127,13 @@
         // UI Functions
 
         function checkboxDiv(id){
-          let checkbox = document.getElementById(id).checked;
-          if(checkbox){
-            document.getElementById(id).checked = false;
+          let checkbox = document.getElementById(id);
+          if(checkbox.checked){
+            checkbox.checked = false;
+            checkbox.stopPropagation();
           } else {
-            document.getElementById(id).checked = true; 
+            checkbox.checked = true;
+            //checkbox.stopPropagation(); 
           }
         }
 
