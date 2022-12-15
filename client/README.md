@@ -18,6 +18,18 @@ If not building for a release and want to test the application with debug output
 Note that if wanting to make changes to the configuration files between compilations, you may be required to remove your
 previous compiled version. To do this, remove the generated ``client/target`` directory.
 
+## How to build and run application in a docker container
+
+1. Before building the client application, the environment variables in 
+   ``client/.env`` must be set. In this file, communication protocol and URL/IP 
+   address to the control server is set. For more documentation on what the 
+   variables do, see [.cargo/config.toml](.cargo/config.toml).
+
+2. When the variables are set, the container can be build and started with the 
+   script [start-docker-container.sh](start-docker-container.sh). To use the
+   script, set it as executable with ``chmod +x start-docker-container.sh`` and
+   then run it with ``./start-docker-container.sh``.
+
 ## How to run tests locally
 
 If testing the client locally, you must first set the configuration file located in ``client/.cargo/config.toml`` as

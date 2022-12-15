@@ -1,0 +1,20 @@
+FROM rust:1.65-bullseye
+
+ARG PROTOCOL
+ARG CONTROL_SERVER_URL
+ARG REMOTE_HOST
+ARG REMOTE_PORT
+ARG OBFUSCATION_KEY
+
+ENV PROTOCOL=$PROTOCOL
+ENV CONTROL_SERVER_URL=$CONTROL_SERVER_URL
+ENV REMOTE_HOST=$REMOTE_HOST
+ENV REMOTE_PORT=$REMOTE_PORT
+ENV OBFUSCATION_KEY=$OBFUSCATION_KEY
+
+WORKDIR /usr/src/client
+COPY . .
+
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/home/root/app/target \
+    cargo install --path .
