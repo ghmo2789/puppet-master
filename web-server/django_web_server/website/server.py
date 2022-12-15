@@ -86,7 +86,7 @@ class ControlServerHandler():
                     }
                     locations.append(clientLocation)
             except Exception as e:
-                print('IP could not be converted to location')
+                print(f'IP could not be converted to location: {e}')
 
         summarized_locations = []
         processed_locations = []
