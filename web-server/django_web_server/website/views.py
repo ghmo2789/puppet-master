@@ -20,6 +20,7 @@ def index(request):
     if request.method == 'POST':
         form = clientForm(request.POST)
         if form.is_valid():
+            print(request)
             controlServer.sendTasks(request)
             return HttpResponseRedirect(request.path_info)
     else:

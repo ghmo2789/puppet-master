@@ -50,7 +50,7 @@
             <form method="post" >
             {% csrf_token %}
             {% for i in tasks.qs%}
-            <tr>
+            <tr id="{{i.task_id}}" style="cursor: pointer">
                 <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}"></td> 
                 <td>{{i.id}}</td>
                 <td>{{i.client_id.ip}}</td>
@@ -64,8 +64,8 @@
       </div>
 
       <!-- Kill task selection -->
-      <div class="w3-container w3-padding-16" id="submit" hidden>
-        <div class="w3-container w3-quarter w3-center" style="float: right">
+      <div class="w3-container w3-padding-16" id="submit" style="position: absolute; right: 10; bottom: 10; width: 500" hidden>
+        <div class="w3-container w3-center w3-half" style="float: right;">
           <input class ="w3-button w3-block w3-black", type="submit", value="Kill Task" id="send_kill"> 
         </div>
       </div>
@@ -76,16 +76,29 @@
 
       // Initialize data for javascript
       let data = [];
+      let div_ids = []; 
       {% for i in tasks.qs %}
         data.push({{i.id}});
+        div_ids.push("{{i.task_id}}");
       {% endfor %}
 
       // Event listeners
       for(let i = 0; i < data.length; i++) {
         document.getElementById(data[i]).addEventListener("click", toggleSubmit)
+        document.getElementById(div_ids[i]).addEventListener("click", () => {checkboxDiv(data[i])});
+        document.getElementById(div_ids[i]).addEventListener("click", toggleSubmit);
       }
 
       toggleSubmit();
+
+      function checkboxDiv(id){
+          let checkbox = document.getElementById(id).checked;
+          if(checkbox){
+            document.getElementById(id).checked = false;
+          } else {
+            document.getElementById(id).checked = true; 
+          }
+        }
 
       function toggleSubmit(){
         submit_element = document.getElementById("submit") 

@@ -2,7 +2,6 @@ from django.db.models import Count
 from decouple import config
 import requests
 from .models import Client, SentTask
-import time
 
 
 class ControlServerHandler():
@@ -110,11 +109,10 @@ class ControlServerHandler():
 
         return summarized_locations
 
-    def __saveTask(self, t_id, c_id, task_t, task_i, t_status):
+    def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_date, t_time):
         if task_t != 'abort':
             client = Client.objects.get(client_id=c_id)
-            t = time.localtime()
-            asc_t = time.asctime(t)
+            asc_t = str(t_date) + " " + str(t_time)
             client.senttask_set.create(task_id=t_id, start_time=asc_t, status=t_status,
                                        task_type=task_t, task_info=task_i)
 
@@ -129,6 +127,7 @@ class ControlServerHandler():
 
         status_code = response.status_code
         if status_code == 200:
+            print(response.json())
             pending_tasks = response.json()['pending_tasks']
             sent_tasks = response.json()['sent_tasks'][0]
             for task in pending_tasks:
@@ -137,16 +136,20 @@ class ControlServerHandler():
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
+                    t_date = task['task']['date']
+                    t_time = task['task']['time']
                     t_status = 'Pending'
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status)
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
             for task in sent_tasks:
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
                 if not (SentTask.objects.filter(task_id=t_id).exists()):
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
+                    t_date = task['task']['date']
+                    t_time = task['task']['time']
                     t_status = task['status'].replace("_", " ")
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status)
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
                 else:
                     SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
 
