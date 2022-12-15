@@ -123,7 +123,8 @@ class ControlServerHandler():
         response = requests.get(url=requestUrl, headers=requestHeaders, params=data)
         status_code = response.status_code
         if status_code == 200:
-            output_string = str(response.json()['task_responses'][0]['responses'][0]['result']) .replace("\n", "<br>")
+            print(response.json())
+            #output_string = str(response.json()['task_responses'][0]['responses'][0]['result']).replace("\n", "<br>")
             has_output = "True"
         else:
             print(status_code)
