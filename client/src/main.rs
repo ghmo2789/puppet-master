@@ -73,13 +73,15 @@ async fn initialise_client() -> String {
         let id = utils::get_host_identify();
         token = match communication::send_identity(id).await {
             Ok(val) => val,
-            Err(_) => String::from("")
+            Err(e) => {
+                #[cfg(debug_assertions)]
+                println!("Failed to get authorization token from server: {}", e);
+                String::from("")
+            }
         };
 
         if token != String::from("") {
             break;
-        } else if cfg!(debug_assertions) {
-            println!("Failed initialize");
         }
         thread::sleep(POLL_SLEEP);
     }
