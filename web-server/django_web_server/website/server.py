@@ -127,7 +127,6 @@ class ControlServerHandler():
 
         status_code = response.status_code
         if status_code == 200:
-            print(response.json())
             pending_tasks = response.json()['pending_tasks']
             sent_tasks = response.json()['sent_tasks'][0]
             for task in pending_tasks:
