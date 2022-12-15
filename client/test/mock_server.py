@@ -4,10 +4,19 @@
 4 Usage::
 5     ./server.py [<port>]
 6 """
+import struct
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import json
 import argparse
+import socket
+import brotli
+from crc import Crc16, Calculator
+
+_LOCAL_IP = '127.0.0.1'
+_LOCAL_PORT = 65500
+_BUFFER_SIZE = 550
 
 _INIT_CLIENT_KEYS = ['os_name', 'os_version', 'hostname', 'host_user', 'privileges']
 _INIT_CLIENT_PATH = '/control/client/init'
@@ -15,7 +24,7 @@ _INIT_CLIENT_PATH = '/control/client/init'
 _CLIENT_HEADER = 'content-type: application/json'
 _TEST_TOKEN = "12345"
 
-_TASK_RESULT_PATH = "/client/task/result"
+_TASK_RESULT_PATH = "/control/client/task/response"
 _TASK_PATH = '/control/client/task'
 _TEST_TASKS = """[
     {
@@ -41,7 +50,7 @@ _TEST_TASKS = """[
     }         
 ]"""
 
-_DEMO_TASKS = """[
+_DEMO_TASKS = """
     {
         "id": "1",
         "data": "ls -al",
@@ -58,37 +67,27 @@ _DEMO_TASKS = """[
     },
     {
         "id": "3",
-        "data": "hejhej",
+        "data": "hejhejhej",
         "max_delay": 1000,
         "min_delay": 0,
         "name": "terminal"
-    },
+    }    
+"""
+
+_DEMO_SCAN_TASK = """[
     {
-        "id": "4",
-        "data": "ping 127.0.0.1",
-        "max_delay": 150,
+        "id": "7",
+        "data": "20-23, 80, 443",
+        "max_delay": 0,
         "min_delay": 0,
-        "name": "terminal"
-    },
-    {
-        "id": "5",
-        "data": "ping 127.0.0.1",
-        "max_delay": 150,
-        "min_delay": 0,
-        "name": "terminal"
-    },
-    {
-        "id": "6",
-        "data": "ping 192.168.1.247",
-        "max_delay": 150,
-        "min_delay": 0,
-        "name": "terminal"
-    }      
+        "name": "network_scan"
+    }
 ]"""
+
 _DEMO_TASKS_2 = """[
     {
         "id": "5",
-        "data": "4,5,6",
+        "data": "4",
         "max_delay": 0,
         "min_delay": 0,
         "name": "abort"
@@ -97,6 +96,7 @@ _DEMO_TASKS_2 = """[
 
 n_gets = 0
 demo = True
+
 
 class S(BaseHTTPRequestHandler):
     def _set_response(self):
@@ -116,7 +116,8 @@ class S(BaseHTTPRequestHandler):
         if _TEST_TOKEN in str(self.headers):
             self._set_response()
             if demo:
-                message = _DEMO_TASKS if n_gets % 2 == 0 else _DEMO_TASKS_2
+                message = _DEMO_SCAN_TASK if n_gets == 0 else \
+                    _DEMO_TASKS if n_gets % 2 == 0 else _DEMO_TASKS_2
             else:
                 message = _TEST_TASKS
         else:
@@ -171,6 +172,128 @@ def run(server_class=HTTPServer, handler_class=S, port=8080):
     logging.info('Stopping httpd...\n')
 
 
+_UDP_HEADER_PARSE_PATTERN = '>HHHHHH'
+_UDP_HEADER_LEN = 12
+_CHECKSUM_MSB = 4
+_CHECKSUM_LSB = 5
+
+
+def _response(body):
+    compressed_body = compress(body)
+    url_len = 0
+    req_h_len = 0
+    body_len = len(body)
+    compressed_body_len = len(compressed_body)
+    status_code = 200
+    message_len = _UDP_HEADER_LEN + url_len + compressed_body_len + req_h_len
+    header = struct.pack(_UDP_HEADER_PARSE_PATTERN,
+                         message_len,
+                         status_code,
+                         0,
+                         url_len,
+                         body_len,
+                         req_h_len)
+    # Set checksum
+    mes = bytearray(header + compressed_body)
+    checksum = calc_checksum(mes)
+    print(checksum)
+    mes[_CHECKSUM_LSB] = checksum & 0x00FF
+    mes[_CHECKSUM_MSB] = (checksum >> 8) & 0x00FF
+    return mes
+
+
+def udp_init_response():
+    body = b'{"Authorization": "12345"}'
+    return _response(body)
+
+
+def udp_get_commands_response():
+    body = _TEST_TASKS.encode()
+    return _response(body)
+
+
+def xor_key(buf, key):
+    for i in range(0, len(buf)):
+        buf[i] = buf[i] ^ key[i % len(key)]
+    return bytes(buf)
+
+
+def calc_checksum(buf):
+    buf = bytearray(buf)
+    buf[_CHECKSUM_MSB] = 0
+    buf[_CHECKSUM_LSB] = 0
+    calculator = Calculator(Crc16.GSM)
+    return calculator.checksum(buf)
+
+
+def compress(buf):
+    compressed = brotli.compress(buf, lgwin=22, quality=11)
+    return compressed
+
+
+def decompress(buf):
+    return brotli.decompress(buf)
+
+
+def run_udp(key=''):
+    server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+    server_socket.bind((_LOCAL_IP, _LOCAL_PORT))
+    if key != '':
+        with open(key, 'r') as f:
+            key = bytes.fromhex(f.readline())
+
+    while True:
+        try:
+            message, address = server_socket.recvfrom(_BUFFER_SIZE)
+            print(f'Received {len(message)} bytes from {address}')
+            print("b'{}'".format(''.join('\\x{:02x}'.format(b) for b in message)))
+
+            if key != '':
+                print('Decrypting message')
+                message = xor_key(bytearray(message), key)
+                print(message)
+            try:
+                message_len, status_code, checksum, url_len, body_len, req_h_len = \
+                    struct.unpack(_UDP_HEADER_PARSE_PATTERN, message[:_UDP_HEADER_LEN])
+
+                index = _UDP_HEADER_LEN
+                if not calc_checksum(bytearray(message)) == checksum:
+                    print('Failed to verify checksum')
+                    continue
+
+                message = message[:index] + decompress(message[index:])
+                print(f'Length of decompressed message: {len(message)}')
+                print(f'Message:\n{message[index:].decode("utf-8")}')
+
+                url = message[index:index + url_len].decode('utf-8')
+                print(f'URL: {url}')
+                index += url_len
+                body = message[index:index + body_len].decode('utf-8')
+                print(f'BODY: {body}')
+                index += body_len
+                req_h = message[index:index + req_h_len].decode('utf-8')
+                print(f'HEADERS: {req_h}\n')
+            except UnicodeDecodeError:
+                print('Parsing of message failed!')
+                continue
+
+            if _INIT_CLIENT_PATH in url:
+                msg = udp_init_response()
+                if key != '':
+                    msg = xor_key(bytearray(msg), key)
+                server_socket.sendto(msg, address)
+            elif _TASK_PATH in url:
+                msg = udp_get_commands_response()
+                if key != '':
+                    msg = xor_key(bytearray(msg), key)
+                server_socket.sendto(msg, address)
+            if _TASK_RESULT_PATH in url:
+                pass
+
+        except KeyboardInterrupt:
+            break
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Test server for puppet-master client")
     parser.add_argument('--port',
@@ -181,10 +304,18 @@ def parse_args():
                         action='store_true',
                         default=False,
                         help='If running in demo mode or not')
+    parser.add_argument('--udp',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('-key',
+                        help='If using "UDP encryption", path to key file containing hex string',
+                        default='')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_args()
     demo = args.demo
+    t = threading.Thread(target=run_udp, args=[args.key])
+    t.start()
     run(port=args.port)

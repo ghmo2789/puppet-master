@@ -33,7 +33,7 @@ def test_task(client):
     )
 
     controller.db.set(
-        collection=DatabaseCollection.USER_TASKS,
+        collection=DatabaseCollection.CLIENT_TASKS,
         entry_id=client_task.id,
         entry=client_task,
         overwrite=True

@@ -1,5 +1,5 @@
+from datetime import datetime
 from typing import cast, List
-import re
 
 from flask import request, jsonify
 
@@ -34,28 +34,43 @@ def init():
 
     # Generate a client id from the client data
     client_ip = get_ip(request)
+    now = datetime.now().isoformat()
     identifying_client_data = IdentifyingClientData(
         client_data=data,
-        ip=client_ip
+        ip=client_ip,
+        last_seen=now,
+        first_seen=now
     )
 
     client_id = controller.client_id_generator.generate(identifying_client_data)
 
     if client_id is None:
-        print(f"Failed to generate client id for client with IP "
-              f"{request.remote_addr}.")
+        print(
+            f"Failed to generate client id for client with IP "
+            f"{request.remote_addr}."
+        )
         return "", 500  # If unsuccessful, return 500 Internal Server Error
 
     client_id = str(client_id)
 
-    controller.db.set_user(
-        user_id=client_id,
-        user=identifying_client_data,
-        overwrite=True)
+    existing_client = controller.db.get_client(
+        client_id=client_id
+    )
 
-    return jsonify({
-        'Authorization': client_id
-    }), 200
+    identifying_client_data.first_seen = \
+        (existing_client or identifying_client_data).first_seen or now
+
+    controller.db.set_client(
+        client_id=client_id,
+        client=identifying_client_data,
+        overwrite=True
+    )
+
+    return jsonify(
+        {
+            'Authorization': client_id
+        }
+    ), 200
 
 
 def task(done=False):
@@ -73,18 +88,23 @@ def task(done=False):
     ):
         return "", 400
 
-    source_collection = DatabaseCollection.USER_TASKS if not done \
-        else DatabaseCollection.USER_DONE_TASKS
+    source_collection = DatabaseCollection.CLIENT_TASKS if not done \
+        else DatabaseCollection.CLIENT_DONE_TASKS
 
     tasks = cast(
         List[ClientTask],
-        list(controller.db.get_all(
-            source_collection,
-            identifier={
-                "_id.client_id": client_id.authorization
-            },
-            entry_instance_creator=lambda: cast(Deserializable, ClientTask())
-        ))
+        list(
+            controller.db.get_all(
+                source_collection,
+                identifier={
+                    "_id.client_id": client_id.authorization
+                },
+                entry_instance_creator=lambda: cast(
+                    Deserializable,
+                    ClientTask()
+                )
+            )
+        )
     )
 
     serialized_result = [found_task.task.serialize() for found_task in tasks]
@@ -93,14 +113,14 @@ def task(done=False):
         for retrieved_task in tasks:
             retrieved_task.set_status(TaskStatus.IN_PROGRESS)
             controller.db.set(
-                DatabaseCollection.USER_DONE_TASKS,
+                DatabaseCollection.CLIENT_DONE_TASKS,
                 entry_id=retrieved_task.id,
                 entry=retrieved_task,
                 overwrite=True
             )
 
             controller.db.delete(
-                DatabaseCollection.USER_TASKS,
+                DatabaseCollection.CLIENT_TASKS,
                 entry_id=retrieved_task.id
             )
 
@@ -111,9 +131,8 @@ def task(done=False):
 
 def task_response():
     """
-    Endpoint handing the client task request
-    :return: A list of tasks, if any, and a status code representing whether
-    the request was successful or not, and why it may have been unsuccessful
+    Endpoint handing the client task response request, which stores the response
+    in the database
     """
     client_id = ClientIdentifier()
 
@@ -139,7 +158,7 @@ def task_response():
     client_task = cast(
         ClientTask,
         controller.db.get_one(
-            DatabaseCollection.USER_DONE_TASKS,
+            DatabaseCollection.CLIENT_DONE_TASKS,
             identifier=task_key,
             entry_instance=ClientTask()
         )
@@ -157,8 +176,8 @@ def task_response():
     existing_response = cast(
         ClientTaskResponseCollection,
         controller.db.get_one(
-            DatabaseCollection.USER_TASK_RESPONSES,
-            identifier=identifying_response.id,
+            DatabaseCollection.CLIENT_TASK_RESPONSES,
+            entry_id=identifying_response.id,
             entry_instance=cast(Deserializable, identifying_response)
         )
     )
@@ -181,15 +200,15 @@ def task_response():
 
     # Update responses in database
     controller.db.set(
-        DatabaseCollection.USER_TASK_RESPONSES,
-        identifier=existing_response.id,
+        DatabaseCollection.CLIENT_TASK_RESPONSES,
+        entry_id=existing_response.id,
         entry=existing_response,
         overwrite=True
     )
 
     client_task.set_status_code(client_response.status)
     controller.db.set(
-        DatabaseCollection.USER_DONE_TASKS,
+        DatabaseCollection.CLIENT_DONE_TASKS,
         identifier=task_key,
         entry=client_task,
         overwrite=True,

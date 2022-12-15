@@ -17,13 +17,14 @@ class DatabaseTestData:
     not mutated during the tests, so it can be reused (except for the databases
     contents).
     """
+
     def __init__(self, use_mock: bool):
         self.settings: WebSettings = WebSettings().read()
         self.db: Database = DatabaseBuilder() \
             .set_mock(use_mock if not self.settings.mock_db else True) \
             .build()
 
-        self.sample_user_data: Dict = {
+        self.sample_client_data: Dict = {
             "os_name": "test os",
             "os_version": "test os 1.0",
             "hostname": "host",
@@ -60,97 +61,103 @@ def assert_are_equal(*args: IdentifyingClientData):
                 assert current_dict[key] == value
 
 
-def test_set_delete_user(test_data: DatabaseTestData):
+def test_set_delete_client(test_data: DatabaseTestData):
     """
-    Tests that the set_user method works as expected without raising errors
+    Tests that the set_client method works as expected without raising errors
     """
     db = test_data.db
-    user = IdentifyingClientData(
-        client_data=ClientData.load_from_dict(test_data.sample_user_data),
+    client = IdentifyingClientData(
+        client_data=ClientData.load_from_dict(test_data.sample_client_data),
         ip=test_data.sample_ip
     )
 
-    db.set_user(
+    db.set_client(
         test_data.sample_id,
-        user,
+        client,
         overwrite=True
     )
 
-    db.delete_user(
+    db.delete_client(
         test_data.sample_id
     )
 
 
 def test_set_get_all(test_data: DatabaseTestData):
     """
-    Tests that the set_user method works as expected without raising errors,
-    and that a set user can be retrieved
+    Tests that the set_client method works as expected without raising errors,
+    and that a set client can be retrieved
     """
     db = test_data.db
-    users = [
+    clients = [
         IdentifyingClientData(
             client_data=ClientData.load_from_dict(
-                test_data.sample_user_data),
+                test_data.sample_client_data
+            ),
             ip=test_data.sample_ip
         ).set_id(test_data.sample_id + "1"),
         IdentifyingClientData(
             client_data=ClientData.load_from_dict(
-                test_data.sample_user_data),
+                test_data.sample_client_data
+            ),
             ip=test_data.sample_ip + "2"
         ).set_id(test_data.sample_id + "2")
     ]
 
-    for user in users:
-        db.set_user(
-            user.id,
-            user,
+    for client in clients:
+        db.set_client(
+            client.id,
+            client,
             overwrite=True
         )
 
-    retrieved_users = list(db.get_all(
-        DatabaseCollection.USERS,
-        {
-            "client_data.os_name": test_data.sample_user_data["os_name"]
-        },
-        lambda: cast(Deserializable, IdentifyingClientData())
-    ))
+    retrieved_clients = list(
+        db.get_all(
+            DatabaseCollection.CLIENTS,
+            {
+                "client_data.os_name": test_data.sample_client_data["os_name"]
+            },
+            lambda: cast(Deserializable, IdentifyingClientData())
+        )
+    )
 
-    assert len(retrieved_users) == len(users)
-    assert all([user.id == retrieved_user.id for (user, retrieved_user) in
-                zip(users, retrieved_users)])
+    assert len(retrieved_clients) == len(clients)
+    assert all([
+        client.id == retrieved_client.id
+        for (client, retrieved_client) in zip(clients, retrieved_clients)
+    ])
 
 
-def test_set_get_delete_get_user(test_data: DatabaseTestData):
+def test_set_get_delete_get_client(test_data: DatabaseTestData):
     """
-    Tests that the set_user method works as expected without raising errors,
-    and that a set user can be retrieved
+    Tests that the set_client method works as expected without raising errors,
+    and that a set client can be retrieved
     """
     db = test_data.db
-    user = IdentifyingClientData(
-        client_data=ClientData.load_from_dict(test_data.sample_user_data),
+    client = IdentifyingClientData(
+        client_data=ClientData.load_from_dict(test_data.sample_client_data),
         ip=test_data.sample_ip
     )
 
-    db.set_user(
+    db.set_client(
         test_data.sample_id,
-        user,
+        client,
         overwrite=True
     )
 
-    retrieved_user = db.get_user(
+    retrieved_client = db.get_client(
         test_data.sample_id
     )
 
-    assert retrieved_user is not None
-    user.set_id(test_data.sample_id)
-    assert_are_equal(user, retrieved_user)
+    assert retrieved_client is not None
+    client.set_id(test_data.sample_id)
+    assert_are_equal(client, retrieved_client)
 
-    db.delete_user(
+    db.delete_client(
         test_data.sample_id
     )
 
-    retrieved_user = db.get_user(
+    retrieved_client = db.get_client(
         test_data.sample_id
     )
 
-    assert retrieved_user is None
+    assert retrieved_client is None

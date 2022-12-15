@@ -19,6 +19,9 @@ class RespondingMessage(IpMessage):
         self._response = value
         self._do_respond = True
 
+    def set_response(self, value: bytes):
+        self.response = value
+
     @property
     def do_respond(self) -> bool:
         return self._do_respond
