@@ -5,10 +5,13 @@ from control_server.tests.utils.generic_test_utils import get_prefix
 from control_server.src.controller import controller
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.src.data.client_task_response import ClientTaskResponse
-from control_server.src.data.client_task_response_collection import ClientTaskResponseCollection
-from control_server.src.data.identifying_client_data import IdentifyingClientData
+from control_server.src.data.client_task_response_collection import \
+    ClientTaskResponseCollection
+from control_server.src.data.identifying_client_data import \
+    IdentifyingClientData
 from control_server.src.data.client_data import ClientData
-from control_server.src.data.anonymous_client_task_response import AnonymousClientTaskResponse
+from control_server.src.data.anonymous_client_task_response import \
+    AnonymousClientTaskResponse
 
 
 def randomize_ids() -> (str, str):
@@ -35,7 +38,10 @@ def set_task_response(client_id: str, task_id: str):
         "hostname": "2",
         "host_user": "2",
         "privileges": "2",
+        "host_id": "1",
+        "polling_time": 1
     }
+
     client_ip = str(uuid.uuid4())
     data = ClientData.load_from_dict(client, raise_error=True)
     new_client = IdentifyingClientData(
@@ -83,9 +89,11 @@ def test_task_output_invalid_authorization(client):
     Test the /admin/taskoutput endpoint with missing authorization key.
     :param client:
     """
-    response = client.get(f"{get_prefix()}/admin/taskoutput", headers={
+    response = client.get(
+        f"{get_prefix()}/admin/taskoutput", headers={
 
-    })
+        }
+    )
 
     assert response.status_code == 401, "Received a non-401 status code"
 
@@ -95,12 +103,14 @@ def test_task_output_wrong_client_id(client):
     Test the /admin/taskoutput endpoint with wrong client id
     :param client:
     """
-    response = client.get(f"{get_prefix()}/admin/taskoutput", headers={
-        "Authorization": controller.settings.admin_key
-    }, query_string={
-        "id": "1234",
-        "task_id": "1234"
-    })
+    response = client.get(
+        f"{get_prefix()}/admin/taskoutput", headers={
+            "Authorization": controller.settings.admin_key
+        }, query_string={
+            "id": "1234",
+            "task_id": "1234"
+        }
+    )
     assert response.status_code == 404, "Received a non-404 status code"
 
 
@@ -114,18 +124,29 @@ def test_task_output(client):
         task_id=task_id,
     )
 
-    response = client.get(f"{get_prefix()}/admin/taskoutput", headers={
-        "Authorization": controller.settings.admin_key
-    }, query_string={
-        "id": client_id,
-        "task_id": task_id
-    })
-    task_response = response.json.get("task_responses")[0]
-    # task_response_db = ClientTaskResponseCollection().deserialize(task_response[0])
-    # print(task_response_db)
-    assert response.status_code == 200, "Received a non-200 status code"
-    assert task_response["_id"].get("task_id") == task_id, "Task ID does not match"
-    assert task_response["_id"].get("client_id") == client_id, "Client ID does not match"
-    assert task_response["responses"][0].get("status") == 0, "Status code does not match"
-    assert task_response["responses"][0].get("id") == task_id, "Task ID does not match"
+    response = client.get(
+        f"{get_prefix()}/admin/taskoutput",
+        headers={
+            "Authorization": controller.settings.admin_key
+        },
+        query_string={
+            "id": client_id,
+            "task_id": task_id
+        }
+    )
 
+    task_response = response.json.get("task_responses")[0]
+
+    assert response.status_code == 200, "Received a non-200 status code"
+    assert task_response["_id"].get(
+        "task_id"
+    ) == task_id, "Task ID does not match"
+    assert task_response["_id"].get(
+        "client_id"
+    ) == client_id, "Client ID does not match"
+    assert task_response["responses"][0].get(
+        "status"
+    ) == 0, "Status code does not match"
+    assert task_response["responses"][0].get(
+        "id"
+    ) == task_id, "Task ID does not match"

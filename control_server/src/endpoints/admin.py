@@ -10,7 +10,22 @@ from control_server.src.data.identifying_client_data import \
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.client_task import ClientTask
 from control_server.src.data.task import Task
-from control_server.src.data.client_task_response_collection import ClientTaskResponseCollection
+from control_server.src.data.client_task_response_collection import \
+    ClientTaskResponseCollection
+
+from control_server.src.utils.time_utils import time_now, time_now_str
+
+
+def _serialize_client(client_data: IdentifyingClientData) -> dict[str, Any]:
+    client_dict = client_data.serialize()
+
+    if client_data.last_seen is not None:
+        client_dict['time_since_last_seen'] = \
+            client_data.time_since_last_seen().total_seconds()
+
+        client_dict['is_online'] = client_data.is_online()
+
+    return client_dict
 
 
 def client():
@@ -35,7 +50,7 @@ def client():
     if client_info is None:
         return 'Wrong client id', 404
 
-    return client_info.serialize(), 200
+    return _serialize_client(client_info), 200
 
 
 def all_clients():
@@ -68,8 +83,11 @@ def all_clients():
 
     return jsonify(
         {
-            'all_clients': [current_client.serialize() for current_client in
-                all_clients_db]
+            'all_clients': [
+                _serialize_client(current_client)
+                for current_client in
+                all_clients_db
+            ]
         }
     ), 200
 
@@ -175,11 +193,6 @@ def post_client_tasks():
     min_delay = incoming.get('min_delay')
     max_delay = incoming.get('max_delay')
 
-    # Current date and time
-    now = datetime.now()
-    date = now.strftime('%Y-%m-%d')
-    time = now.strftime('%H:%M')
-
     if clients_id is None or task_data is None:
         return 'Missing ID or task', 400
 
@@ -188,8 +201,7 @@ def post_client_tasks():
         data=task_data,
         min_delay=int(min_delay),
         max_delay=int(max_delay),
-        date=date,
-        time=time,
+        time=time_now_str(),
     )
 
     new_task.generate_id()
@@ -401,9 +413,12 @@ def get_task_output():
                 Deserializable(),
                 ClientTaskResponseCollection()
             )
-        ))
+        )
+    )
 
-    return jsonify({
-        'task_responses': [current_response.serialize()
-                           for current_response in all_task_response]
-    }), 200
+    return jsonify(
+        {
+            'task_responses': [current_response.serialize()
+                for current_response in all_task_response]
+        }
+    ), 200

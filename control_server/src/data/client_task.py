@@ -5,6 +5,7 @@ from control_server.src.data.serializable import Serializable
 from control_server.src.data.task import Task
 from control_server.src.data.task_status import TaskStatus
 from control_server.src.data_class import DataClass
+from control_server.src.utils.time_utils import time_now_str
 
 
 class ClientTask(DataClass, Serializable, Deserializable):
@@ -26,8 +27,12 @@ class ClientTask(DataClass, Serializable, Deserializable):
         self.task = task
         self.status: str | None = None
         self.status_code: int | None = None
+        self.status_update_time: str | None = None
 
     def set_status_code(self, status_code: int):
+        if self.status_code != status_code:
+            self.status_update_time = time_now_str()
+
         self.status_code = status_code
 
         if status_code >= TaskStatus.ERROR.get_code():

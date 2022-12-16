@@ -1,18 +1,23 @@
+from typing import Optional, Any
+
+from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.serializable import Serializable
 from control_server.src.data_class import DataClass
 
 
-class ClientData(DataClass, Serializable):
+class ClientData(DataClass, Serializable, Deserializable):
     """
     A data class containing client data.
     """
     def __init__(self):
         super().__init__()
-        self.os_name = None
-        self.os_version = None
-        self.hostname = None
-        self.host_user = None
-        self.privileges = None
+        self.os_name: Optional[str] = None
+        self.os_version: Optional[str] = None
+        self.hostname: Optional[str] = None
+        self.host_user: Optional[str] = None
+        self.privileges: Optional[str] = None
+        self.host_id: Optional[str] = None
+        self.polling_time: Optional[int] = None
 
     @staticmethod
     def load_from_dict(data_dict: dict, raise_error: bool = True):
@@ -22,5 +27,5 @@ class ClientData(DataClass, Serializable):
             raise_error=raise_error
         )
 
-    def serialize(self):
+    def serialize(self, _: dict[str, Any] = None):
         return self.__dict__

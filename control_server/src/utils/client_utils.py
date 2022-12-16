@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from control_server.src.controller import controller
+from control_server.src.utils.time_utils import time_now
 
 
 def seen_client(client_id: str) -> bool:
@@ -17,7 +18,7 @@ def seen_client(client_id: str) -> bool:
     if client is None:
         return False
 
-    client.set_last_seen(datetime.now())
+    client.set_last_seen(time_now())
     controller.db.set_client(
         client_id=client_id,
         client=client,

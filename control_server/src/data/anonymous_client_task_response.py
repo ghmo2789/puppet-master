@@ -11,7 +11,9 @@ class AnonymousClientTaskResponse(DataClass, Deserializable, Serializable):
     def __init__(
             self,
             result: str = None,
-            status: int = None):
+            status: int = None,
+            time: str = None):
         super().__init__()
         self.result: str = result
         self.status: int = status
+        self.time: str = None
