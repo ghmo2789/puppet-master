@@ -14,3 +14,6 @@ REMOTE_PORT = "65500"
 # Key to obfuscate data with when using UDP, if empty, client will send data in clear text.
 # Must be a hex string, and the the same value must be set on the control server!
 OBFUSCATION_KEY = ""
+
+# The time between each poll to the control server in seconds
+POLLING_TIME = "10"

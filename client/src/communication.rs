@@ -152,6 +152,8 @@ mod tests {
             hostname: String::from("test"),
             host_user: String::from("test"),
             privileges: String::from("test"),
+            host_id: String::from("test"),
+            polling_time: 10,
         };
         match send_identity(id).await {
             Ok(val) => {
