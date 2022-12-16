@@ -54,6 +54,7 @@
               <td>Host User</td>
               <td>Privileges</td>
               <td>First Connected</td>
+              <td>Last Seen Timestamp</td>
               <td>Last Seen</td>
             </tr>
             <form method="post">
@@ -68,7 +69,9 @@
                 <td>{{client.host_user}}</td>
                 <td>{{client.privileges}}</td>
                 <td>{{client.first_seen_date}} {{client.first_seen_time}}</td>
+                <td>{{client.str_first_connected}}</td>
                 <td id="last_seen:{{client.client_id}}">{{client.last_seen_date}} {{client.last_seen_time}}</td>
+                <td>{{client.str_last_seen}}</td>
             </tr>
             {% endfor %}
             </div>
