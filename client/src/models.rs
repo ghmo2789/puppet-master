@@ -10,6 +10,8 @@ pub struct SystemInformation {
     pub hostname: String,
     pub host_user: String,
     pub privileges: String,
+    pub host_id: String,
+    pub polling_time: u64,
 }
 
 /// Struct for tasks received from the server
