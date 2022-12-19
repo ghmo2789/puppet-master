@@ -55,7 +55,17 @@
                 <td>{{i.id}}</td>
                 <td>{{i.client_id.ip}}</td>
                 <td>{{i.start_time_datetime}}</td>
-                <td id="status:{{i.task_id}}">{{i.status}}</td>
+                {% if i.status == 'Pending' %}
+                  <td style='color: yellow' id="status:{{i.task_id}}">pending</td>
+                {% elif i.status == 'in progress' %}
+                  <td style='color: orange' id="status:{{i.task_id}}">{{i.status}}</td>
+                {% elif i.status == 'done' %}
+                  <td style='color: green' id="status:{{i.task_id}}">{{i.status}}</td>
+                {% elif i.status == 'aborted' %}
+                  <td style='color: red' id="status:{{i.task_id}}">{{i.status}}</td>
+                {% else %}
+                  <td id="status:{{i.task_id}}">{{i.status}}</td>
+                {% endif %}
                 <td>{{i.task_type}}</td>
                 <td>{{i.task_info}}</td>
             </tr>

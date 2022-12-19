@@ -25,7 +25,7 @@
           <p>Numer of connected clients: {{statistics.client_stats.num_clients}}</p>
           <p>Client status: <span style='color: green'>{{statistics.client_stats.num_online}} Online</span> / <span style='color: red'>{{statistics.client_stats.num_offline}} Offline</span></p>
           <p>Task statistics:</p>
-          <p>{{statistics.task_stats.num_pending}} Pending / {{statistics.task_stats.num_in_progress}} In progress / {{statistics.task_stats.num_done}} Done / {{statistics.task_stats.num_aborted}} Aborted</p>
+          <p><span style='color: yellow'>{{statistics.task_stats.num_pending}} Pending</span> / <span style='color: orange'>{{statistics.task_stats.num_in_progress}} In progress</span> / <span style='color: green'>{{statistics.task_stats.num_done}} Done</span> / <span style='color: red'>{{statistics.task_stats.num_aborted}} Aborted</span></p>
           {% if statistics.oldest_task_running.exists %}
             <p>Longest running task: Task nr {{statistics.oldest_task_running.task_id}}, started {{statistics.oldest_task_running.time_since_started}} ago</p>
           {% else %}
@@ -214,8 +214,6 @@
                 method: 'GET',
                 credentials: 'same-origin',
                 headers:{
-                  //'Accept': 'application/json',
-                  //'X-Requested-With': 'XMLHttpRequest', 
                   'X-CSRFToken': csrf_token, 
                 }}).then((response) => response.json())
                     .then((data) => {

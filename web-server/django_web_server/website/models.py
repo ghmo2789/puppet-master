@@ -34,11 +34,11 @@ class Client(models.Model):
 
         result = ''
         if days > 0:
-            result = str(days) + ' days'
+            result = str(days) + ' days '
         elif hours > 0:
-            result = str(hours) + ' hours'
+            result = str(hours) + ' hours '
         elif minutes > 0:
-            result = str(minutes) + ' minutes'
+            result = str(minutes) + ' minutes '
         else:
             result = 'now'
 
@@ -73,13 +73,13 @@ class SentTask(models.Model):
 
         result = ''
         if days > 0:
-            result = str(days) + ' days' + str(hours) + ' hours' + str(minutes) + ' minutes'
+            result = str(days) + ' days ' + str(hours) + ' hours ' + str(minutes) + ' minutes '
         elif hours > 0:
-            result = str(hours) + ' hours' + str(minutes) + ' minutes'
+            result = str(hours) + ' hours ' + str(minutes) + ' minutes '
         elif minutes > 0:
-            result = str(minutes) + ' minutes'
+            result = str(minutes) + ' minutes '
         else:
-            result = 'less than one minute'
+            result = ' less than one minute'
 
         return result
         
