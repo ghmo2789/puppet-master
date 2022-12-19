@@ -53,6 +53,8 @@
               <td>Computer name</td>
               <td>Host User</td>
               <td>Privileges</td>
+              <td>First Connected</td>
+              <td>Last Seen</td>
             </tr>
             <form method="post">
             {% csrf_token %}
@@ -65,6 +67,8 @@
                 <td>{{client.hostname}}</td>
                 <td>{{client.host_user}}</td>
                 <td>{{client.privileges}}</td>
+                <td>{{client.first_seen_date}} {{client.first_seen_time}}</td>
+                <td id="last_seen:{{client.client_id}}">{{client.last_seen_date}} {{client.last_seen_time}}</td>
             </tr>
             {% endfor %}
             </div>
@@ -203,6 +207,31 @@
 
           alert(alert_text);          
         }
+
+        const csrf_token = '{{ csrf_token }}';
+      
+        function get_updated_client_status(){
+          fetch('updated_client_status', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers:{
+                  //'Accept': 'application/json',
+                  //'X-Requested-With': 'XMLHttpRequest', 
+                  'X-CSRFToken': csrf_token, 
+                }}).then((response) => response.json())
+                    .then((data) => {
+                      var clients_list = data.clients;
+                      for (i = 0; i < clients_list.length; i++) {
+                        var client = clients_list[i];
+                        var elem_id = 'last_seen:' + client.client_id;
+                        var new_last_seen = client.new_last_seen_date + " " + client.new_last_seen_time;
+                        var elem = document.getElementById(elem_id);
+                        elem.innerHTML = new_last_seen;              
+                      }
+                    });
+        }
+
+        setInterval(get_updated_client_status, 10000);
       
         
         

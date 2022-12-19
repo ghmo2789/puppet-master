@@ -15,7 +15,6 @@ def kill_task(request):
 def index(request):
     controlServer = ControlServerHandler()
     controlServer.getClients()
-
     tasks = [{'name': "Write command"}, {'name': "Open browser"}]
 
     if request.method == 'POST':
@@ -62,3 +61,23 @@ def task_output(request):
         'output': output,
     }
     return JsonResponse(taskOutput)
+
+
+def updated_tasks(request):
+    controlServer = ControlServerHandler()
+    updatedTaskStatus = controlServer.getUpdatedTaskStatus()
+    updatedTaskList = {
+        'tasks': updatedTaskStatus
+    }
+
+    return JsonResponse(updatedTaskList)
+
+
+def updated_client_status(request):
+    controlServer = ControlServerHandler()
+    updatedclientStatus = controlServer.getUpdatedClientStatus()
+    updatedClientList = {
+        'clients': updatedclientStatus
+    }
+
+    return JsonResponse(updatedClientList)

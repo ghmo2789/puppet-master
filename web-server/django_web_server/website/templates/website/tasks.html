@@ -10,6 +10,15 @@
     <!-- Navbar -->
     {% block nav %}{% include 'website/navbar.html' %}{% endblock nav %}
 
+    <div id="notis">
+      <div id="notis-header">
+        <p>Task Updated</p>
+      </div>
+      <div id="notis-content">
+          <p id="notis-content-p">You have a notification!</p>
+      </div>
+    </div>
+
     <!-- Heading -->
     <div class="w3-container"> 
       <h1>Task History</h1>
@@ -31,6 +40,7 @@
         <table class="table table-dark table-striped table-hover mb-0">
             <tr style="background-color: black;"> 
               <td><input type="checkbox" name="select_all" value="1" id="master_checkbox" onclick="select_all()"></td>
+              <td>Task ID</td>
               <td>Client IP</td>
               <td>Start Time</td>
               <td>Status</td>
@@ -43,12 +53,13 @@
             {% for i in tasks.qs%}
             <tr id="{{i.task_id}}" style="cursor: pointer">
                 <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}"></td> 
+                <td>{{i.id}}</td>
                 <td>{{i.client_id.ip}}</td>
                 <td>{{i.start_time}}</td>
-                <td>{{i.status}}</td>
+                <td id="status:{{i.task_id}}">{{i.status}}</td>
                 <td>{{i.task_type}}</td>
                 <td>{{i.task_info}}</td>
-                <td class="w3-center w3-circle">
+                <td class="w3-center">
                   <b class="w3-button w3-circle w3-black" id="{{i.id}}_button" onclick="event.stopPropagation();" hidden>
                     i
                   </b>
@@ -166,6 +177,41 @@
                   
 
       
+      
+      function get_updated_tasks(){
+        fetch('updated_task', {
+              method: 'GET',
+              credentials: 'same-origin',
+              headers:{
+                //'Accept': 'application/json',
+                //'X-Requested-With': 'XMLHttpRequest', 
+                'X-CSRFToken': csrf_token, 
+              }}).then((response) => response.json())
+                  .then((data) => {
+                    tasks_list = data.tasks
+                    for (i = 0; i < tasks_list.length; i++) {
+                      var task = tasks_list[i];
+                      var our_id = task.id;
+                      var task_id = task.task_id;
+                      var new_status = task.new_status;
+                      var elem_id = 'status:' + task_id;
+                      var status_element = document.getElementById(elem_id);
+                      status_element.innerHTML = new_status;
+                      var alert_text = 'Task ' + our_id + ' is now ' + new_status;
+                      var notis = document.getElementById('notis')
+                      var notis_content = document.getElementById('notis-content-p');
+                      notis_content.innerHTML = alert_text;
+                      //notis.style.visibility = 'show';
+                      document.getElementById('notis').style.visibility = "visible";
+                      setTimeout(function(){
+                        document.getElementById('notis').style.visibility = "hidden"
+                      }, 10000);
+                    }
+                  });
+        }
+
+        setInterval(get_updated_tasks, 5000);
+
     </script>
   </body> 
 </html>
