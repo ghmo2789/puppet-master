@@ -1,7 +1,6 @@
 from django.db import OperationalError
 import django_filters
 from .models import Client, SentTask
-from django import forms
 
 
 class ClientFilter(django_filters.FilterSet):

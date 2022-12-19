@@ -1,8 +1,6 @@
-from django.db.models import Count
 from decouple import config
 import requests
 from .models import Client, SentTask
-import time
 from datetime import datetime
 
 
@@ -106,8 +104,6 @@ class ControlServerHandler():
 
         return statistics
 
-
-
     def getLocations(self):
         ids = list(Client.objects.values_list('id', flat=True))
         locations = []
@@ -154,7 +150,7 @@ class ControlServerHandler():
     def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_start_time, t_start_time_dt):
         if task_t != 'abort':
             client = Client.objects.get(client_id=c_id)
-            client.senttask_set.create(task_id=t_id, start_time=t_start_time, start_time_datetime=t_start_time_dt, 
+            client.senttask_set.create(task_id=t_id, start_time=t_start_time, start_time_datetime=t_start_time_dt,
                                        status=t_status, task_type=task_t, task_info=task_i)
 
     def getTasks(self):

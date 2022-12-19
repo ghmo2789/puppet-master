@@ -23,14 +23,13 @@ class Client(models.Model):
         return "Id: " + str(self.client_id) + \
                "First seen: " + self.first_seen_date + " " + self.first_seen_time + \
                "Last seen: " + self.last_seen_date + " " + self.last_seen_time
-    
+
     def str_last_seen(self):
         difference = int(self.time_since_last_seen)
 
         days = difference // (24*60*60)
         hours = (difference - days*24*60*60) // (60*60)
         minutes = (difference - days*24*60*60 - hours*60*60) // 60
-        seconds = difference - days*24*60*60 - hours*60*60 - minutes*60
 
         result = ''
         if days > 0:
@@ -57,7 +56,7 @@ class SentTask(models.Model):
 
     def finished(self, time):
         self.finish_time = time
-    
+
     def time_since_started(self):
         utc_now = datetime.now(timezone.utc)
         now = utc_now + timedelta(hours=1)
@@ -65,11 +64,10 @@ class SentTask(models.Model):
 
         if now < self.start_time_datetime:
             difference = timedelta(0)
-        
+
         days = difference.days
         hours = difference.seconds // (60*60)
         minutes = (difference.seconds - hours*60*60) // 60
-        seconds = difference.seconds - hours*60*60 - minutes*60
 
         result = ''
         if days > 0:
@@ -82,6 +80,6 @@ class SentTask(models.Model):
             result = ' less than one minute'
 
         return result
-        
+
     def __str__(self):
         return ("task id = " + str(self.task_id) + " client id = " + str(self.client_id))
