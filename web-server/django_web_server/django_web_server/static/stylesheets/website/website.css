@@ -1,17 +1,21 @@
 
 #website-info {
-  padding: 40px 0 40px 0;
+  padding: 40px 0 0 0;
   overflow: auto;
 }
 
 #website-statistics {
   margin: 0 0% 0 3%;
   width: 30%;
+  margin-bottom: 40px;
 }
 
 #website-map {
-  margin: 0 3% 0 4%;
+  margin: 0 0 0 4%;
   width: 60%;
+  padding: 0 0 40px 0;
+  overflow: visible;
+  height: 440px;
 }
 
 .website-info-box {
@@ -53,4 +57,22 @@
 
 #notis-content > p {
   margin-top: 5px;
+}
+
+#client-filter-container {
+  background-color: #212529;
+  margin: 0 16px 0 16px;
+}
+
+#client-filter-header {
+  float: left;
+}
+
+#client-filter {
+  float: right;
+}
+
+#client-table-container {
+  margin-top: 0;
+  padding-top: 0!important;
 }

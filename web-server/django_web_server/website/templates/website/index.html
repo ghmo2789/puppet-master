@@ -35,25 +35,26 @@
           {% endif %}
         </div>
         <div class="website-info-box text-bg-dark p-3" id="website-map">
-          <h2>Map</h2>
+          <h3>Select Clients by Location</h3>
           <div id="mapid" style='height: 300px'></div>
         </div>
       </div>
       
       <!-- Client filter -->
-      <div class="w3-container">
-        <form method="GET">
-          {{ filter.form.os_name }}
-          {{ filter.form.hostname }}
-          {{ filter.form.is_online }}
-          <button class="w3-button w3-black" type="submit">Apply Filter</button>
-        </form>
+      <div id="client-filter-container" class="w3-container">
+        <h3 id="client-filter-header">Select Clients to send tasks</h3>
+        <div id="client-filter">
+          <form method="GET">
+            {{ filter.form.os_name }}
+            {{ filter.form.hostname }}
+            {{ filter.form.is_online }}
+            <button class="w3-button w3-black" type="submit">Apply Filter</button>
+          </form>
+        </div>
       </div>
       
       <!-- Client table -->
-
-
-      <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="overflow: auto"> 
+      <div id="client-table-container" class="w3-container table-wrapper-scroll-y w3-padding-16" style="overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0" id="client_table">
             <tr style="background-color: black;"> 
               <td><input type="checkbox" name="selectAll" value="1" id="master_checkbox" onclick="selectAll()"></td>

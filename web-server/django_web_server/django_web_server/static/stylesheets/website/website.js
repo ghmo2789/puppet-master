@@ -15,6 +15,7 @@ var greenIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
+
 var blueIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -34,12 +35,24 @@ function markerDeactivate(marker) {
   marker.setIcon(blueIcon);
 }
 
+function markerCounter(marker, num_checked, num_clients) {
+  var checked_str = num_checked.toString() + '/' + num_clients.toString();
+  var label_options = {
+    permanent: true,
+  }
+  marker.bindTooltip(checked_str, label_options);
+}
+
 let markers = [];
 
 for (const clientLocation of locations) {
   var ids = clientLocation.client_ids;
   var loc = clientLocation.location;
-  var marker = L.marker(loc).addTo(map).on('click', 
+  var checked_str = '0/' + ids.length;
+  var label_options = {
+    permanent: true,
+  }
+  var marker = L.marker(loc).bindTooltip(checked_str, label_options).addTo(map).on('click', 
       function(e){
         var clickedMarker = e.target;
         var checked = clickedMarker.myJsonData.checked;
@@ -66,6 +79,7 @@ for (const clientLocation of locations) {
             }
           }
           toggleSubmit();
+          toggleMarker();
         }
       }
   );
@@ -79,19 +93,23 @@ function toggleMarker() {
     var marker = markers[i];
     var c_ids = marker.myJsonData.clientIds;
     var client_checked = false;
+    var num_checked = 0;
     
     for (j = 0; j < c_ids.length; j++) {
       c_id = c_ids[j];
       let c_id_element = document.getElementById(c_id); 
       if (c_id_element != null && c_id_element.checked) {
         client_checked = true;
+        num_checked++;
       }
     }
     if (client_checked) {
       markerActivate(marker);
+      markerCounter(marker, num_checked, c_ids.length);
     }
     else {
       markerDeactivate(marker);
+      markerCounter(marker, num_checked, c_ids.length);
     }
   }
 }
