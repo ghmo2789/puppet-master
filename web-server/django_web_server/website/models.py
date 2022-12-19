@@ -26,8 +26,7 @@ class SentTask(models.Model):
     status = models.CharField(max_length=60)
     task_type = models.CharField(max_length=20)
     task_info = models.CharField(max_length=100)
-    task_output = jsonfield.JSONField()
-
+    
     def finished(self, time):
         self.finish_time = time
 

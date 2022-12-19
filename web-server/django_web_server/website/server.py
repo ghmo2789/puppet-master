@@ -98,22 +98,19 @@ class ControlServerHandler():
                 summarized_locations.append(summarized_location)
                 processed_locations.append(current_loc)
 
-        print(f'all locations: {locations}')
-        print(f'summarized locations: {summarized_locations}')
 
         return summarized_locations
 
-    def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_date, t_time, t_output):
+    def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_date, t_time):
         if task_t != 'abort':
             client = Client.objects.get(client_id=c_id)
             asc_t = str(t_date) + " " + str(t_time)
             client.senttask_set.create(task_id=t_id, start_time=asc_t, status=t_status,
-                                       task_type=task_t, task_info=task_i, task_output=t_output)
+                                       task_type=task_t, task_info=task_i)
 
     
     def getTaskOutput(self, task_id, client_id):
         output_string = ""
-        has_output = "False"
         requestUrl = "https://" + self.url + self.prefix + "/admin/taskoutput"
         requestHeaders = {'Authorization': self.authorization}
         data = {
@@ -122,15 +119,9 @@ class ControlServerHandler():
         }
         response = requests.get(url=requestUrl, headers=requestHeaders, params=data)
         status_code = response.status_code
-        if status_code == 200:
-            print(response.json())
-            #output_string = str(response.json()['task_responses'][0]['responses'][0]['result']).replace("\n", "<br>")
-            has_output = "True"
-        else:
-            print(status_code)
-        full_output = '{"output": "' + output_string + '" , "has_output": "' + has_output + '"}'
-        output_json = json.loads(full_output)
-        return output_json
+        if status_code == 200 and response.json() != {'task_responses': []}:
+            output_string = str(response.json()['task_responses'][0]['responses'][0]['result']).replace("\n", "<br>")
+        return output_string
     
     def getTasks(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
@@ -152,10 +143,10 @@ class ControlServerHandler():
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
-                    t_date = task['task']['date']
-                    t_time = task['task']['time']
+                    t_date = " " #task['task']['date']
+                    t_time = task['task']['created_time']
                     t_status = 'Pending'
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time, t_output)
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
             for task in sent_tasks:
                 t_output = self.getTaskOutput(task['_id']['task_id'], task['_id']['client_id'])
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
@@ -163,10 +154,10 @@ class ControlServerHandler():
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
-                    t_date = task['task']['date']
-                    t_time = task['task']['time']
+                    t_date = " " #task['task']['date']
+                    t_time = task['task']['created_time']
                     t_status = task['status'].replace("_", " ")
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time, t_output)
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
                 else:
                     SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
 

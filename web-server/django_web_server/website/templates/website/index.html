@@ -112,7 +112,6 @@
         for(let i = 0; i < data.length; i++) {
           document.getElementById(data[i]).addEventListener("click", toggleSubmit);
           document.getElementById(data[i]).addEventListener("click", toggleMarker);
-          //document.getElementById(data[i]).addEventListener("click", stopImmediatePropagation);
           document.getElementById(div_ids[i]).addEventListener("click", () => {checkboxDiv(data[i])});
           document.getElementById(div_ids[i]).addEventListener("click", toggleMarker);
           document.getElementById(div_ids[i]).addEventListener("click", toggleSubmit);
@@ -130,10 +129,8 @@
           let checkbox = document.getElementById(id);
           if(checkbox.checked){
             checkbox.checked = false;
-            checkbox.stopPropagation();
           } else {
             checkbox.checked = true;
-            //checkbox.stopPropagation(); 
           }
         }
 
@@ -152,7 +149,6 @@
         }
         
         function toggleSubmit(){
-          console.log("hej");
           submit_element = document.getElementById("submit") 
           checked = false; 
           for(let i = 0; i < data.length; i++) {
