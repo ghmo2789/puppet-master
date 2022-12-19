@@ -41,7 +41,6 @@ def index(request):
     return render(request, 'website/index.html', context, )
 
 
-
 def tasks(request):
     controlServer = ControlServerHandler()
     controlServer.getTasks()
@@ -51,6 +50,7 @@ def tasks(request):
         return HttpResponseRedirect(request.path_info)
     context = {'tasks': TaskFilter(request.GET, queryset=SentTask.objects.all().order_by('-id'))}
     return render(request, 'website/tasks.html', context)
+
 
 def task_output(request):
     controlServer = ControlServerHandler()

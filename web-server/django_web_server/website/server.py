@@ -2,7 +2,6 @@ from django.db.models import Count
 from decouple import config
 import requests
 from .models import Client, SentTask
-import json
 
 
 class ControlServerHandler():
@@ -98,7 +97,6 @@ class ControlServerHandler():
                 summarized_locations.append(summarized_location)
                 processed_locations.append(current_loc)
 
-
         return summarized_locations
 
     def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_date, t_time):
@@ -108,7 +106,6 @@ class ControlServerHandler():
             client.senttask_set.create(task_id=t_id, start_time=asc_t, status=t_status,
                                        task_type=task_t, task_info=task_i)
 
-    
     def getTaskOutput(self, task_id, client_id):
         output_string = ""
         requestUrl = "https://" + self.url + self.prefix + "/admin/taskoutput"
@@ -122,7 +119,7 @@ class ControlServerHandler():
         if status_code == 200 and response.json() != {'task_responses': []}:
             output_string = str(response.json()['task_responses'][0]['responses'][0]['result']).replace("\n", "<br>")
         return output_string
-    
+
     def getTasks(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
@@ -137,24 +134,22 @@ class ControlServerHandler():
             pending_tasks = response.json()['pending_tasks']
             sent_tasks = response.json()['sent_tasks'][0]
             for task in pending_tasks:
-                t_output = self.getTaskOutput(task['_id']['task_id'], task['_id']['client_id'])
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
                 if not (SentTask.objects.filter(task_id=t_id).exists()):
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
-                    t_date = " " #task['task']['date']
+                    t_date = " "
                     t_time = task['task']['created_time']
                     t_status = 'Pending'
                     self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
             for task in sent_tasks:
-                t_output = self.getTaskOutput(task['_id']['task_id'], task['_id']['client_id'])
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
                 if not (SentTask.objects.filter(task_id=t_id).exists()):
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
-                    t_date = " " #task['task']['date']
+                    t_date = " "
                     t_time = task['task']['created_time']
                     t_status = task['status'].replace("_", " ")
                     self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
