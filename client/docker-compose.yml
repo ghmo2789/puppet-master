@@ -1,0 +1,19 @@
+services:
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PROTOCOL=${CLIENT_PROTOCOL}
+        - CONTROL_SERVER_URL=${CLIENT_CONTROL_SERVER_URL}
+        - REMOTE_HOST=${CLIENT_UDP_HOST}
+        - REMOTE_PORT=${CLIENT_UDP_PORT}
+        - OBFUSCATION_KEY=${CLIENT_OBFUSCATION_KEY}
+    command: client
+    restart: always
+    container_name: client
+    logging:
+      options:
+        max-size: 100m
+    extra_hosts:
+      - '${CLIENT_HTTP_HOST}:${CLIENT_HTTP_IP}'

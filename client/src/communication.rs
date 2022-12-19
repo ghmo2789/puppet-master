@@ -19,7 +19,7 @@ const REMOTE_HOST: &'static str = env!("REMOTE_HOST");
 
 const INIT_ENDPOINT: &'static str = "/control/client/init";
 const COMMAND_ENDPOINT: &'static str = "/control/client/task";
-const RESULT_ENDPOINT: &'static str = "/client/task/result";
+const RESULT_ENDPOINT: &'static str = "/control/client/task/response";
 
 const UDP_PROTOCOL: &str = "udp";
 const HTTPS_PROTOCOL: &'static str = "https";
@@ -152,6 +152,8 @@ mod tests {
             hostname: String::from("test"),
             host_user: String::from("test"),
             privileges: String::from("test"),
+            host_id: String::from("test"),
+            polling_time: 10,
         };
         match send_identity(id).await {
             Ok(val) => {

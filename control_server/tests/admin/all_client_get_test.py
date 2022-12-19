@@ -36,6 +36,7 @@ def test_all_client_no_clients(client):
     :param client:
     :return:
     """
+    controller.db.clear()
     response = client.get(f"{get_prefix()}/admin/allclients", headers={
         "Authorization": controller.settings.admin_key
     })
@@ -49,6 +50,7 @@ def test_all_client_with_clients(client):
     :param client:
     :return:
     """
+    controller.db.clear()
     client_1 = {
         "os_name": "1",
         "os_version": "1",
