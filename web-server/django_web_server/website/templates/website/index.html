@@ -26,7 +26,11 @@
           <p>Client status: <span style='color: green'>{{statistics.client_stats.num_online}} Online</span> / <span style='color: red'>{{statistics.client_stats.num_offline}} Offline</span></p>
           <p>Task statistics:</p>
           <p>{{statistics.task_stats.num_pending}} Pending / {{statistics.task_stats.num_in_progress}} In progress / {{statistics.task_stats.num_done}} Done / {{statistics.task_stats.num_aborted}} Aborted</p>
-          <p>Longest running task: Task nr {{statistics.oldest_task_running.task_id}}, started {{statistics.oldest_task_running.time_since_started}} ago</p>
+          {% if statistics.oldest_task_running.exists %}
+            <p>Longest running task: Task nr {{statistics.oldest_task_running.task_id}}, started {{statistics.oldest_task_running.time_since_started}} ago</p>
+          {% else %}
+            <p>No running tasks</p>
+          {% endif %}
         </div>
         <div class="website-info-box text-bg-dark p-3" id="website-map">
           <h2>Map</h2>

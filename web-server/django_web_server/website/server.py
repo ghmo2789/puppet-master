@@ -83,11 +83,20 @@ class ControlServerHandler():
             'num_aborted': num_aborted
         }
 
-        oldest_task_running_obj = SentTask.objects.filter(status='in progress').order_by('start_time_datetime')[0]
-        oldest_task_running = {
-            'task_id': oldest_task_running_obj.id,
-            'time_since_started': oldest_task_running_obj.time_since_started()
-        }
+        oldest_task_running = {}
+        if num_in_progress > 0:
+            oldest_task_running_obj = SentTask.objects.filter(status='in progress').order_by('start_time_datetime')[0]
+            oldest_task_running = {
+                'exists': True,
+                'task_id': oldest_task_running_obj.id,
+                'time_since_started': oldest_task_running_obj.time_since_started()
+            }
+        else:
+            oldest_task_running = {
+                'exists': False,
+                'task_id': '',
+                'time_since_started': '',
+            }
 
         statistics = {
             'client_stats': client_stats,
