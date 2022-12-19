@@ -1,6 +1,7 @@
 from django.db import OperationalError
 import django_filters
 from .models import Client, SentTask
+from django import forms
 
 
 class ClientFilter(django_filters.FilterSet):
@@ -12,13 +13,17 @@ class ClientFilter(django_filters.FilterSet):
         existing_hosts = list(Client.objects.values_list('hostname', flat=True))
         host_CHOICES = tuple((i, i) for i in existing_hosts)
         hostname = django_filters.AllValuesFilter(choices=host_CHOICES, empty_label="Filter by host name")
+
+        existing_is_online = list(Client.objects.values_list('is_online', flat=True))
+        is_online_CHOICES = ((True, 'Online'), (False, 'Offline'))
+        is_online = django_filters.ChoiceFilter(choices=is_online_CHOICES, empty_label="Filter status")
     except OperationalError as e:
         print("Database not initialized: " + str(e))
         print("Please run migrate, then makemigrations and migrate again")
 
     class Meta:
         model = Client
-        fields = ('os_name', 'hostname')
+        fields = ('os_name', 'hostname', 'is_online')
 
 
 class TaskFilter(django_filters.FilterSet):

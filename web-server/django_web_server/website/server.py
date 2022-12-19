@@ -95,8 +95,6 @@ class ControlServerHandler():
             'oldest_task_running': oldest_task_running
         }
 
-        print(f'statistics: {statistics}')
-
         return statistics
 
 
