@@ -190,8 +190,6 @@ class ControlServerHandler():
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
-                    t_date = " "
-                    t_time = task['task']['created_time']
                     t_status = 'Pending'
                     start_time = task['task']['created_time']
                     start_time_trunc = start_time[0:19]
@@ -203,8 +201,6 @@ class ControlServerHandler():
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
-                    t_date = " "
-                    t_time = task['task']['created_time']
                     t_status = task['status'].replace("_", " ")
                     start_time = task['task']['created_time']
                     start_time_trunc = start_time[0:19]
