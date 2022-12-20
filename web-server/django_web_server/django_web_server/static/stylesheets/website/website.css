@@ -6,13 +6,13 @@
 
 #website-statistics {
   margin: 0 0% 0 3%;
-  width: 30%;
+  width:25%;
   margin-bottom: 40px;
 }
 
 #website-map {
-  margin: 0 0 0 4%;
-  width: 60%;
+  float: right;
+  margin-right: 16px;
   padding: 0 0 40px 0;
   overflow: visible;
   height: 440px;
