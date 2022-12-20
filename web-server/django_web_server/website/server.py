@@ -278,8 +278,9 @@ class ControlServerHandler():
             task_info = request.POST.getlist('text')[0]
             task_info = task_info.replace('"', '\"')
             task_t = "terminal"
-        elif task_t == "Open browser":
-            task_info = "sensible-browser 'google.com'"
+        elif task_t == "Scan network":
+            task_t = "network_scan"
+            task_info = ""
 
         client_ids_string = ", ".join(client_ids)
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
