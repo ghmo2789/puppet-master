@@ -78,9 +78,9 @@ for (const clientLocation of locations) {
               c_id_element.checked = false;
             }
           }
-          toggleSubmit();
-          toggleMarker();
         }
+        toggleSubmit();
+        toggleMarker();
       }
   );
   marker.myJsonData = {clientIds: ids,
