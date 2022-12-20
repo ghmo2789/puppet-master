@@ -78,7 +78,7 @@
                 <td>{{client.hostname}}</td>
                 <td>{{client.host_user}}</td>
                 <td>{{client.privileges}}</td>
-                <td>{{client.first_seen_date}} {{client.first_seen_time}}</td>
+                <td>{{client.first_seen_datetime.date}} {{client.first_seen_time_str}}</td>
                 <td>{{client.str_last_seen}}</td>
                 {% if client.is_online is True%}
                   <td style='color: green'>Online</td>

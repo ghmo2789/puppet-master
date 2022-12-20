@@ -14,6 +14,7 @@ class Client(models.Model):
     privileges = models.CharField(max_length=50, default="")
     first_seen_date = models.CharField(max_length=50, default="")
     first_seen_time = models.CharField(max_length=50, default="")
+    first_seen_datetime = models.DateTimeField(blank=True, default=datetime.now)
     last_seen_date = models.CharField(max_length=50, default="")
     last_seen_time = models.CharField(max_length=50, default="")
     is_online = models.BooleanField(default=False)
@@ -23,6 +24,11 @@ class Client(models.Model):
         return "Id: " + str(self.client_id) + \
                "First seen: " + self.first_seen_date + " " + self.first_seen_time + \
                "Last seen: " + self.last_seen_date + " " + self.last_seen_time
+
+    def first_seen_time_str(self):
+        time = self.first_seen_datetime
+        string = "%s:%s:%s" % (time.hour, time.minute, time.second)
+        return string
 
     def str_last_seen(self):
         difference = int(self.time_since_last_seen)
@@ -56,6 +62,11 @@ class SentTask(models.Model):
 
     def finished(self, time):
         self.finish_time = time
+    
+    def start_time_str(self):
+        time = self.start_time_datetime
+        string = "%s:%s:%s" % (time.hour, time.minute, time.second)
+        return string
 
     def time_since_started(self):
         utc_now = datetime.now(timezone.utc)
