@@ -26,7 +26,7 @@
           <p>Client status:</p>
           <p><span style='color: green'>{{statistics.client_stats.num_online}} Online</span> / <span style='color: red'>{{statistics.client_stats.num_offline}} Offline</span></p>
           <p>Task statistics:</p>
-          <p><span style='color: yellow'>{{statistics.task_stats.num_pending}} Pending</span> / <span style='color: orange'>{{statistics.task_stats.num_in_progress}} In progress</span> / <span style='color: green'>{{statistics.task_stats.num_done}} Done</span> / <span style='color: red'>{{statistics.task_stats.num_aborted}} Aborted</span></p>
+          <p><span style='color: yellow'>{{statistics.task_stats.num_pending}} Pending</span> / <span style='color: orange'>{{statistics.task_stats.num_in_progress}} In progress</span> / <span style='color: green'>{{statistics.task_stats.num_done}} Done</span> / <span style='color: purple'>{{statistics.task_stats.num_aborted}} Aborted</span> / <span style='color: red'>{{statistics.task_stats.num_error}} Error</span></p>
           {% if statistics.oldest_task_running.exists %}
             <p>Longest running task:</p>
             <p>Task nr {{statistics.oldest_task_running.task_id}}, started <span style='font-weight: bold'>{{statistics.oldest_task_running.time_since_started}}</span> ago</p>
@@ -34,29 +34,30 @@
             <p>No running tasks</p>
           {% endif %}
         </div>
-        <div class="website-info-box text-bg-dark p-3" id="website-map">
-          <h2>Map</h2>
-          <div id="mapid" style='height: 300px'></div>
+        <div class="website-info-box text-bg-dark p-3 w3-twothird" id="website-map">
+          <h3>Select Clients by Location</h3>
+          <div id="mapid" style='height: 335px'></div>
         </div>
       </div>
       
       <!-- Client filter -->
-      <div class="w3-container">
-        <form method="GET">
-          {{ filter.form.os_name }}
-          {{ filter.form.hostname }}
-          {{ filter.form.is_online }}
-          <button class="w3-button w3-black" type="submit">Apply Filter</button>
-        </form>
+      <div id="client-filter-container" class="w3-container">
+        <h3 id="client-filter-header">Select Clients to send tasks</h3>
+        <div id="client-filter">
+          <form method="GET">
+            {{ filter.form.os_name }}
+            {{ filter.form.hostname }}
+            {{ filter.form.is_online }}
+            <button class="w3-button w3-black" type="submit">Apply Filter</button>
+          </form>
+        </div>
       </div>
       
       <!-- Client table -->
-
-
-      <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="overflow: auto"> 
+      <div id="client-table-container" class="w3-container table-wrapper-scroll-y w3-padding-16" style="overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0" id="client_table">
             <tr style="background-color: black;"> 
-              <td><input type="checkbox" name="selectAll" value="1" id="master_checkbox" onclick="selectAll()"></td>
+              <td><input type="checkbox" name="selectAll" value="1" id="master_checkbox" onclick="selectAll()" style="cursor: pointer;"></td>
               <td>Client IP</td>
               <td>OS</td>
               <td>Computer name</td>
@@ -70,14 +71,14 @@
             {% csrf_token %}
              
           {% for client in filter.qs %}
-            <tr>
-                <td><input type="checkbox" name="select" value='{{client.client_id}}' id="{{client.id}}"></td> 
+            <tr id="{{client.client_id}}" style="cursor: pointer;">
+                <td><input style="cursor: pointer;" type="checkbox" name="select" value='{{client.client_id}}' id="{{client.id}}" onclick= "event.stopPropagation();"></td> 
                 <td>{{client.ip}}</td>
                 <td>{{client.os_name}} v. {{client.os_version}}</td>
                 <td>{{client.hostname}}</td>
                 <td>{{client.host_user}}</td>
                 <td>{{client.privileges}}</td>
-                <td>{{client.first_seen_date}} {{client.first_seen_time}}</td>
+                <td>{{client.first_seen_datetime.date}} {{client.first_seen_time_str}}</td>
                 <td>{{client.str_last_seen}}</td>
                 {% if client.is_online is True%}
                   <td style='color: green'>Online</td>
@@ -91,13 +92,13 @@
       </div>
 
       <!-- Send task fields -->
-      <div class="w3-container w3-padding-16" action="/website/" id="submit" hidden>
-        <div class="w3-container w3-quarter w3-center" style="float: right">
+      <div class="w3-container" style="position: absolute; right: 10; bottom: 10; width: 500;" action="/website/" id="submit" hidden>
+        <div class="w3-container w3-quarter" style="float: right">
           <input class ="w3-button w3-block w3-black", type="submit", value="Submit" id="send_task" disabled> 
         </div>
-        <div class="w3-container w3-quarter w3-center" style="float: right">
+        <div class="w3-container w3-half" style="float: right">
           <select class="w3-select" name="option" id="task_selection">
-            <option value="default" disabled selected>Select Task</option>
+            <option value="default" disabled selected id="default_task">Select Task</option>
             {% for task in tasks %}
             <option value="{{task.name}}">{{task.name}}</option>
             {% endfor %}
@@ -121,23 +122,37 @@
         
         // Initialize data for javascript
         let data = [];
-      {% for i in filter.qs %}
-        data.push({{i.id}});
-      {% endfor %}
-
+        let div_ids = []; 
+        {% for i in filter.qs %}
+        data.push({{i.id}}); 
+        div_ids.push("{{i.client_id}}");
+        {% endfor %}
+      
         // Event listeners
         for(let i = 0; i < data.length; i++) {
           document.getElementById(data[i]).addEventListener("click", toggleSubmit);
           document.getElementById(data[i]).addEventListener("click", toggleMarker);
+          document.getElementById(div_ids[i]).addEventListener("click", () => {checkboxDiv(data[i])});
+          document.getElementById(div_ids[i]).addEventListener("click", toggleMarker);
+          document.getElementById(div_ids[i]).addEventListener("click", toggleSubmit);
         }
-        document.getElementById("task_selection").addEventListener("change", enableButton); 
+        document.getElementById("submit").addEventListener("change", enableButton); 
         document.getElementById("command_text").addEventListener("input", enableButton);
         document.getElementById("send_task").addEventListener("click", sendAlert);
         document.getElementById("master_checkbox").addEventListener("click", toggleMarker);
         
         toggleSubmit();
-
+        
         // UI Functions
+
+        function checkboxDiv(id){
+          let checkbox = document.getElementById(id);
+          if(checkbox.checked){
+            checkbox.checked = false;
+          } else {
+            checkbox.checked = true;
+          }
+        }
 
         function selectAll(){
           if(document.getElementById("master_checkbox").checked) {
@@ -164,7 +179,7 @@
           if(checked){
             submit_element.hidden = false;
           } else {
-            submit_element.hidden = true; 
+            submit_element.hidden = true;
           }
         }
 

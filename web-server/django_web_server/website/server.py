@@ -26,6 +26,9 @@ class ControlServerHandler():
         for client in clients:
             if not (Client.objects.filter(client_id=client['_id']).exists()):
                 client_data = client['client_data']
+                first_seen = client['first_seen']
+                first_seen_trunc = first_seen[0:19]
+                first_seen_dt = datetime.strptime(first_seen_trunc, '%Y-%m-%dT%H:%M:%S')
                 c = Client(client_id=client['_id'],
                            ip=client['ip'],
                            os_name=client_data['os_name'],
@@ -35,6 +38,7 @@ class ControlServerHandler():
                            privileges=client_data['privileges'],
                            first_seen_date=client['first_seen'][0:10],
                            first_seen_time=client['first_seen'][11:19],
+                           first_seen_datetime=first_seen_dt,
                            last_seen_date=client['last_seen'][0:10],
                            last_seen_time=client['last_seen'][11:19],
                            is_online=client['is_online'],
@@ -75,11 +79,13 @@ class ControlServerHandler():
         num_in_progress = SentTask.objects.filter(status='in progress').count()
         num_aborted = SentTask.objects.filter(status='aborted').count()
         num_done = SentTask.objects.filter(status='done').count()
+        num_error = SentTask.objects.filter(status='error').count()
         task_stats = {
             'num_pending': num_pending,
             'num_in_progress': num_in_progress,
             'num_done': num_done,
-            'num_aborted': num_aborted
+            'num_aborted': num_aborted,
+            'num_error': num_error,
         }
 
         oldest_task_running = {}
@@ -153,6 +159,20 @@ class ControlServerHandler():
             client = Client.objects.get(client_id=c_id)
             client.senttask_set.create(task_id=t_id, start_time=t_start_time, start_time_datetime=t_start_time_dt,
                                        status=t_status, task_type=task_t, task_info=task_i)
+
+    def getTaskOutput(self, task_id, client_id):
+        output_string = ""
+        requestUrl = "https://" + self.url + self.prefix + "/admin/taskoutput"
+        requestHeaders = {'Authorization': self.authorization}
+        data = {
+            "id": str(client_id),
+            "task_id": str(task_id),
+        }
+        response = requests.get(url=requestUrl, headers=requestHeaders, params=data)
+        status_code = response.status_code
+        if status_code == 200 and response.json() != {'task_responses': []}:
+            output_string = str(response.json()['task_responses'][0]['responses'][0]['result']).replace("\n", "<br>")
+        return output_string
 
     def getTasks(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
@@ -264,8 +284,9 @@ class ControlServerHandler():
             task_info = request.POST.getlist('text')[0]
             task_info = task_info.replace('"', '\"')
             task_t = "terminal"
-        elif task_t == "Open browser":
-            task_info = "sensible-browser 'google.com'"
+        elif task_t == "Scan network":
+            task_t = "network_scan"
+            task_info = ""
 
         client_ids_string = ", ".join(client_ids)
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
