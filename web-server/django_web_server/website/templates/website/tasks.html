@@ -60,7 +60,7 @@
                 <td>{{i.task_type}}</td>
                 <td>{{i.task_info}}</td>
                 <td class="w3-center">
-                  <b class="w3-button w3-circle w3-black" id="{{i.id}}_button" onclick="event.stopPropagation();" hidden>
+                  <b class="w3-button w3-circle w3-black" id="{{i.task_id}}_button" onclick="event.stopPropagation();" hidden>
                     i
                   </b>
                 </td>
@@ -93,10 +93,10 @@
       {% for i in tasks.qs %}
         data.push({{i.id}});
         div_ids.push("{{i.task_id}}");
+        var output_button = document.getElementById("{{i.task_id}}_button");
+        output_button.addEventListener("click", () => {getTaskOutput("{{i.client_id}}", "{{i.task_id}}")});
         if("{{i.status}}" == "done") {
-          var output_button = document.getElementById("{{i.id}}_button");
           output_button.hidden = false;
-          output_button.addEventListener("click", () => {getTaskOutput("{{i.client_id}}", "{{i.task_id}}")});
         }
       {% endfor %}
 
@@ -203,6 +203,9 @@
                       notis_content.innerHTML = alert_text;
                       //notis.style.visibility = 'show';
                       document.getElementById('notis').style.visibility = "visible";
+                      if(new_status == "done") {
+                        document.getElementById(task_id + "_button").hidden = false; 
+                      }
                       setTimeout(function(){
                         document.getElementById('notis').style.visibility = "hidden"
                       }, 10000);
