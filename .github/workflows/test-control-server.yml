@@ -52,6 +52,8 @@ jobs:
           echo "TEST_FORWARD_TO_HOST=https://www.blank.org/" >> .env
           echo "CI=True" >> .env
           echo "CLIENT_ID_KEYS=^client_data\\.*$" >> .env
+          echo "UPDATE_INTERVAL=1" >> .env
+          echo "TIME_ELAPSED_FACTOR=2" >> .env
       - name: Test with pytest
         working-directory: ./control_server
         run: |
