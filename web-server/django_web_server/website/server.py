@@ -165,12 +165,16 @@ class ControlServerHandler():
 
         status_code = response.status_code
         if status_code == 200:
+            # If there are no clients saved, get them first
+            if Client.objects.all().count() == 0:
+                self.getClients()
             pending_tasks = response.json()['pending_tasks']
             sent_tasks = response.json()['sent_tasks'][0]
             for task in pending_tasks:
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
-                if not (SentTask.objects.filter(task_id=t_id).exists()):
-                    c_id = task['_id']['client_id']
+                c_id = task['_id']['client_id']
+                # Create new task only if task does not already exist and its client exists
+                if (not (SentTask.objects.filter(task_id=t_id).exists())) and Client.objects.filter(client_id=c_id).exists():
                     task_t = task['task']['name']
                     task_i = task['task']['data']
                     t_status = 'Pending'
@@ -180,8 +184,9 @@ class ControlServerHandler():
                     self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, start_time_dt)
             for task in sent_tasks:
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
-                if not (SentTask.objects.filter(task_id=t_id).exists()):
-                    c_id = task['_id']['client_id']
+                c_id = task['_id']['client_id']
+                # Create new task only if task does not already exist and its client exists
+                if (not (SentTask.objects.filter(task_id=t_id).exists())) and Client.objects.filter(client_id=c_id).exists():
                     task_t = task['task']['name']
                     task_i = task['task']['data']
                     t_status = task['status'].replace("_", " ")
