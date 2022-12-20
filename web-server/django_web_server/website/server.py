@@ -54,7 +54,8 @@ class ControlServerHandler():
 
         try:
             clients = r.json()['all_clients']
-            self.__save_clients(clients)
+            if len(clients) != 0:
+                self.__save_clients(clients)
             return clients
         except ValueError as e:
             print("Server issues" + str(e))
