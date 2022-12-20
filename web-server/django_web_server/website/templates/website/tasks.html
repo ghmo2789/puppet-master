@@ -56,7 +56,7 @@
                 <td>{{i.id}}</td>
                 <td>{{i.client_id.ip}}</td>
                 <td>{{i.start_time_datetime.date}} {{i.start_time_str}}</td>
-                {% if i.status == 'Pending' %}
+                {% if i.status == 'pending' %}
                   <td style='color: yellow' id="status:{{i.task_id}}">pending</td>
                 {% elif i.status == 'in progress' %}
                   <td style='color: orange' id="status:{{i.task_id}}">{{i.status}}</td>

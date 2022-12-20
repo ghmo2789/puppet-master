@@ -80,7 +80,7 @@ class ControlServerHandler():
             'num_offline': num_offline
         }
 
-        num_pending = SentTask.objects.filter(status='Pending').count()
+        num_pending = SentTask.objects.filter(status='pending').count()
         num_in_progress = SentTask.objects.filter(status='in progress').count()
         num_aborted = SentTask.objects.filter(status='aborted').count()
         num_done = SentTask.objects.filter(status='done').count()
@@ -202,7 +202,7 @@ class ControlServerHandler():
                 if (not (SentTask.objects.filter(task_id=t_id).exists())) and Client.objects.filter(client_id=c_id).exists():
                     task_t = task['task']['name']
                     task_i = task['task']['data']
-                    t_status = 'Pending'
+                    t_status = 'pending'
                     start_time = task['task']['created_time']
                     start_time_trunc = start_time[0:19]
                     start_time_dt = datetime.strptime(start_time_trunc, '%Y-%m-%dT%H:%M:%S')
