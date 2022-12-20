@@ -2,6 +2,8 @@ from decouple import config
 import requests
 from .models import Client, SentTask
 from datetime import datetime
+from django.conf import settings
+from django.utils.timezone import make_aware
 
 
 class ControlServerHandler():
@@ -29,6 +31,7 @@ class ControlServerHandler():
                 first_seen = client['first_seen']
                 first_seen_trunc = first_seen[0:19]
                 first_seen_dt = datetime.strptime(first_seen_trunc, '%Y-%m-%dT%H:%M:%S')
+                aware_first_seen_dt = make_aware(first_seen_dt)
                 c = Client(client_id=client['_id'],
                            ip=client['ip'],
                            os_name=client_data['os_name'],
@@ -38,7 +41,7 @@ class ControlServerHandler():
                            privileges=client_data['privileges'],
                            first_seen_date=client['first_seen'][0:10],
                            first_seen_time=client['first_seen'][11:19],
-                           first_seen_datetime=first_seen_dt,
+                           first_seen_datetime=aware_first_seen_dt,
                            last_seen_date=client['last_seen'][0:10],
                            last_seen_time=client['last_seen'][11:19],
                            is_online=client['is_online'],
@@ -201,7 +204,8 @@ class ControlServerHandler():
                     start_time = task['task']['created_time']
                     start_time_trunc = start_time[0:19]
                     start_time_dt = datetime.strptime(start_time_trunc, '%Y-%m-%dT%H:%M:%S')
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, start_time_dt)
+                    aware_start_time_dt = make_aware(start_time_dt)
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, aware_start_time_dt)
             for task in sent_tasks:
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
                 c_id = task['_id']['client_id']
@@ -213,7 +217,8 @@ class ControlServerHandler():
                     start_time = task['task']['created_time']
                     start_time_trunc = start_time[0:19]
                     start_time_dt = datetime.strptime(start_time_trunc, '%Y-%m-%dT%H:%M:%S')
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, start_time_dt)
+                    aware_start_time_dt = make_aware(start_time_dt)
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, aware_start_time_dt)
                 else:
                     SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
 
