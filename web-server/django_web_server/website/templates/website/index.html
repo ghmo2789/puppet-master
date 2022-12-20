@@ -22,9 +22,17 @@
       <div id="website-info">
         <div class="website-info-box text-bg-dark p-3" id="website-statistics">
           <h2>Welcome to Puppet Master!</h2>
-          <p>Numer of connected clients: {{statistics.num_clients}}</p>
-          <p>Top os: {{statistics.top_os}}</p>
-          <p>Encountered errors: {{statistics.errors}}</p>
+          <p>Numer of connected clients: {{statistics.client_stats.num_clients}}</p>
+          <p>Client status:</p>
+          <p><span style='color: green'>{{statistics.client_stats.num_online}} Online</span> / <span style='color: red'>{{statistics.client_stats.num_offline}} Offline</span></p>
+          <p>Task statistics:</p>
+          <p><span style='color: yellow'>{{statistics.task_stats.num_pending}} Pending</span> / <span style='color: orange'>{{statistics.task_stats.num_in_progress}} In progress</span> / <span style='color: green'>{{statistics.task_stats.num_done}} Done</span> / <span style='color: red'>{{statistics.task_stats.num_aborted}} Aborted</span></p>
+          {% if statistics.oldest_task_running.exists %}
+            <p>Longest running task:</p>
+            <p>Task nr {{statistics.oldest_task_running.task_id}}, started <span style='font-weight: bold'>{{statistics.oldest_task_running.time_since_started}}</span> ago</p>
+          {% else %}
+            <p>No running tasks</p>
+          {% endif %}
         </div>
         <div class="website-info-box text-bg-dark p-3" id="website-map">
           <h2>Map</h2>
@@ -37,6 +45,7 @@
         <form method="GET">
           {{ filter.form.os_name }}
           {{ filter.form.hostname }}
+          {{ filter.form.is_online }}
           <button class="w3-button w3-black" type="submit">Apply Filter</button>
         </form>
       </div>
@@ -55,6 +64,7 @@
               <td>Privileges</td>
               <td>First Connected</td>
               <td>Last Seen</td>
+              <td>Status</td>
             </tr>
             <form method="post">
             {% csrf_token %}
@@ -68,7 +78,12 @@
                 <td>{{client.host_user}}</td>
                 <td>{{client.privileges}}</td>
                 <td>{{client.first_seen_date}} {{client.first_seen_time}}</td>
-                <td id="last_seen:{{client.client_id}}">{{client.last_seen_date}} {{client.last_seen_time}}</td>
+                <td>{{client.str_last_seen}}</td>
+                {% if client.is_online is True%}
+                  <td style='color: green'>Online</td>
+                {% else %}
+                  <td style='color: red'>Offline</td>
+                {% endif %}
             </tr>
             {% endfor %}
             </div>
@@ -215,8 +230,6 @@
                 method: 'GET',
                 credentials: 'same-origin',
                 headers:{
-                  //'Accept': 'application/json',
-                  //'X-Requested-With': 'XMLHttpRequest', 
                   'X-CSRFToken': csrf_token, 
                 }}).then((response) => response.json())
                     .then((data) => {
@@ -231,7 +244,7 @@
                     });
         }
 
-        setInterval(get_updated_client_status, 10000);
+        // setInterval(get_updated_client_status, 10000);
       
         
         

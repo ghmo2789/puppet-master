@@ -36,7 +36,7 @@
 
 
     <!-- Tasks table -->
-    <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
+    <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:700px; overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0">
             <tr style="background-color: black;"> 
               <td><input type="checkbox" name="select_all" value="1" id="master_checkbox" onclick="select_all()"></td>
@@ -55,8 +55,18 @@
                 <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}"></td> 
                 <td>{{i.id}}</td>
                 <td>{{i.client_id.ip}}</td>
-                <td>{{i.start_time}}</td>
-                <td id="status:{{i.task_id}}">{{i.status}}</td>
+                <td>{{i.start_time_datetime}}</td>
+                {% if i.status == 'Pending' %}
+                  <td style='color: yellow' id="status:{{i.task_id}}">pending</td>
+                {% elif i.status == 'in progress' %}
+                  <td style='color: orange' id="status:{{i.task_id}}">{{i.status}}</td>
+                {% elif i.status == 'done' %}
+                  <td style='color: green' id="status:{{i.task_id}}">{{i.status}}</td>
+                {% elif i.status == 'aborted' %}
+                  <td style='color: red' id="status:{{i.task_id}}">{{i.status}}</td>
+                {% else %}
+                  <td id="status:{{i.task_id}}">{{i.status}}</td>
+                {% endif %}
                 <td>{{i.task_type}}</td>
                 <td>{{i.task_info}}</td>
                 <td class="w3-center">
@@ -95,7 +105,7 @@
         div_ids.push("{{i.task_id}}");
         var output_button = document.getElementById("{{i.task_id}}_button");
         output_button.addEventListener("click", () => {getTaskOutput("{{i.client_id}}", "{{i.task_id}}")});
-        if("{{i.status}}" == "done") {
+        if("{{i.status}}" == "done" || "{{i.status}}" == "error") {
           output_button.hidden = false;
         }
       {% endfor %}

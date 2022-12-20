@@ -1,7 +1,7 @@
-from django.db.models import Count
 from decouple import config
 import requests
 from .models import Client, SentTask
+from datetime import datetime
 
 
 class ControlServerHandler():
@@ -36,12 +36,16 @@ class ControlServerHandler():
                            first_seen_date=client['first_seen'][0:10],
                            first_seen_time=client['first_seen'][11:19],
                            last_seen_date=client['last_seen'][0:10],
-                           last_seen_time=client['last_seen'][11:19])
+                           last_seen_time=client['last_seen'][11:19],
+                           is_online=client['is_online'],
+                           time_since_last_seen=client['time_since_last_seen'])
                 c.save()
             else:
                 Client.objects.filter(client_id=client['_id']) \
                               .update(last_seen_date=client['last_seen'][0:10],
-                                      last_seen_time=client['last_seen'][11:19])
+                                      last_seen_time=client['last_seen'][11:19],
+                                      is_online=client['is_online'],
+                                      time_since_last_seen=client['time_since_last_seen'])
 
     def getClients(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
@@ -58,12 +62,46 @@ class ControlServerHandler():
 
     def getStatistics(self):
         num_clients = Client.objects.all().count()
-        top_os = 'None'
-        if num_clients > 0:
-            top_os = Client.objects.annotate(c=Count('os_name')).order_by('-c').first().os_name
-        statistics = {'num_clients': num_clients,
-                      'top_os': top_os,
-                      'errors': self.errors}
+        num_online = Client.objects.filter(is_online=True).count()
+        num_offline = Client.objects.filter(is_online=False).count()
+        client_stats = {
+            'num_clients': num_clients,
+            'num_online': num_online,
+            'num_offline': num_offline
+        }
+
+        num_pending = SentTask.objects.filter(status='Pending').count()
+        num_in_progress = SentTask.objects.filter(status='in progress').count()
+        num_aborted = SentTask.objects.filter(status='aborted').count()
+        num_done = SentTask.objects.filter(status='done').count()
+        task_stats = {
+            'num_pending': num_pending,
+            'num_in_progress': num_in_progress,
+            'num_done': num_done,
+            'num_aborted': num_aborted
+        }
+
+        oldest_task_running = {}
+        if num_in_progress > 0:
+            oldest_task_running_obj = SentTask.objects.filter(status='in progress').order_by('start_time_datetime')[0]
+            oldest_task_running = {
+                'exists': True,
+                'task_id': oldest_task_running_obj.id,
+                'time_since_started': oldest_task_running_obj.time_since_started()
+            }
+        else:
+            oldest_task_running = {
+                'exists': False,
+                'task_id': '',
+                'time_since_started': '',
+            }
+
+        statistics = {
+            'client_stats': client_stats,
+            'task_stats': task_stats,
+            'oldest_task_running': oldest_task_running
+        }
+
         return statistics
 
     def getLocations(self):
@@ -109,12 +147,11 @@ class ControlServerHandler():
 
         return summarized_locations
 
-    def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_date, t_time):
+    def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_start_time, t_start_time_dt):
         if task_t != 'abort':
             client = Client.objects.get(client_id=c_id)
-            asc_t = str(t_date) + " " + str(t_time)
-            client.senttask_set.create(task_id=t_id, start_time=asc_t, status=t_status,
-                                       task_type=task_t, task_info=task_i)
+            client.senttask_set.create(task_id=t_id, start_time=t_start_time, start_time_datetime=t_start_time_dt,
+                                       status=t_status, task_type=task_t, task_info=task_i)
 
     def getTaskOutput(self, task_id, client_id):
         output_string = ""
@@ -152,7 +189,10 @@ class ControlServerHandler():
                     t_date = " "
                     t_time = task['task']['created_time']
                     t_status = 'Pending'
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
+                    start_time = task['task']['created_time']
+                    start_time_trunc = start_time[0:19]
+                    start_time_dt = datetime.strptime(start_time_trunc, '%Y-%m-%dT%H:%M:%S')
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, start_time_dt)
             for task in sent_tasks:
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
                 if not (SentTask.objects.filter(task_id=t_id).exists()):
@@ -162,7 +202,10 @@ class ControlServerHandler():
                     t_date = " "
                     t_time = task['task']['created_time']
                     t_status = task['status'].replace("_", " ")
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
+                    start_time = task['task']['created_time']
+                    start_time_trunc = start_time[0:19]
+                    start_time_dt = datetime.strptime(start_time_trunc, '%Y-%m-%dT%H:%M:%S')
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, start_time_dt)
                 else:
                     SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
 

@@ -30,6 +30,10 @@ def index(request):
     locations = controlServer.getLocations()
     locations = {'locations': locations}
 
+    clients = Client.objects.all()
+    for client in clients:
+        client.str_last_seen()
+
     context = {'clients': Client.objects.all(),
                'tasks': tasks,
                'form': form,
