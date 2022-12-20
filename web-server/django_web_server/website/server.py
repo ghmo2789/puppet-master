@@ -58,15 +58,17 @@ class ControlServerHandler():
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
         requestHeaders = {'Authorization': self.authorization}
         r = requests.get(url=requestUrl, headers=requestHeaders)
-
-        try:
-            clients = r.json()['all_clients']
-            if len(clients) != 0:
+        if r.status_code == 200:
+            try:
+                clients = r.json()['all_clients']
                 self.__save_clients(clients)
-            return clients
-        except ValueError as e:
-            print("Server issues" + str(e))
-            return []
+                return clients
+            except ValueError as e:
+                print("Server issues" + str(e))
+                return []
+        if r.status_code == 404:
+            Client.objects.all().delete()
+
 
     def getStatistics(self):
         num_clients = Client.objects.all().count()
