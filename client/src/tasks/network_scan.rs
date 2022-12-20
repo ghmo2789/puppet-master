@@ -8,7 +8,6 @@ use local_ip_address::local_ip;
 use rayon::iter::IntoParallelIterator;
 use rayon::prelude::*;
 use crate::models::{
-    Task,
     TaskResult,
 };
 use crate::tasks::RunningTasks;
@@ -158,8 +157,8 @@ pub fn scan_local_net(ports: Vec<u16>) -> Result<Vec<NetworkHost>, Error> {
 /// If the range string is invalid
 fn push_port_range(range_str: &str, ports: &mut Vec<u16>) -> Result<(), anyhow::Error> {
     let split = range_str.split('-').collect::<Vec<&str>>();
-    let mut min_port;
-    let mut max_port;
+    let min_port;
+    let max_port;
 
     if split.len() != 2 {
         return Err(anyhow::Error::msg("Failed parse range, split on '-' to long"));

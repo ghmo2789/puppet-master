@@ -9,10 +9,7 @@ use std::{
     sync::Mutex,
     io::Read,
 };
-use std::char::MAX;
-use std::cmp::min;
-use std::error::Error;
-use std::process::{Child, id, Stdio};
+use std::process::{Child, Stdio};
 use lazy_static::lazy_static;
 use rand::Rng;
 use crate::models::{
@@ -127,7 +124,7 @@ impl RunningTasks {
 }
 
 /// Struct representing ta running task
-struct RunningTask {
+pub struct RunningTask {
     id: String,
     child: Child,
 }
