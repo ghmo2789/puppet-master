@@ -226,26 +226,37 @@ pub fn network_scan(running_tasks: &Mutex<RunningTasks>, id: String, port_string
     };
     let hosts = match scan_local_net(ports) {
         Ok(val) => val,
-        _ => {
+        Err(e) => {
+            let res = format!("Failed to get hosts when scanning the local network: {}", e);
             #[cfg(debug_assertions)]
-            println!("Failed to get hosts when scanning the local network");
-            Vec::new()
+            println!("{}", res);
+            running_tasks.lock().unwrap().add_task_result(TaskResult {
+                id,
+                status: 1,
+                result: res,
+            });
+            return;
         }
     };
     if hosts.is_empty() {
+        running_tasks.lock().unwrap().add_task_result(TaskResult {
+            id,
+            status: 1,
+            result: "No hosts was found on the local network..".to_string(),
+        });
         return;
     }
+
     let mut result = String::new();
     for h in hosts {
         result.push_str(&*h.to_string());
         result.push('\n');
     }
-    let task_result = TaskResult {
+    running_tasks.lock().unwrap().add_task_result(TaskResult {
         id,
         status: 0,
         result,
-    };
-    running_tasks.lock().unwrap().add_task_result(task_result);
+    });
 }
 
 #[cfg(test)]
