@@ -78,11 +78,13 @@ class ControlServerHandler():
         num_in_progress = SentTask.objects.filter(status='in progress').count()
         num_aborted = SentTask.objects.filter(status='aborted').count()
         num_done = SentTask.objects.filter(status='done').count()
+        num_error = SentTask.objects.filter(status='error').count()
         task_stats = {
             'num_pending': num_pending,
             'num_in_progress': num_in_progress,
             'num_done': num_done,
-            'num_aborted': num_aborted
+            'num_aborted': num_aborted,
+            'num_error': num_error,
         }
 
         oldest_task_running = {}

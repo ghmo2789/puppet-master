@@ -63,6 +63,8 @@
                 {% elif i.status == 'done' %}
                   <td style='color: green' id="status:{{i.task_id}}">{{i.status}}</td>
                 {% elif i.status == 'aborted' %}
+                  <td style='color: purple' id="status:{{i.task_id}}">{{i.status}}</td>
+                {% elif i.status == 'error' %}
                   <td style='color: red' id="status:{{i.task_id}}">{{i.status}}</td>
                 {% else %}
                   <td id="status:{{i.task_id}}">{{i.status}}</td>
