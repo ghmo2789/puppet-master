@@ -52,7 +52,7 @@
             {% csrf_token %}
             {% for i in tasks.qs%}
             <tr id="{{i.task_id}}" style="cursor: pointer">
-                <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}"></td> 
+                <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}" style="cursor: pointer" onclick="event.stopPropagation();"></td> 
                 <td>{{i.id}}</td>
                 <td>{{i.client_id.ip}}</td>
                 <td>{{i.start_time_datetime.date}} {{i.start_time_str}}</td>
