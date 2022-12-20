@@ -20,15 +20,42 @@ previous compiled version. To do this, remove the generated ``client/target`` di
 
 ## How to build and run application in a docker container
 
-1. Before building the client application, the environment variables in 
-   ``client/.env`` must be set. In this file, communication protocol and URL/IP 
-   address to the control server is set. For more documentation on what the 
-   variables do, see [.cargo/config.toml](.cargo/config.toml).
+1. Before building the client application, the environment variables in
+   ``client/.env`` must be set. In this file, communication protocol and URL/IP address to the control server is set.
+   For more documentation on what the variables do, see [.cargo/config.toml](.cargo/config.toml).
 
-2. When the variables are set, the container can be build and started with the 
-   script [start-docker-container.sh](start-docker-container.sh). To use the
-   script, set it as executable with ``chmod +x start-docker-container.sh`` and
-   then run it with ``./start-docker-container.sh``.
+2. When the variables are set, the container can be build and started with the
+   script [start-docker-container.sh](start-docker-container.sh). To use the script, set it as executable
+   with ``chmod +x start-docker-container.sh`` and then run it with ``./start-docker-container.sh``.
+
+## How to build with static linking for Linux
+
+The application can be built with static linking on Linux to allow the application to run on Linux hosts without any
+dependecies.
+
+1. Update ``rustup``
+
+```
+rustup update
+```
+
+2. Install dependencies
+
+```
+sudo apt-get install pkg-config musl-tools libssl-dev
+```
+
+3. Add the Linux MUSL toolchain to rustup
+
+```
+rustup target add x86_64-unknown-linux-musl
+```
+
+4. Build the application for ``x86_64-unknown-linux-musl``
+
+```
+cargo build --target x86_64-unknown-linux-musl --release
+```
 
 ## How to run tests locally
 
