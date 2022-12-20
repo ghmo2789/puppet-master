@@ -62,7 +62,7 @@ class SentTask(models.Model):
 
     def finished(self, time):
         self.finish_time = time
-    
+
     def start_time_str(self):
         time = self.start_time_datetime
         string = "%s:%s:%s" % (time.hour, time.minute, time.second)
