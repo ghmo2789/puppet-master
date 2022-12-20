@@ -7,7 +7,7 @@ from typing import Any
 
 from decouple import config
 
-from control_server.src.middleware.event import Event
+from control_server.src.utils.event import Event
 from control_server.src.middleware.events.udp_receive_event import \
     UdpReceiveEvent
 from control_server.src.middleware.obfuscation_key import ObfuscationKey

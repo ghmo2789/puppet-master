@@ -68,6 +68,14 @@ def init():
         overwrite=True
     )
 
+    # Update the client in the client tracker if there is a tracker
+    if controller.client_tracker is not None:
+        controller.client_tracker.mark_as_seen(
+            client_id=client_id,
+            polling_time=data.polling_time,
+            is_newly_started=True
+        )
+
     return jsonify(
         {
             'Authorization': client_id

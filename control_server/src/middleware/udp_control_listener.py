@@ -1,6 +1,6 @@
 from control_server.src.middleware.checksum import Checksum
 from control_server.src.middleware.compression.compression import Compression
-from control_server.src.middleware.event import Event
+from control_server.src.utils.event import Event
 from control_server.src.middleware.events.message_received_event import \
     MessageReceivedEvent
 from control_server.src.middleware.generic_message_builder import \
