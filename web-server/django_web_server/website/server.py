@@ -153,6 +153,20 @@ class ControlServerHandler():
             client.senttask_set.create(task_id=t_id, start_time=t_start_time, start_time_datetime=t_start_time_dt,
                                        status=t_status, task_type=task_t, task_info=task_i)
 
+    def getTaskOutput(self, task_id, client_id):
+        output_string = ""
+        requestUrl = "https://" + self.url + self.prefix + "/admin/taskoutput"
+        requestHeaders = {'Authorization': self.authorization}
+        data = {
+            "id": str(client_id),
+            "task_id": str(task_id),
+        }
+        response = requests.get(url=requestUrl, headers=requestHeaders, params=data)
+        status_code = response.status_code
+        if status_code == 200 and response.json() != {'task_responses': []}:
+            output_string = str(response.json()['task_responses'][0]['responses'][0]['result']).replace("\n", "<br>")
+        return output_string
+
     def getTasks(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
@@ -172,6 +186,8 @@ class ControlServerHandler():
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
+                    t_date = " "
+                    t_time = task['task']['created_time']
                     t_status = 'Pending'
                     start_time = task['task']['created_time']
                     start_time_trunc = start_time[0:19]
@@ -183,6 +199,8 @@ class ControlServerHandler():
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
+                    t_date = " "
+                    t_time = task['task']['created_time']
                     t_status = task['status'].replace("_", " ")
                     start_time = task['task']['created_time']
                     start_time_trunc = start_time[0:19]
