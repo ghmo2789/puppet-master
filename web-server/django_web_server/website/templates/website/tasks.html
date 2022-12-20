@@ -207,13 +207,17 @@
                       var task_id = task.task_id;
                       var new_status = task.new_status;
                       var elem_id = 'status:' + task_id;
+                      // Update status and color
                       var status_element = document.getElementById(elem_id);
                       status_element.innerHTML = new_status;
+                      color_map = {'ending': 'yellow', 'in progress': 'orange', 'done': 'green', 'aborted': 'purple', 'error': 'red'};
+                      new_color = color_map[new_status];
+                      status_element.style.color = new_color;
+                      // Notis window
                       var alert_text = 'Task ' + our_id + ' is now ' + new_status;
                       var notis = document.getElementById('notis')
                       var notis_content = document.getElementById('notis-content-p');
                       notis_content.innerHTML = alert_text;
-                      //notis.style.visibility = 'show';
                       document.getElementById('notis').style.visibility = "visible";
                       if(new_status == "done") {
                         document.getElementById(task_id + "_button").hidden = false; 
