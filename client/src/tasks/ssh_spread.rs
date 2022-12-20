@@ -161,6 +161,7 @@ fn run_ssh_spread(hosts: Vec<NetworkHost>) -> Result<Vec<String>, anyhow::Error>
     for h in &hosts {
         init_res.push_str(&*format!("{}\n", &*h.to_string()));
     }
+    init_res.push_str("=>\n");
     res.lock().unwrap().push(init_res);
 
     let pool = rayon::ThreadPoolBuilder::new()
