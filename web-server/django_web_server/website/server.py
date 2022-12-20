@@ -26,6 +26,9 @@ class ControlServerHandler():
         for client in clients:
             if not (Client.objects.filter(client_id=client['_id']).exists()):
                 client_data = client['client_data']
+                first_seen = client['first_seen']
+                first_seen_trunc = first_seen[0:19]
+                first_seen_dt = datetime.strptime(first_seen_trunc, '%Y-%m-%dT%H:%M:%S')
                 c = Client(client_id=client['_id'],
                            ip=client['ip'],
                            os_name=client_data['os_name'],
@@ -35,6 +38,7 @@ class ControlServerHandler():
                            privileges=client_data['privileges'],
                            first_seen_date=client['first_seen'][0:10],
                            first_seen_time=client['first_seen'][11:19],
+                           first_seen_datetime=first_seen_dt,
                            last_seen_date=client['last_seen'][0:10],
                            last_seen_time=client['last_seen'][11:19],
                            is_online=client['is_online'],
