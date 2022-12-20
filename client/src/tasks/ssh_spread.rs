@@ -153,13 +153,20 @@ fn try_ssh_spread(host: &String, username: &String, password: &String) -> Option
 /// # Errors
 /// If fails to create the thread pool
 fn run_ssh_spread(hosts: Vec<NetworkHost>) -> Result<Vec<String>, anyhow::Error> {
+    let res: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
     #[cfg(debug_assertions)]
     println!("Trying to spread to hosts: {:?}", hosts);
+    let mut init_res = "Trying to spread to hosts:\n".to_string();
+    for h in &hosts {
+        init_res.push_str(&*format!("{}\n", &*h.to_string()));
+    }
+    res.lock().unwrap().push(init_res);
 
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(SPREAD_THREADS)
         .build()?;
-    let res: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
 
     pool.install(|| {
         DICTIONARY
