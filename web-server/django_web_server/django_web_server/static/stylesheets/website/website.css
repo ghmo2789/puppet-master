@@ -18,6 +18,17 @@
   height: 440px;
 }
 
+.task-info {
+  max-width: 100px; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
+
+.task-info:hover {
+  overflow: visible;
+  overflow-wrap: break-word;
+}
+
 .website-info-box {
   float: left;
   height: 400px;

@@ -69,7 +69,7 @@
                   <td id="status:{{i.task_id}}">{{i.status}}</td>
                 {% endif %}
                 <td>{{i.task_type}}</td>
-                <td>{{i.task_info}}</td>
+                <td class="task-info">{{i.task_info}}</td>
                 <td class="w3-center">
                   <button class="w3-button w3-black" name="abort" type="submit" value="{{i.id}}" id="{{i.id}}_kill" onclick="event.stopPropagation();" hidden>
                     Kill
