@@ -1,5 +1,13 @@
+from decouple import config
+
 from control_server.src.controller import controller
 from control_server.src.utils.time_utils import time_now
+
+default_polling_time = config(
+    "DEFAULT_CLIENT_POLLING_TIME",
+    cast=float,
+    default=60.0
+)
 
 
 def seen_client(client_id: str, is_newly_started: bool = False) -> bool:
@@ -29,7 +37,9 @@ def seen_client(client_id: str, is_newly_started: bool = False) -> bool:
     if controller.client_tracker is not None:
         controller.client_tracker.mark_as_seen(
             client_id=client_id,
-            polling_time=client.polling_time,
+            polling_time=client.client_data.polling_time
+            if client.client_data is not None else
+            default_polling_time,
             is_newly_started=is_newly_started
         )
 

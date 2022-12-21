@@ -95,7 +95,9 @@ class ClientTaskStatusUpdater:
             task_status=task_status
         )
 
+        count = 0
         for client_task in client_tasks:
+            count += 1
             client_task.set_status(new_task_status)
             key = {
                 '_id.client_id': client_id,
@@ -116,4 +118,4 @@ class ClientTaskStatusUpdater:
                     identifier=key
                 )
 
-        return len(client_tasks)
+        return count
