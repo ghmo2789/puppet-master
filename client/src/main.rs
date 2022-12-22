@@ -14,6 +14,7 @@ use crate::models::{
 };
 
 
+
 mod tasks;
 mod models;
 
@@ -102,6 +103,6 @@ async fn main() -> Result<(), anyhow::Error> {
         call_home(&token).await;
         thread::sleep(Duration::from_secs(polling_time));
     }
-
+    // Never reached
     // Ok(())
 }
