@@ -210,9 +210,9 @@
                       // Update status and color
                       var status_element = document.getElementById(elem_id);
                       status_element.innerHTML = new_status;
-                      color_map = {'ending': 'yellow', 'in progress': 'orange', 'done': 'green', 'aborted': 'purple', 'error': 'red'};
-                      new_color = color_map[new_status];
-                      status_element.style.color = new_color;
+                      color_class_map = {'pending': 'status-pending', 'in progress': 'status-in-progress', 'done': 'status-done', 'aborted': 'status-aborted', 'error': 'status-error'};
+                      new_class = color_class_map[new_status];
+                      status_element.className = new_class;
                       // Notis window
                       var alert_text = 'Task ' + our_id + ' is now ' + new_status;
                       var notis = document.getElementById('notis')
