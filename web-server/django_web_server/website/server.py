@@ -7,6 +7,10 @@ from django.utils.timezone import make_aware
 
 
 class ControlServerHandler():
+    """
+    A Class for handling all the communication with the control server
+    """
+
     url = ""
     prefix = ""
     authorization = ""
@@ -18,6 +22,14 @@ class ControlServerHandler():
         self.authorization = config("CONTROL_SERVER_AUTHORIZATION")
 
     def __save_clients(self, clients):
+        """
+        Saves clients and their information in the database
+        :param clients: List of clients
+        :side effects: Saves clients in the database if they do not already exist,
+                       otherwise update their status. If a client in the database no
+                       longer exists in the control server it will be deleted
+        :return:
+        """
         saved_client_ids = list(Client.objects.values_list('client_id', flat=True))
         received_client_ids = [client['_id'] for client in clients]
 
@@ -55,6 +67,14 @@ class ControlServerHandler():
                                       time_since_last_seen=client['time_since_last_seen'])
 
     def getClients(self):
+        """
+        Send request to control server to retrieve all clients and saves 
+        them in the database
+        :side effects: Saves clients in the database if they do not already exist,
+                       otherwise update their status. If a client in the database no
+                       longer exists in the control server it will be deleted
+        :return:
+        """
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
         requestHeaders = {'Authorization': self.authorization}
         r = requests.get(url=requestUrl, headers=requestHeaders)
@@ -71,6 +91,11 @@ class ControlServerHandler():
 
 
     def getStatistics(self):
+        """
+        Gathers statistics about the clients and tasks
+        :return: Statistics containing the number of clients, number online/offline,
+                 number of task in of each status and the longing running task
+        """
         num_clients = Client.objects.all().count()
         num_online = Client.objects.filter(is_online=True).count()
         num_offline = Client.objects.filter(is_online=False).count()
@@ -117,6 +142,12 @@ class ControlServerHandler():
         return statistics
 
     def getLocations(self):
+        """
+        Gets the lat, long location of each client
+        :side effects: Calls an external API for converting IP address to lat, long location
+        :return: List of locations containing its lat, long coordinates and all clients
+                 which are connected from that location
+        """
         ids = list(Client.objects.values_list('id', flat=True))
         locations = []
 
@@ -160,6 +191,17 @@ class ControlServerHandler():
         return summarized_locations
 
     def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_start_time, t_start_time_dt):
+        """
+        Saves a task in the database
+        :param t_id: The task id
+        :param c_id: The client id of the client running the task
+        :param task_t: The task type
+        :param task_i: The task information
+        :param t_status: The task status
+        :param t_start_time: The task start time represented as a string
+        :param t_start_time_dt: The task start time represented as a datetime object
+        :side effects: Saves the task in the database
+        """
         if task_t != 'abort':
             client = Client.objects.get(client_id=c_id)
             client.senttask_set.create(task_id=t_id, start_time=t_start_time, start_time_datetime=t_start_time_dt,

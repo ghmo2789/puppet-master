@@ -7,12 +7,15 @@ from .server import ControlServerHandler
 import json
 
 
-def kill_task(request):
-    # TODO: Send to control server
-    return
-
-
 def index(request):
+    """
+    Front-page and client-page view
+    :param request: Request object
+    :side effects: Loads all clients from the control server into the
+                   database. If the request is a POST request, it will send
+                   task corresponding to the form to the control server
+    :return: Rendering of the client webpage
+    """
     controlServer = ControlServerHandler()
     controlServer.getClients()
     tasks = [{'name': "Write command"}, {'name': "Scan network"}]
@@ -43,6 +46,14 @@ def index(request):
 
 
 def tasks(request):
+    """
+    Tasks-page view
+    :param request: Request object
+    :side effects: Loads all tasks from the control server into the
+                   database. If the request is a POST, it will send 
+                   abort task to the control server
+    :return: Rendering of the tasks webpage
+    """
     controlServer = ControlServerHandler()
     controlServer.getTasks()
 
@@ -54,6 +65,11 @@ def tasks(request):
 
 
 def task_output(request):
+    """
+    Gets task output of a specific task from the control server
+    :param request: Request object containing task info
+    :return: The task output
+    """
     controlServer = ControlServerHandler()
     task_id = json.loads(request.body)['task_id']
     client_id = task_id[36:72]
@@ -66,6 +82,13 @@ def task_output(request):
 
 
 def updated_tasks(request):
+    """
+    Gets all tasks from the control server in order to update their status
+    :param request: Request object
+    :side effects: Gets all tasks from the control server and updates their
+                   status in the database if it has changed
+    :return: List of the ids and new status of the tasks which has been updated
+    """
     controlServer = ControlServerHandler()
     updatedTaskStatus = controlServer.getUpdatedTaskStatus()
     updatedTaskList = {
@@ -76,6 +99,13 @@ def updated_tasks(request):
 
 
 def updated_client_status(request):
+    """
+    Gets all clients from the control server and updates their last seen timestamp
+    :param request: Request object
+    :side effects: Gets all clients from the control server and updates in
+                   the database the date and time they were last seen 
+    :return: List of the ids and timestamps of the clients that has been updated
+    """
     controlServer = ControlServerHandler()
     updatedclientStatus = controlServer.getUpdatedClientStatus()
     updatedClientList = {
