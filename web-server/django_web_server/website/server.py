@@ -208,6 +208,12 @@ class ControlServerHandler():
                                        status=t_status, task_type=task_t, task_info=task_i)
 
     def getTaskOutput(self, task_id, client_id):
+        """
+        Gets output for a task from the control server
+        :param task_id: The task id
+        :param client_id: The client id of the client running the task
+        :return: Returns the task output in a string
+        """
         output_string = ""
         requestUrl = "https://" + self.url + self.prefix + "/admin/taskoutput"
         requestHeaders = {'Authorization': self.authorization}
@@ -222,6 +228,11 @@ class ControlServerHandler():
         return output_string
 
     def getTasks(self):
+        """
+        Gets all tasks from the control server
+        :side effects: Saves all the tasks in the database
+        :return:
+        """
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
 
@@ -267,6 +278,11 @@ class ControlServerHandler():
                     SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
 
     def getUpdatedTaskStatus(self):
+        """
+        Gets all updated tasks and their new status
+        :side effects: Updates the task status in the database
+        :return: A list of updated tasks with their id and new status
+        """
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
 
@@ -298,6 +314,10 @@ class ControlServerHandler():
         return updated_tasks
 
     def getUpdatedClientStatus(self):
+        """
+        Gets all updated clients and their new time for last seen
+        :return: A list of updated clients with their new time last seen
+        """
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
         requestHeaders = {'Authorization': self.authorization}
         r = requests.get(url=requestUrl, headers=requestHeaders)
@@ -326,6 +346,13 @@ class ControlServerHandler():
             return []
 
     def sendTasks(self, request):
+        """
+        Send tasks to the control server
+        :param request: Request object containing information about client ids, 
+                        task type and task info
+        :side effects: Sends post request to control server to send a task
+        :return: 
+        """
         client_ids = request.POST.getlist('select')
         task_t = request.POST.getlist('option')[0]
         task_info = "..."
@@ -365,6 +392,12 @@ class ControlServerHandler():
         return
 
     def killTask(self, request):
+        """
+        Send request to the control server to kill a task
+        :param request: Request object containing task ids
+        :side effects: Sends post request to control server to kill a task
+        :return: 
+        """
         selected = request.POST.getlist('select')
         task_ids = list(SentTask.objects.filter(id__in=selected).values_list('task_id', flat=True))
         selected_client_ids = list(SentTask.objects.filter(task_id__in=task_ids).values_list('client_id', flat=True))

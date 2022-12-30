@@ -56,6 +56,7 @@ def tasks(request):
     :return: Rendering of the tasks webpage
     """
     controlServer = ControlServerHandler()
+    controlServer.getClients()
     controlServer.getTasks()
 
     if request.method == 'POST':
