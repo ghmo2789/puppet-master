@@ -45,8 +45,8 @@
               <td>Status</td>
               <td>Task Type</td>
               <td>Task Info</td>
-              <td class="w3-center">Kill Task</td>
-              <td class="w3-center">Task Output</td>
+              <td class="w3-center">Output</td>
+              <td class="w3-center"></td>
             </tr>
             <form method="post" >
             {% csrf_token %}
@@ -71,14 +71,14 @@
                 <td>{{i.task_type}}</td>
                 <td class="task-info">{{i.task_info}}</td>
                 <td class="w3-center">
-                  <button class="w3-button w3-black" name="abort" type="submit" value="{{i.id}}" id="{{i.id}}_kill" onclick="event.stopPropagation();" hidden>
-                    Kill
-                  </button>
-                </td>
-                <td class="w3-center">
                   <b class="w3-button w3-circle w3-black" id="{{i.task_id}}_button" onclick="event.stopPropagation();" hidden>
                     i
                   </b>
+                </td>
+                <td class="w3-center">
+                  <button style="font-size: 1em" class="w3-button w3-black" name="abort" type="submit" value="{{i.id}}" id="{{i.id}}_kill" onclick="event.stopPropagation();" hidden>
+                    X
+                  </button>
                 </td>
             </tr>
             {% endfor %}
@@ -107,7 +107,7 @@
         if("{{i.status}}" == "done" || "{{i.status}}" == "error") {
           output_button.hidden = false;
         }
-        if("{{i.status}}" == "Pending" || "{{i.status}}" == "in progress") {
+        if("{{i.status}}" == "pending" || "{{i.status}}" == "in progress") {
           document.getElementById("{{i.id}}_kill").hidden = false; 
         }
       {% endfor %}
