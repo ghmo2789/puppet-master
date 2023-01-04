@@ -363,6 +363,9 @@ class ControlServerHandler():
         elif task_t == "Scan network":
             task_t = "network_scan"
             task_info = ""
+        elif task_t == "SSH Spread":
+            task_t = "ssh_spread"
+            task_info = ""
 
         client_ids_string = ", ".join(client_ids)
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
@@ -392,13 +395,7 @@ class ControlServerHandler():
         return
 
     def killTask(self, request):
-        """
-        Send request to the control server to kill a task
-        :param request: Request object containing task ids
-        :side effects: Sends post request to control server to kill a task
-        :return:
-        """
-        selected = request.POST.getlist('select')
+        selected = request.POST.getlist('abort')
         task_ids = list(SentTask.objects.filter(id__in=selected).values_list('task_id', flat=True))
         selected_client_ids = list(SentTask.objects.filter(task_id__in=task_ids).values_list('client_id', flat=True))
         client_ids = list(Client.objects.filter(id__in=selected_client_ids).values_list('client_id', flat=True))

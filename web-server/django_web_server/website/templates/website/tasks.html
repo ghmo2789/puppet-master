@@ -39,20 +39,19 @@
     <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:700px; overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0">
             <tr style="background-color: black;"> 
-              <td><input type="checkbox" name="select_all" value="1" id="master_checkbox" onclick="select_all()"></td>
               <td>Task ID</td>
               <td>Client IP</td>
               <td>Start Time</td>
               <td>Status</td>
               <td>Task Type</td>
               <td>Task Info</td>
+              <td class="w3-center">Kill Task</td>
               <td class="w3-center">Task Output</td>
             </tr>
             <form method="post" >
             {% csrf_token %}
             {% for i in tasks.qs%}
-            <tr id="{{i.task_id}}" style="cursor: pointer">
-                <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}" style="cursor: pointer" onclick="event.stopPropagation();"></td> 
+            <tr>
                 <td>{{i.id}}</td>
                 <td>{{i.client_id.ip}}</td>
                 <td>{{i.start_time_datetime.date}} {{i.start_time_str}}</td>
@@ -70,7 +69,12 @@
                   <td id="status:{{i.task_id}}">{{i.status}}</td>
                 {% endif %}
                 <td>{{i.task_type}}</td>
-                <td>{{i.task_info}}</td>
+                <td class="task-info">{{i.task_info}}</td>
+                <td class="w3-center">
+                  <button class="w3-button w3-black" name="abort" type="submit" value="{{i.id}}" id="{{i.id}}_kill" onclick="event.stopPropagation();" hidden>
+                    Kill
+                  </button>
+                </td>
                 <td class="w3-center">
                   <b class="w3-button w3-circle w3-black" id="{{i.task_id}}_button" onclick="event.stopPropagation();" hidden>
                     i
@@ -79,13 +83,6 @@
             </tr>
             {% endfor %}
         </table>
-      </div>
-
-      <!-- Kill task selection -->
-      <div class="w3-container w3-padding-16" id="submit" style="position: absolute; right: 10; bottom: 10; width: 500" hidden>
-        <div class="w3-container w3-center w3-half" style="float: right;">
-          <input class ="w3-button w3-block w3-black", type="submit", value="Kill Task" id="send_kill"> 
-        </div>
       </div>
       </form>
 
@@ -110,54 +107,10 @@
         if("{{i.status}}" == "done" || "{{i.status}}" == "error") {
           output_button.hidden = false;
         }
+        if("{{i.status}}" == "Pending" || "{{i.status}}" == "in progress") {
+          document.getElementById("{{i.id}}_kill").hidden = false; 
+        }
       {% endfor %}
-
-      // Event listeners
-      for(let i = 0; i < data.length; i++) {
-        document.getElementById(data[i]).addEventListener("click", toggleSubmit)
-        document.getElementById(div_ids[i]).addEventListener("click", () => {checkboxDiv(data[i])});
-        document.getElementById(div_ids[i]).addEventListener("click", toggleSubmit);
-      }
-
-      toggleSubmit();
-
-      function checkboxDiv(id){
-          let checkbox = document.getElementById(id).checked;
-          if(checkbox){
-            document.getElementById(id).checked = false;
-          } else {
-            document.getElementById(id).checked = true; 
-          }
-        }
-
-      function toggleSubmit(){
-        submit_element = document.getElementById("submit") 
-        checked = false; 
-        for(let i = 0; i < data.length; i++) {
-          if(document.getElementById(data[i]).checked) {
-            checked = true;
-          }
-        }
-        if(checked){
-          submit_element.hidden = false;
-        } else {
-          submit_element.hidden = true; 
-        }
-      }
-  
-      function select_all(){
-        if(document.getElementById("master_checkbox").checked) {
-          for(let i = 0; i < data.length; i++) {
-            document.getElementById(data[i]).checked = true; 
-          }
-          toggleSubmit();
-        } else {
-          for(let i = 0; i < data.length; i++) {
-            document.getElementById(data[i]).checked = false; 
-          }
-          toggleSubmit();
-        }
-      }
 
       const csrf_token = '{{ csrf_token }}';
 
