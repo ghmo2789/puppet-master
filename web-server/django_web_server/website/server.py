@@ -2,7 +2,6 @@ from decouple import config
 import requests
 from .models import Client, SentTask
 from datetime import datetime
-from django.conf import settings
 from django.utils.timezone import make_aware
 
 
@@ -68,7 +67,7 @@ class ControlServerHandler():
 
     def getClients(self):
         """
-        Send request to control server to retrieve all clients and saves 
+        Send request to control server to retrieve all clients and saves
         them in the database
         :side effects: Saves clients in the database if they do not already exist,
                        otherwise update their status. If a client in the database no
@@ -88,7 +87,6 @@ class ControlServerHandler():
                 return []
         if r.status_code == 404:
             Client.objects.all().delete()
-
 
     def getStatistics(self):
         """
@@ -252,7 +250,8 @@ class ControlServerHandler():
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
                 c_id = task['_id']['client_id']
                 # Create new task only if task does not already exist and its client exists
-                if (not (SentTask.objects.filter(task_id=t_id).exists())) and Client.objects.filter(client_id=c_id).exists():
+                if (not (SentTask.objects.filter(task_id=t_id).exists())) \
+                   and Client.objects.filter(client_id=c_id).exists():
                     task_t = task['task']['name']
                     task_i = task['task']['data']
                     t_status = 'pending'
@@ -265,7 +264,8 @@ class ControlServerHandler():
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
                 c_id = task['_id']['client_id']
                 # Create new task only if task does not already exist and its client exists
-                if (not (SentTask.objects.filter(task_id=t_id).exists())) and Client.objects.filter(client_id=c_id).exists():
+                if (not (SentTask.objects.filter(task_id=t_id).exists())) \
+                   and Client.objects.filter(client_id=c_id).exists():
                     task_t = task['task']['name']
                     task_i = task['task']['data']
                     t_status = task['status'].replace("_", " ")
@@ -348,10 +348,10 @@ class ControlServerHandler():
     def sendTasks(self, request):
         """
         Send tasks to the control server
-        :param request: Request object containing information about client ids, 
+        :param request: Request object containing information about client ids,
                         task type and task info
         :side effects: Sends post request to control server to send a task
-        :return: 
+        :return:
         """
         client_ids = request.POST.getlist('select')
         task_t = request.POST.getlist('option')[0]
@@ -396,7 +396,7 @@ class ControlServerHandler():
         Send request to the control server to kill a task
         :param request: Request object containing task ids
         :side effects: Sends post request to control server to kill a task
-        :return: 
+        :return:
         """
         selected = request.POST.getlist('select')
         task_ids = list(SentTask.objects.filter(id__in=selected).values_list('task_id', flat=True))

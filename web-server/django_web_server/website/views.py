@@ -34,8 +34,6 @@ def index(request):
     locations = controlServer.getLocations()
     locations = {'locations': locations}
 
-    clients = Client.objects.all()
-
     context = {'clients': Client.objects.all(),
                'tasks': tasks,
                'form': form,
@@ -51,7 +49,7 @@ def tasks(request):
     Tasks-page view
     :param request: Request object
     :side effects: Loads all tasks from the control server into the
-                   database. If the request is a POST, it will send 
+                   database. If the request is a POST, it will send
                    abort task to the control server
     :return: Rendering of the tasks webpage
     """
@@ -105,7 +103,7 @@ def updated_client_status(request):
     Gets all clients from the control server and updates their last seen timestamp
     :param request: Request object
     :side effects: Gets all clients from the control server and updates in
-                   the database the date and time they were last seen 
+                   the database the date and time they were last seen
     :return: List of the ids and timestamps of the clients that has been updated
     """
     controlServer = ControlServerHandler()
