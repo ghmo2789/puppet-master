@@ -56,16 +56,16 @@
                 <td>{{i.id}}</td>
                 <td>{{i.client_id.ip}}</td>
                 <td>{{i.start_time_datetime.date}} {{i.start_time_str}}</td>
-                {% if i.status == 'Pending' %}
-                  <td style='color: yellow' id="status:{{i.task_id}}">pending</td>
+                {% if i.status == 'pending' %}
+                  <td class="status-pending" id="status:{{i.task_id}}">pending</td>
                 {% elif i.status == 'in progress' %}
-                  <td style='color: orange' id="status:{{i.task_id}}">{{i.status}}</td>
+                  <td class="status-in-progress" id="status:{{i.task_id}}">{{i.status}}</td>
                 {% elif i.status == 'done' %}
-                  <td style='color: green' id="status:{{i.task_id}}">{{i.status}}</td>
+                  <td class="status-done" id="status:{{i.task_id}}">{{i.status}}</td>
                 {% elif i.status == 'aborted' %}
-                  <td style='color: purple' id="status:{{i.task_id}}">{{i.status}}</td>
+                  <td class="status-aborted" id="status:{{i.task_id}}">{{i.status}}</td>
                 {% elif i.status == 'error' %}
-                  <td style='color: red' id="status:{{i.task_id}}">{{i.status}}</td>
+                  <td class="status-error" id="status:{{i.task_id}}">{{i.status}}</td>
                 {% else %}
                   <td id="status:{{i.task_id}}">{{i.status}}</td>
                 {% endif %}
@@ -210,9 +210,9 @@
                       // Update status and color
                       var status_element = document.getElementById(elem_id);
                       status_element.innerHTML = new_status;
-                      color_map = {'ending': 'yellow', 'in progress': 'orange', 'done': 'green', 'aborted': 'purple', 'error': 'red'};
-                      new_color = color_map[new_status];
-                      status_element.style.color = new_color;
+                      color_class_map = {'pending': 'status-pending', 'in progress': 'status-in-progress', 'done': 'status-done', 'aborted': 'status-aborted', 'error': 'status-error'};
+                      new_class = color_class_map[new_status];
+                      status_element.className = new_class;
                       // Notis window
                       var alert_text = 'Task ' + our_id + ' is now ' + new_status;
                       var notis = document.getElementById('notis')

@@ -95,3 +95,31 @@
   margin-top: 0;
   padding-top: 0!important;
 }
+
+.status-online {
+  color: #00cc00;
+}
+
+.status-offline {
+  color: red;
+}
+
+.status-pending {
+  color: yellow;
+}
+
+.status-in-progress {
+  color: orange;
+}
+
+.status-done {
+  color: #00cc00;
+}
+
+.status-aborted {
+  color: #4d79ff;
+}
+
+.status-error {
+  color: red;
+}

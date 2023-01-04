@@ -2,9 +2,14 @@ from decouple import config
 import requests
 from .models import Client, SentTask
 from datetime import datetime
+from django.utils.timezone import make_aware
 
 
 class ControlServerHandler():
+    """
+    A Class for handling all the communication with the control server
+    """
+
     url = ""
     prefix = ""
     authorization = ""
@@ -16,6 +21,14 @@ class ControlServerHandler():
         self.authorization = config("CONTROL_SERVER_AUTHORIZATION")
 
     def __save_clients(self, clients):
+        """
+        Saves clients and their information in the database
+        :param clients: List of clients
+        :side effects: Saves clients in the database if they do not already exist,
+                       otherwise update their status. If a client in the database no
+                       longer exists in the control server it will be deleted
+        :return:
+        """
         saved_client_ids = list(Client.objects.values_list('client_id', flat=True))
         received_client_ids = [client['_id'] for client in clients]
 
@@ -29,6 +42,7 @@ class ControlServerHandler():
                 first_seen = client['first_seen']
                 first_seen_trunc = first_seen[0:19]
                 first_seen_dt = datetime.strptime(first_seen_trunc, '%Y-%m-%dT%H:%M:%S')
+                aware_first_seen_dt = make_aware(first_seen_dt)
                 c = Client(client_id=client['_id'],
                            ip=client['ip'],
                            os_name=client_data['os_name'],
@@ -38,7 +52,7 @@ class ControlServerHandler():
                            privileges=client_data['privileges'],
                            first_seen_date=client['first_seen'][0:10],
                            first_seen_time=client['first_seen'][11:19],
-                           first_seen_datetime=first_seen_dt,
+                           first_seen_datetime=aware_first_seen_dt,
                            last_seen_date=client['last_seen'][0:10],
                            last_seen_time=client['last_seen'][11:19],
                            is_online=client['is_online'],
@@ -52,19 +66,34 @@ class ControlServerHandler():
                                       time_since_last_seen=client['time_since_last_seen'])
 
     def getClients(self):
+        """
+        Send request to control server to retrieve all clients and saves
+        them in the database
+        :side effects: Saves clients in the database if they do not already exist,
+                       otherwise update their status. If a client in the database no
+                       longer exists in the control server it will be deleted
+        :return:
+        """
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
         requestHeaders = {'Authorization': self.authorization}
         r = requests.get(url=requestUrl, headers=requestHeaders)
-
-        try:
-            clients = r.json()['all_clients']
-            self.__save_clients(clients)
-            return clients
-        except ValueError as e:
-            print("Server issues" + str(e))
-            return []
+        if r.status_code == 200:
+            try:
+                clients = r.json()['all_clients']
+                self.__save_clients(clients)
+                return clients
+            except ValueError as e:
+                print("Server issues" + str(e))
+                return []
+        if r.status_code == 404:
+            Client.objects.all().delete()
 
     def getStatistics(self):
+        """
+        Gathers statistics about the clients and tasks
+        :return: Statistics containing the number of clients, number online/offline,
+                 number of task in of each status and the longing running task
+        """
         num_clients = Client.objects.all().count()
         num_online = Client.objects.filter(is_online=True).count()
         num_offline = Client.objects.filter(is_online=False).count()
@@ -74,7 +103,7 @@ class ControlServerHandler():
             'num_offline': num_offline
         }
 
-        num_pending = SentTask.objects.filter(status='Pending').count()
+        num_pending = SentTask.objects.filter(status='pending').count()
         num_in_progress = SentTask.objects.filter(status='in progress').count()
         num_aborted = SentTask.objects.filter(status='aborted').count()
         num_done = SentTask.objects.filter(status='done').count()
@@ -111,6 +140,12 @@ class ControlServerHandler():
         return statistics
 
     def getLocations(self):
+        """
+        Gets the lat, long location of each client
+        :side effects: Calls an external API for converting IP address to lat, long location
+        :return: List of locations containing its lat, long coordinates and all clients
+                 which are connected from that location
+        """
         ids = list(Client.objects.values_list('id', flat=True))
         locations = []
 
@@ -154,12 +189,29 @@ class ControlServerHandler():
         return summarized_locations
 
     def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_start_time, t_start_time_dt):
+        """
+        Saves a task in the database
+        :param t_id: The task id
+        :param c_id: The client id of the client running the task
+        :param task_t: The task type
+        :param task_i: The task information
+        :param t_status: The task status
+        :param t_start_time: The task start time represented as a string
+        :param t_start_time_dt: The task start time represented as a datetime object
+        :side effects: Saves the task in the database
+        """
         if task_t != 'abort':
             client = Client.objects.get(client_id=c_id)
             client.senttask_set.create(task_id=t_id, start_time=t_start_time, start_time_datetime=t_start_time_dt,
                                        status=t_status, task_type=task_t, task_info=task_i)
 
     def getTaskOutput(self, task_id, client_id):
+        """
+        Gets output for a task from the control server
+        :param task_id: The task id
+        :param client_id: The client id of the client running the task
+        :return: Returns the task output in a string
+        """
         output_string = ""
         requestUrl = "https://" + self.url + self.prefix + "/admin/taskoutput"
         requestHeaders = {'Authorization': self.authorization}
@@ -174,6 +226,11 @@ class ControlServerHandler():
         return output_string
 
     def getTasks(self):
+        """
+        Gets all tasks from the control server
+        :side effects: Saves all the tasks in the database
+        :return:
+        """
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
 
@@ -184,34 +241,48 @@ class ControlServerHandler():
 
         status_code = response.status_code
         if status_code == 200:
+            # If there are no clients saved, get them first
+            if Client.objects.all().count() == 0:
+                self.getClients()
             pending_tasks = response.json()['pending_tasks']
             sent_tasks = response.json()['sent_tasks'][0]
             for task in pending_tasks:
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
-                if not (SentTask.objects.filter(task_id=t_id).exists()):
-                    c_id = task['_id']['client_id']
+                c_id = task['_id']['client_id']
+                # Create new task only if task does not already exist and its client exists
+                if (not (SentTask.objects.filter(task_id=t_id).exists())) \
+                   and Client.objects.filter(client_id=c_id).exists():
                     task_t = task['task']['name']
                     task_i = task['task']['data']
-                    t_status = 'Pending'
+                    t_status = 'pending'
                     start_time = task['task']['created_time']
                     start_time_trunc = start_time[0:19]
                     start_time_dt = datetime.strptime(start_time_trunc, '%Y-%m-%dT%H:%M:%S')
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, start_time_dt)
+                    aware_start_time_dt = make_aware(start_time_dt)
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, aware_start_time_dt)
             for task in sent_tasks:
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
-                if not (SentTask.objects.filter(task_id=t_id).exists()):
-                    c_id = task['_id']['client_id']
+                c_id = task['_id']['client_id']
+                # Create new task only if task does not already exist and its client exists
+                if (not (SentTask.objects.filter(task_id=t_id).exists())) \
+                   and Client.objects.filter(client_id=c_id).exists():
                     task_t = task['task']['name']
                     task_i = task['task']['data']
                     t_status = task['status'].replace("_", " ")
                     start_time = task['task']['created_time']
                     start_time_trunc = start_time[0:19]
                     start_time_dt = datetime.strptime(start_time_trunc, '%Y-%m-%dT%H:%M:%S')
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, start_time_dt)
+                    aware_start_time_dt = make_aware(start_time_dt)
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, aware_start_time_dt)
                 else:
                     SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
 
     def getUpdatedTaskStatus(self):
+        """
+        Gets all updated tasks and their new status
+        :side effects: Updates the task status in the database
+        :return: A list of updated tasks with their id and new status
+        """
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
         requestHeaders = {'Authorization': self.authorization}
 
@@ -243,6 +314,10 @@ class ControlServerHandler():
         return updated_tasks
 
     def getUpdatedClientStatus(self):
+        """
+        Gets all updated clients and their new time for last seen
+        :return: A list of updated clients with their new time last seen
+        """
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
         requestHeaders = {'Authorization': self.authorization}
         r = requests.get(url=requestUrl, headers=requestHeaders)
@@ -271,6 +346,13 @@ class ControlServerHandler():
             return []
 
     def sendTasks(self, request):
+        """
+        Send tasks to the control server
+        :param request: Request object containing information about client ids,
+                        task type and task info
+        :side effects: Sends post request to control server to send a task
+        :return:
+        """
         client_ids = request.POST.getlist('select')
         task_t = request.POST.getlist('option')[0]
         task_info = "..."
@@ -310,6 +392,12 @@ class ControlServerHandler():
         return
 
     def killTask(self, request):
+        """
+        Send request to the control server to kill a task
+        :param request: Request object containing task ids
+        :side effects: Sends post request to control server to kill a task
+        :return:
+        """
         selected = request.POST.getlist('select')
         task_ids = list(SentTask.objects.filter(id__in=selected).values_list('task_id', flat=True))
         selected_client_ids = list(SentTask.objects.filter(task_id__in=task_ids).values_list('client_id', flat=True))

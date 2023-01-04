@@ -4,6 +4,9 @@ from .models import Client, SentTask
 
 
 class ClientFilter(django_filters.FilterSet):
+    """
+    A filter class for filtering clients.
+    """
     try:
         existing_os = list(Client.objects.values_list('os_name', flat=True))
         os_CHOICES = tuple((i, i) for i in existing_os)
@@ -26,7 +29,9 @@ class ClientFilter(django_filters.FilterSet):
 
 
 class TaskFilter(django_filters.FilterSet):
-
+    """
+    A filter class for filtering tasks.
+    """
     try:
         existing_id = list(SentTask.objects.values_list('client_id', flat=True))
         existing_ip = list(Client.objects.filter(id__in=existing_id).values_list('ip', flat=True))
