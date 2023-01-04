@@ -7,6 +7,8 @@ from control_server.src.data.client_task_response import ClientTaskResponse
 from control_server.src.data.client_task_response_collection import \
     ClientTaskResponseCollection
 from control_server.src.data.deserializable import Deserializable
+from control_server.src.data.identifying_client_data import \
+    IdentifyingClientData
 from control_server.src.data.task import Task
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.tests.utils.generic_test_utils import get_prefix
@@ -96,6 +98,13 @@ def test_task_response(client):
     task_response = get_task_response()
 
     controller.db.set(
+        collection=DatabaseCollection.CLIENTS,
+        entry_id=client_id,
+        entry=IdentifyingClientData(),
+        overwrite=True
+    )
+
+    controller.db.set(
         collection=DatabaseCollection.CLIENT_DONE_TASKS,
         identifier={
             "client_id": client_id,
@@ -137,6 +146,13 @@ def test_task_two_responses(client):
     randomize_ids()
     assert_no_responses()
     number = 10
+
+    controller.db.set(
+        collection=DatabaseCollection.CLIENTS,
+        entry_id=client_id,
+        entry=IdentifyingClientData(),
+        overwrite=True
+    )
 
     controller.db.set(
         collection=DatabaseCollection.CLIENT_DONE_TASKS,

@@ -1,7 +1,7 @@
-from django.db.models import Count
 from decouple import config
 import requests
 from .models import Client, SentTask
+from datetime import datetime
 
 
 class ControlServerHandler():
@@ -26,6 +26,9 @@ class ControlServerHandler():
         for client in clients:
             if not (Client.objects.filter(client_id=client['_id']).exists()):
                 client_data = client['client_data']
+                first_seen = client['first_seen']
+                first_seen_trunc = first_seen[0:19]
+                first_seen_dt = datetime.strptime(first_seen_trunc, '%Y-%m-%dT%H:%M:%S')
                 c = Client(client_id=client['_id'],
                            ip=client['ip'],
                            os_name=client_data['os_name'],
@@ -35,13 +38,18 @@ class ControlServerHandler():
                            privileges=client_data['privileges'],
                            first_seen_date=client['first_seen'][0:10],
                            first_seen_time=client['first_seen'][11:19],
+                           first_seen_datetime=first_seen_dt,
                            last_seen_date=client['last_seen'][0:10],
-                           last_seen_time=client['last_seen'][11:19])
+                           last_seen_time=client['last_seen'][11:19],
+                           is_online=client['is_online'],
+                           time_since_last_seen=client['time_since_last_seen'])
                 c.save()
             else:
                 Client.objects.filter(client_id=client['_id']) \
                               .update(last_seen_date=client['last_seen'][0:10],
-                                      last_seen_time=client['last_seen'][11:19])
+                                      last_seen_time=client['last_seen'][11:19],
+                                      is_online=client['is_online'],
+                                      time_since_last_seen=client['time_since_last_seen'])
 
     def getClients(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/allclients"
@@ -58,12 +66,48 @@ class ControlServerHandler():
 
     def getStatistics(self):
         num_clients = Client.objects.all().count()
-        top_os = 'None'
-        if num_clients > 0:
-            top_os = Client.objects.annotate(c=Count('os_name')).order_by('-c').first().os_name
-        statistics = {'num_clients': num_clients,
-                      'top_os': top_os,
-                      'errors': self.errors}
+        num_online = Client.objects.filter(is_online=True).count()
+        num_offline = Client.objects.filter(is_online=False).count()
+        client_stats = {
+            'num_clients': num_clients,
+            'num_online': num_online,
+            'num_offline': num_offline
+        }
+
+        num_pending = SentTask.objects.filter(status='Pending').count()
+        num_in_progress = SentTask.objects.filter(status='in progress').count()
+        num_aborted = SentTask.objects.filter(status='aborted').count()
+        num_done = SentTask.objects.filter(status='done').count()
+        num_error = SentTask.objects.filter(status='error').count()
+        task_stats = {
+            'num_pending': num_pending,
+            'num_in_progress': num_in_progress,
+            'num_done': num_done,
+            'num_aborted': num_aborted,
+            'num_error': num_error,
+        }
+
+        oldest_task_running = {}
+        if num_in_progress > 0:
+            oldest_task_running_obj = SentTask.objects.filter(status='in progress').order_by('start_time_datetime')[0]
+            oldest_task_running = {
+                'exists': True,
+                'task_id': oldest_task_running_obj.id,
+                'time_since_started': oldest_task_running_obj.time_since_started()
+            }
+        else:
+            oldest_task_running = {
+                'exists': False,
+                'task_id': '',
+                'time_since_started': '',
+            }
+
+        statistics = {
+            'client_stats': client_stats,
+            'task_stats': task_stats,
+            'oldest_task_running': oldest_task_running
+        }
+
         return statistics
 
     def getLocations(self):
@@ -85,7 +129,7 @@ class ControlServerHandler():
                     }
                     locations.append(clientLocation)
             except Exception as e:
-                print(e)
+                print(f'IP could not be converted to location: {e}')
 
         summarized_locations = []
         processed_locations = []
@@ -109,12 +153,25 @@ class ControlServerHandler():
 
         return summarized_locations
 
-    def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_date, t_time):
+    def __saveTask(self, t_id, c_id, task_t, task_i, t_status, t_start_time, t_start_time_dt):
         if task_t != 'abort':
             client = Client.objects.get(client_id=c_id)
-            asc_t = str(t_date) + " " + str(t_time)
-            client.senttask_set.create(task_id=t_id, start_time=asc_t, status=t_status,
-                                       task_type=task_t, task_info=task_i)
+            client.senttask_set.create(task_id=t_id, start_time=t_start_time, start_time_datetime=t_start_time_dt,
+                                       status=t_status, task_type=task_t, task_info=task_i)
+
+    def getTaskOutput(self, task_id, client_id):
+        output_string = ""
+        requestUrl = "https://" + self.url + self.prefix + "/admin/taskoutput"
+        requestHeaders = {'Authorization': self.authorization}
+        data = {
+            "id": str(client_id),
+            "task_id": str(task_id),
+        }
+        response = requests.get(url=requestUrl, headers=requestHeaders, params=data)
+        status_code = response.status_code
+        if status_code == 200 and response.json() != {'task_responses': []}:
+            output_string = str(response.json()['task_responses'][0]['responses'][0]['result']).replace("\n", "<br>")
+        return output_string
 
     def getTasks(self):
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"
@@ -135,20 +192,22 @@ class ControlServerHandler():
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
-                    t_date = task['task']['date']
-                    t_time = task['task']['time']
                     t_status = 'Pending'
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
+                    start_time = task['task']['created_time']
+                    start_time_trunc = start_time[0:19]
+                    start_time_dt = datetime.strptime(start_time_trunc, '%Y-%m-%dT%H:%M:%S')
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, start_time_dt)
             for task in sent_tasks:
                 t_id = task['_id']['task_id'] + task['_id']['client_id']
                 if not (SentTask.objects.filter(task_id=t_id).exists()):
                     c_id = task['_id']['client_id']
                     task_t = task['task']['name']
                     task_i = task['task']['data']
-                    t_date = task['task']['date']
-                    t_time = task['task']['time']
                     t_status = task['status'].replace("_", " ")
-                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, t_date, t_time)
+                    start_time = task['task']['created_time']
+                    start_time_trunc = start_time[0:19]
+                    start_time_dt = datetime.strptime(start_time_trunc, '%Y-%m-%dT%H:%M:%S')
+                    self.__saveTask(t_id, c_id, task_t, task_i, t_status, start_time, start_time_dt)
                 else:
                     SentTask.objects.filter(task_id=t_id).update(status=task['status'].replace("_", " "))
 
@@ -195,16 +254,17 @@ class ControlServerHandler():
                 client_id = client['_id']
                 new_last_seen_date = client['last_seen'][0:10]
                 new_last_seen_time = client['last_seen'][11:19]
-                c = Client.objects.get(client_id=client_id)
-                if c.last_seen_date != new_last_seen_date or c.last_seen_time != new_last_seen_time:
-                    c.last_seen_date = new_last_seen_date
-                    c.last_seen_time = new_last_seen_time
-                    new_c = {
-                        'client_id': client_id,
-                        'new_last_seen_date': new_last_seen_date,
-                        'new_last_seen_time': new_last_seen_time
-                    }
-                    updated_clients.append(new_c)
+                if (Client.objects.filter(client_id=client_id).exists()):
+                    c = Client.objects.get(client_id=client_id)
+                    if c.last_seen_date != new_last_seen_date or c.last_seen_time != new_last_seen_time:
+                        c.last_seen_date = new_last_seen_date
+                        c.last_seen_time = new_last_seen_time
+                        new_c = {
+                            'client_id': client_id,
+                            'new_last_seen_date': new_last_seen_date,
+                            'new_last_seen_time': new_last_seen_time
+                        }
+                        updated_clients.append(new_c)
             return updated_clients
         except ValueError as e:
             print("Server issues" + str(e))
@@ -218,8 +278,9 @@ class ControlServerHandler():
             task_info = request.POST.getlist('text')[0]
             task_info = task_info.replace('"', '\"')
             task_t = "terminal"
-        elif task_t == "Open browser":
-            task_info = "sensible-browser 'google.com'"
+        elif task_t == "Scan network":
+            task_t = "network_scan"
+            task_info = ""
 
         client_ids_string = ", ".join(client_ids)
         requestUrl = "https://" + self.url + self.prefix + "/admin/task"

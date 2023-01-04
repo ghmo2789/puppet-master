@@ -17,6 +17,7 @@ from control_server.src.data.identifying_client_data import \
     IdentifyingClientData
 from control_server.src.data.task_status import TaskStatus
 from control_server.src.database.database_collection import DatabaseCollection
+from control_server.src.utils.client_utils import seen_client
 from control_server.src.utils.request_utils import get_ip
 
 
@@ -88,6 +89,9 @@ def task(done=False):
     ):
         return "", 400
 
+    if not seen_client(client_id.authorization):
+        return "", 401
+
     source_collection = DatabaseCollection.CLIENT_TASKS if not done \
         else DatabaseCollection.CLIENT_DONE_TASKS
 
@@ -142,6 +146,9 @@ def task_response():
             raise_error=False
     ):
         return "", 400
+
+    if not seen_client(client_id.authorization):
+        return "", 401
 
     client_response = ClientTaskResponse()
     if not client_response.load_from(

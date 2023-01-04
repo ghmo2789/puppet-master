@@ -36,7 +36,7 @@
 
 
     <!-- Tasks table -->
-    <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:500px; overflow: auto"> 
+    <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:700px; overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0">
             <tr style="background-color: black;"> 
               <td><input type="checkbox" name="select_all" value="1" id="master_checkbox" onclick="select_all()"></td>
@@ -46,18 +46,36 @@
               <td>Status</td>
               <td>Task Type</td>
               <td>Task Info</td>
+              <td class="w3-center">Task Output</td>
             </tr>
             <form method="post" >
             {% csrf_token %}
             {% for i in tasks.qs%}
             <tr id="{{i.task_id}}" style="cursor: pointer">
-                <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}"></td> 
+                <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}" style="cursor: pointer" onclick="event.stopPropagation();"></td> 
                 <td>{{i.id}}</td>
                 <td>{{i.client_id.ip}}</td>
-                <td>{{i.start_time}}</td>
-                <td id="status:{{i.task_id}}">{{i.status}}</td>
+                <td>{{i.start_time_datetime.date}} {{i.start_time_str}}</td>
+                {% if i.status == 'Pending' %}
+                  <td style='color: yellow' id="status:{{i.task_id}}">pending</td>
+                {% elif i.status == 'in progress' %}
+                  <td style='color: orange' id="status:{{i.task_id}}">{{i.status}}</td>
+                {% elif i.status == 'done' %}
+                  <td style='color: green' id="status:{{i.task_id}}">{{i.status}}</td>
+                {% elif i.status == 'aborted' %}
+                  <td style='color: purple' id="status:{{i.task_id}}">{{i.status}}</td>
+                {% elif i.status == 'error' %}
+                  <td style='color: red' id="status:{{i.task_id}}">{{i.status}}</td>
+                {% else %}
+                  <td id="status:{{i.task_id}}">{{i.status}}</td>
+                {% endif %}
                 <td>{{i.task_type}}</td>
                 <td>{{i.task_info}}</td>
+                <td class="w3-center">
+                  <b class="w3-button w3-circle w3-black" id="{{i.task_id}}_button" onclick="event.stopPropagation();" hidden>
+                    i
+                  </b>
+                </td>
             </tr>
             {% endfor %}
         </table>
@@ -71,15 +89,27 @@
       </div>
       </form>
 
-
+      <div class="w3-container" id="output" hidden>
+        <button id="close_output" class="w3-button w3-large w3-circle w3-ripple w3-black" onclick="document.getElementById('output').hidden = true">
+          x
+        </button> 
+        <h3>Output:</h3>
+        <p id="output_p">Hej</p>
+      </div> 
     <script type="text/javascript">
 
       // Initialize data for javascript
       let data = [];
       let div_ids = []; 
+      output_div = document.getElementById("output");
       {% for i in tasks.qs %}
         data.push({{i.id}});
         div_ids.push("{{i.task_id}}");
+        var output_button = document.getElementById("{{i.task_id}}_button");
+        output_button.addEventListener("click", () => {getTaskOutput("{{i.client_id}}", "{{i.task_id}}")});
+        if("{{i.status}}" == "done" || "{{i.status}}" == "error") {
+          output_button.hidden = false;
+        }
       {% endfor %}
 
       // Event listeners
@@ -130,6 +160,35 @@
       }
 
       const csrf_token = '{{ csrf_token }}';
+
+      function getTaskOutput(client_id, task_id) {
+        //GET with client_id and task_id
+        //Put output in output-div, make div visible
+        fetch('task_output', {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers:{
+                'X-CSRFToken': csrf_token,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json' 
+              },
+              body: JSON.stringify({ 
+                'client_id': client_id,
+                'task_id': task_id,
+              }),
+        }).then((response) => response.json())
+                  .then((data) => {
+                    var output = "No output";
+                    if(data.output != ""){
+                      output = data.output; 
+                    };
+                    document.getElementById("output").hidden = false;  
+                    document.getElementById("output_p").innerHTML = output;
+                  });
+      }
+                  
+
+      
       
       function get_updated_tasks(){
         fetch('updated_task', {
@@ -148,13 +207,21 @@
                       var task_id = task.task_id;
                       var new_status = task.new_status;
                       var elem_id = 'status:' + task_id;
+                      // Update status and color
                       var status_element = document.getElementById(elem_id);
                       status_element.innerHTML = new_status;
+                      color_map = {'ending': 'yellow', 'in progress': 'orange', 'done': 'green', 'aborted': 'purple', 'error': 'red'};
+                      new_color = color_map[new_status];
+                      status_element.style.color = new_color;
+                      // Notis window
                       var alert_text = 'Task ' + our_id + ' is now ' + new_status;
                       var notis = document.getElementById('notis')
                       var notis_content = document.getElementById('notis-content-p');
                       notis_content.innerHTML = alert_text;
                       document.getElementById('notis').style.visibility = "visible";
+                      if(new_status == "done") {
+                        document.getElementById(task_id + "_button").hidden = false; 
+                      }
                       setTimeout(function(){
                         document.getElementById('notis').style.visibility = "hidden"
                       }, 10000);
