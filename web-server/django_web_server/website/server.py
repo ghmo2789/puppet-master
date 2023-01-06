@@ -223,6 +223,7 @@ class ControlServerHandler():
         status_code = response.status_code
         if status_code == 200 and response.json() != {'task_responses': []}:
             output_string = str(response.json()['task_responses'][0]['responses'][0]['result']).replace("\n", "<br>")
+
         return output_string
 
     def getTasks(self):
@@ -334,6 +335,7 @@ class ControlServerHandler():
                     if c.last_seen_date != new_last_seen_date or c.last_seen_time != new_last_seen_time:
                         c.last_seen_date = new_last_seen_date
                         c.last_seen_time = new_last_seen_time
+                        c.save()
                         new_c = {
                             'client_id': client_id,
                             'new_last_seen_date': new_last_seen_date,
@@ -392,7 +394,7 @@ class ControlServerHandler():
         else:
             print("Something went very wrong")
 
-        return
+        return response
 
     def killTask(self, request):
         selected = request.POST.getlist('abort')
@@ -428,4 +430,4 @@ class ControlServerHandler():
         else:
             print("Something went very wrong")
 
-        return
+        return response

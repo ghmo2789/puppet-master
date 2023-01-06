@@ -27,9 +27,7 @@ class Client(models.Model):
         Get the string representation of a client
         :return: the client represented as a string
         """
-        return "Id: " + str(self.client_id) + \
-               "First seen: " + self.first_seen_date + " " + self.first_seen_time + \
-               "Last seen: " + self.last_seen_date + " " + self.last_seen_time
+        return "Id: " + str(self.client_id)
 
     def first_seen_time_str(self):
         """
@@ -54,12 +52,12 @@ class Client(models.Model):
 
         result = ''
         if days > 0:
-            result = str(days) + ' days '
-        elif hours > 0:
-            result = str(hours) + ' hours '
-        elif minutes > 0:
-            result = str(minutes) + ' minutes '
-        else:
+            result += str(days) + ' days '
+        if hours > 0:
+            result += str(hours) + ' hours '
+        if minutes > 0:
+            result += str(minutes) + ' minutes '
+        if minutes <= 0:
             result = 'now'
 
         return result
@@ -130,4 +128,4 @@ class SentTask(models.Model):
         Get string representation of a sent task
         :return: a sent task represented as a string
         """
-        return ("task id = " + str(self.task_id) + " client id = " + str(self.client_id))
+        return ("task id = " + str(self.task_id))
