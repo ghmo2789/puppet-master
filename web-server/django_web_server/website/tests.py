@@ -1,6 +1,6 @@
 from django.test import TestCase, RequestFactory
 from .models import Client, SentTask
-from datetime import datetime
+from datetime import datetime, timezone
 from .server import ControlServerHandler
 from unittest.mock import Mock, patch
 
@@ -245,3 +245,12 @@ class FirstTest(TestCase):
     def test_senttask_str(self):
         t = SentTask.objects.all()[0]
         self.assertEqual(str(t), 'task id = c7dedc0d-f1cb-4554-960d-a94200092562b412387f-b8c6-922b-0a2e-df8631b6977f')
+
+    @patch('website.models.datetime')
+    def test_senttask_time_since_started(self, mock_now):
+        fake_now_datetime = datetime.strptime('2023-01-04T15:11:11', '%Y-%m-%dT%H:%M:%S')
+        fake_now_datetime = fake_now_datetime.replace(tzinfo=timezone.utc)
+        mock_now.now.return_value = fake_now_datetime
+        t = SentTask.objects.all()[0]
+
+        self.assertEqual(t.time_since_started(), '3 days 2 hours 11 minutes ')
