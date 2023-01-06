@@ -715,6 +715,7 @@ mod tests {
     #[test]
     fn test_udp_message_from_bytes_invalid() {
         let buf = b"000";
+        println!("Intended failures:");
         match UDPMessage::from_bytes(&mut buf.to_vec()) {
             Ok(_) => assert!(false),
             Err(_) => assert!(true)
