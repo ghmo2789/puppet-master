@@ -1,17 +1,21 @@
 
 #website-info {
-  padding: 40px 0 40px 0;
+  padding: 40px 0 0 0;
   overflow: auto;
 }
 
 #website-statistics {
   margin: 0 0% 0 3%;
-  width: 30%;
+  width:25%;
+  margin-bottom: 40px;
 }
 
 #website-map {
-  margin: 0 3% 0 4%;
-  width: 60%;
+  float: right;
+  margin-right: 16px;
+  padding: 0 0 40px 0;
+  overflow: visible;
+  height: 440px;
 }
 
 .website-info-box {
@@ -25,4 +29,69 @@
 #website-kill-btn {
   background-color: black;
   border-color: black;
+}
+
+#output {
+  height: 200px;
+  width: 400px;
+  border: 3px #111111;
+  border-radius: 10px;
+  border-style: solid;
+  background-color: #212529;
+  overflow: auto;
+  position: fixed;
+  top: 100;
+  right: 50; 
+}
+
+#close_output {
+  position: absolute;
+  top: 10;
+  right: 10;
+  cursor: pointer;
+}
+#notis {
+  position: absolute;
+  color: white;
+  right: 15px;
+  top: 60px;
+  height: 70px;
+  width: 250px;
+  background-color: #212529;
+  border-radius: 8px;
+  visibility: hidden;
+}
+
+#notis-header {
+  background-color: black;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+#notis-header > p, #notis-content > p {
+  text-align: center;
+  padding: 2px;
+  margin-bottom: 0;
+}
+
+#notis-content > p {
+  margin-top: 5px;
+}
+
+#client-filter-container {
+  background-color: #212529;
+  margin: 0 16px 0 16px;
+}
+
+#client-filter-header {
+  float: left;
+}
+
+#client-filter {
+  float: right;
+}
+
+#client-table-container {
+  margin-top: 0;
+  padding-top: 0!important;
 }
