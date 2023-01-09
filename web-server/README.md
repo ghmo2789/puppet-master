@@ -11,3 +11,7 @@ Navigate to the django_web_server directory containing the manage.py file and ru
 - python manage.py runserver
 
 The web server is now running and the administrator user interface can be accessed in a web browser from the address http://127.0.0.1:8000/website/
+
+## Running the tests
+To run the unit tests, navigate to the django_web_server directory containing the manage.py file and run
+- python manage.py test
