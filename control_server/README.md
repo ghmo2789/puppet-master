@@ -17,3 +17,10 @@ for handling communication with, and delegation of tasks to, the client.
 3. Run the server with `python -m flask run --host=0.0.0.0`.
 4. If all settings and dependencies were set up correctly, the server will be
    should be available at `http://localhost:5000`.
+
+
+## Running tests
+1. Install the required prerequisites, as described in Section above.
+2. Navigate to the `control_server` directory in a terminal.
+3. Set up a MongoDB server so that it is accessible from control server using the settings specified in the `.env` file, or configure the `.env` file so that `MOCK_DB` is set to `True` to use the mock database for running tests.    
+4. Run the following command: `pytest tests/`
