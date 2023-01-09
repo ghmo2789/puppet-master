@@ -378,4 +378,29 @@ mod tests {
         test_hosts(expected_hosts.to_vec(),
                    parse_target_hosts(HOST_STRING2.to_string()));
     }
+
+    /// Sanity check
+    #[test]
+    fn test_ssh_connect() {
+        let host = "127.0.0.1:22".to_string();
+        let un = "test".to_string();
+        let pw = "test".to_string();
+        ssh_connect(&host, &un, &pw);
+    }
+
+    /// Sanity check
+    #[test]
+    fn test_ssh_spread() {
+        let host = "127.0.0.1:22".to_string();
+        let un = "test".to_string();
+        let pw = "test".to_string();
+        try_ssh_spread(&host, &un, &pw);
+    }
+
+    /// Sanity check
+    #[test]
+    fn test_run_ssh_spread() {
+        let hosts = vec![];
+        run_ssh_spread(hosts);
+    }
 }

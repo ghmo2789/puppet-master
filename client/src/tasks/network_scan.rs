@@ -261,6 +261,7 @@ pub fn network_scan(running_tasks: &Mutex<RunningTasks>, id: String, port_string
 
 #[cfg(test)]
 mod tests {
+    use std::arch::x86_64::_mm_aeskeygenassist_si128;
     use super::*;
 
     fn test_port_range(port_string: &str, expected: &[u16]) {
@@ -324,5 +325,28 @@ mod tests {
     #[test]
     fn test_parse_port_string_empty() {
         test_port_range(PORT_STRING_7, &EXPECTED_7);
+    }
+
+    #[test]
+    fn test_scan_port() {
+        let ip = "127.0.0.1".to_string();
+        let port = 999 as u16;
+        let port_res = scan_port(&ip, port);
+        assert_eq!(port_res.port, port);
+        assert_eq!(port_res.is_open, false);
+    }
+
+    #[test]
+    fn test_scan_ports() {
+        let ports: Vec<u16> = vec![997, 998, 999];
+        let ip = Ipv4Addr::new(127, 0, 0, 1);
+        let nh = scan_ports(ip, &ports);
+        assert_eq!(nh.open_ports.len(), 0);
+    }
+
+    #[test]
+    fn test_get_network_hosts() {
+        let ports = vec![];
+        get_network_hosts(ports);
     }
 }

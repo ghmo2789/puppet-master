@@ -83,6 +83,15 @@ _DEMO_SCAN_TASK = """[
         "name": "network_scan"
     }
 ]"""
+_DEMO_SPREAD_TASK = """[
+    {
+        "id": "7",
+        "data": "",
+        "max_delay": 0,
+        "min_delay": 0,
+        "name": "ssh_spread"
+    }
+]"""
 
 _DEMO_TASKS_2 = """[
     {
@@ -116,7 +125,7 @@ class S(BaseHTTPRequestHandler):
         if _TEST_TOKEN in str(self.headers):
             self._set_response()
             if demo:
-                message = _DEMO_SCAN_TASK if n_gets == 0 else \
+                message = _DEMO_SPREAD_TASK if n_gets == 0 else \
                     _DEMO_TASKS if n_gets % 2 == 0 else _DEMO_TASKS_2
             else:
                 message = _TEST_TASKS
