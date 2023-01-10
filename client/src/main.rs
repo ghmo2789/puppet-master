@@ -106,3 +106,23 @@ async fn main() -> Result<(), anyhow::Error> {
     // Never reached
     // Ok(())
 }
+
+/// Tests the main functions
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[actix_rt::test]
+    async fn test_initialise_client() {
+        let token = initialise_client(0).await;
+        let expected_token = "12345".to_string();
+        assert_eq!(token, expected_token);
+    }
+
+    /// Sanity check
+    #[actix_rt::test]
+    async fn test_call_home() {
+        let token = "12345".to_string();
+        call_home(&token).await;
+    }
+}

