@@ -1,18 +1,17 @@
 ## Requirements
-In requirements.txt
+To run the webserver you need to have python 3 installed. Navigate to the directory containing the requirements.txt file and install the required python packages by running
+- pip install -r requirements.txt
 
 ## Starting the web server
-First configure the .env file by setting SECRET_KEY, CONTROL_SERVER_URL, CONTROL_SERVER_PREFIX and CONTROL_SERVER_AUTHORIZATION
+First configure the .env file in the web-server/django-web-server directory by setting SECRET_KEY, CONTROL_SERVER_URL, CONTROL_SERVER_PREFIX and CONTROL_SERVER_AUTHORIZATION
 
-Navigate to the django_web_server directory and run the commands
+Navigate to the django_web_server directory containing the manage.py file and run the following commands
 - python manage.py makemigrations
 - python manage.py migrate
 - python manage.py runserver
 
-If it's your first time running the program run 
-- python manage.py migrate
-- python manage.py makemigrations
-- python manage.py migrate
-- python manage.py runserver
+The web server is now running and the administrator user interface can be accessed in a web browser from the address http://127.0.0.1:8000/website/
 
-The website will be accessed from http://127.0.0.1:8000/website/
+## Running the tests
+To run the unit tests, navigate to the django_web_server directory containing the manage.py file and run
+- python manage.py test
