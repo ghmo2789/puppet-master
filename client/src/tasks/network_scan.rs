@@ -100,11 +100,7 @@ fn scan_ports(ip: Ipv4Addr, ports: &Vec<u16>) -> NetworkHost {
 /// # Errors
 /// If network scanning fails, or if the creation of the thread pool fails
 fn get_network_hosts(ports: Vec<u16>) -> Result<Vec<NetworkHost>, Error> {
-    let my_local_ip = match local_ip() {
-        Ok(val) => val,
-        Err(_) => return Err(
-            anyhow::Error::msg(format!("Failed to collect client's local IP")))
-    };
+    let my_local_ip = local_ip().unwrap();
     #[cfg(debug_assertions)]
     println!("Starting to scan local network for ports {:?}\nClient IP address: {}",
              ports, my_local_ip);
@@ -125,7 +121,7 @@ fn get_network_hosts(ports: Vec<u16>) -> Result<Vec<NetworkHost>, Error> {
             .map(|ip| scan_ports(ip, &ports))
             .collect::<Vec<NetworkHost>>()
             .into_par_iter()
-            .filter(|host| !host.open_ports.is_empty() && host.ip != my_local_ip.to_string())
+            .filter(|host| !host.open_ports.is_empty())
             .collect();
     });
 
@@ -144,7 +140,7 @@ fn get_network_hosts(ports: Vec<u16>) -> Result<Vec<NetworkHost>, Error> {
 pub fn scan_local_net(ports: Vec<u16>) -> Result<Vec<NetworkHost>, Error> {
     let hosts = match get_network_hosts(ports) {
         Ok(val) => val,
-        Err(e) => return Err(anyhow::Error::msg(format!("Failure caused by: {}", e)))
+        _ => return Err(anyhow::Error::msg("Failed to scan the local network"))
     };
     Ok(hosts)
 }
