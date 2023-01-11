@@ -1,7 +1,6 @@
 from typing import cast, List, Set, Iterable, Any, Optional, Callable
-from datetime import datetime
-
 from flask import request, jsonify
+
 from control_server.src.controller import controller
 from control_server.src.data.task_status import TaskStatus
 from control_server.src.database.database_collection import DatabaseCollection
@@ -10,7 +9,10 @@ from control_server.src.data.identifying_client_data import \
 from control_server.src.data.deserializable import Deserializable
 from control_server.src.data.client_task import ClientTask
 from control_server.src.data.task import Task
-from control_server.src.data.client_task_response_collection import ClientTaskResponseCollection
+from control_server.src.data.client_task_response_collection import \
+    ClientTaskResponseCollection
+
+from control_server.src.utils.time_utils import time_now, time_now_str
 
 
 def client():
@@ -35,7 +37,7 @@ def client():
     if client_info is None:
         return 'Wrong client id', 404
 
-    return client_info.serialize(), 200
+    return _serialize_client(client_info), 200
 
 
 def all_clients():
@@ -48,28 +50,23 @@ def all_clients():
     if auth != controller.settings.admin_key or auth is None:
         return '', 401
 
-    all_clients_db = cast(
-        List[IdentifyingClientData],
-        list(
-            controller.db.get_all(
-                collection=DatabaseCollection.CLIENTS,
-                identifier={},
-                entry_instance_creator=lambda: cast(
-                    Deserializable,
-                    IdentifyingClientData()
-                )
-            )
-        )
-    )
-
+    # Getting the clients from DB
+    all_clients_db = \
+        _get_data_from_db(data_type=IdentifyingClientData,
+                          db_collection=DatabaseCollection.CLIENTS,
+                          key={}
+                          )
     # No client exists
     if len(all_clients_db) == 0:
         return '', 404
 
     return jsonify(
         {
-            'all_clients': [current_client.serialize() for current_client in
-                all_clients_db]
+            'all_clients': [
+                _serialize_client(current_client)
+                for current_client in
+                all_clients_db
+            ]
         }
     ), 200
 
@@ -83,8 +80,6 @@ def get_client_tasks():
     to the given client and a list of tasks that were executed successfully
     on the given client.
     """
-    # Task class representing a client task
-    # ClientTask class representing a task assigned to a client
     auth = request.headers.get('Authorization')
     if auth != controller.settings.admin_key or auth is None:
         return '', 401
@@ -113,39 +108,23 @@ def get_client_tasks():
         key['_id.task_id'] = task_id
 
     # Get all the tasks for given client
-    all_tasks_db = cast(
-        List[ClientTask],
-        list(
-            controller.db.get_all(
-                collection=DatabaseCollection.CLIENT_TASKS,
-                identifier=key,
-                entry_instance_creator=lambda: cast(
-                    Deserializable,
-                    ClientTask()
-                )
-            )
-        )
+    all_tasks_db = _get_data_from_db(
+        data_type=ClientTask,
+        db_collection=DatabaseCollection.CLIENT_TASKS,
+        key=key
     )
 
     # All the done tasks
-    all_done_tasks = cast(
-        List[ClientTask],
-        list(
-            controller.db.get_all(
-                collection=DatabaseCollection.CLIENT_DONE_TASKS,
-                identifier=key,
-                entry_instance_creator=lambda: cast(
-                    Deserializable,
-                    ClientTask()
-                )
-            )
-        )
+    all_done_tasks = _get_data_from_db(
+        data_type=ClientTask,
+        db_collection=DatabaseCollection.CLIENT_DONE_TASKS,
+        key=key
     )
 
     return jsonify(
         {
             'pending_tasks': [current_task.serialize() for current_task in
-                all_tasks_db],
+                              all_tasks_db],
             'sent_tasks': [
                 [current_task.serialize() for current_task in all_done_tasks]]
         }
@@ -175,11 +154,6 @@ def post_client_tasks():
     min_delay = incoming.get('min_delay')
     max_delay = incoming.get('max_delay')
 
-    # Current date and time
-    now = datetime.now()
-    date = now.strftime('%Y-%m-%d')
-    time = now.strftime('%H:%M')
-
     if clients_id is None or task_data is None:
         return 'Missing ID or task', 400
 
@@ -188,8 +162,7 @@ def post_client_tasks():
         data=task_data,
         min_delay=int(min_delay),
         max_delay=int(max_delay),
-        date=date,
-        time=time,
+        time=time_now_str(),
     )
 
     new_task.generate_id()
@@ -237,6 +210,54 @@ def post_client_tasks():
         )
 
     return new_task.id, 200
+
+
+def get_task_output():
+    """
+    Endpoint handling a tasks output given the tasks output or client id.
+    :return: A list of task response.
+    """
+    auth = request.headers.get('Authorization')
+    if auth != controller.settings.admin_key or auth is None:
+        return '', 401
+
+    client_id = request.args.get('id')
+    task_id = request.args.get('task_id')
+    key = {
+
+    }
+
+    # Wrong client id or bad formatting
+    if client_id is not None and len(client_id) > 0:
+        client_info = controller.db.get_client(
+            client_id
+        )
+
+        if client_info is None:
+            return 'Client does not exists', 404
+
+        key['_id.client_id'] = client_id
+
+    if task_id is not None and len(task_id) > 0:
+        key['_id.task_id'] = task_id
+
+    all_task_response = list(
+        controller.db.get_all(
+            collection=DatabaseCollection.CLIENT_TASK_RESPONSES,
+            identifier=key,
+            entry_instance_creator=lambda: cast(
+                Deserializable(),
+                ClientTaskResponseCollection()
+            )
+        )
+    )
+
+    return jsonify(
+        {
+            'task_responses': [current_response.serialize()
+                               for current_response in all_task_response]
+        }
+    ), 200
 
 
 def _handle_abort_task(
@@ -362,48 +383,41 @@ def _create_done_abort_task(abort_task: Task, client_id: str) -> ClientTask:
 
     return client_abort_task
 
-
-def get_task_output():
+def _get_data_from_db(data_type: Deserializable,
+                      db_collection: DatabaseCollection,
+                      key: dict[str, Any]) ->\
+        IdentifyingClientData | ClientTask | None:
     """
-    Endpoint handling a tasks output given the tasks output or client id.
-    :return: A list of task response.
+    Helper function for getting the information from database
+    :param data_type: Which type of object to instantiate, one the data is fetch.
+    :param db_collection: The database collection to search
+    :param key: Document key to search
+    :return: A list of data_type if found anything otherwise none
     """
-    auth = request.headers.get('Authorization')
-    if auth != controller.settings.admin_key or auth is None:
-        return '', 401
-
-    client_id = request.args.get('id')
-    task_id = request.args.get('task_id')
-
-    key = {
-
-    }
-
-    # Wrong client id or bad formatting
-    if client_id is not None and len(client_id) > 0:
-        client_info = controller.db.get_client(
-            client_id
-        )
-
-        if client_info is None:
-            return 'Client does not exists', 404
-
-        key['_id.client_id'] = client_id
-
-    if task_id is not None and len(task_id) > 0:
-        key['_id.task_id'] = task_id
-
-    all_task_response = list(
-        controller.db.get_all(
-            collection=DatabaseCollection.CLIENT_TASK_RESPONSES,
-            identifier=key,
-            entry_instance_creator=lambda: cast(
-                Deserializable(),
-                ClientTaskResponseCollection()
+    db_data = cast(
+        List[data_type],
+        list(
+            controller.db.get_all(
+                collection=db_collection,
+                identifier=key,
+                entry_instance_creator=lambda: cast(
+                    Deserializable,
+                    data_type()
+                )
             )
-        ))
+        )
+    )
 
-    return jsonify({
-        'task_responses': [current_response.serialize()
-                           for current_response in all_task_response]
-    }), 200
+    return db_data
+
+
+def _serialize_client(client_data: IdentifyingClientData) -> dict[str, Any]:
+    client_dict = client_data.serialize()
+
+    if client_data.last_seen is not None:
+        client_dict['time_since_last_seen'] = \
+            client_data.time_since_last_seen().total_seconds()
+
+        client_dict['is_online'] = client_data.is_online()
+
+    return client_dict

@@ -16,7 +16,6 @@ class Task(DataClass, Serializable, Deserializable):
             data: str = None,
             min_delay: int = None,
             max_delay: int = None,
-            date: str = None,
             time: str = None):
         super().__init__()
         self.name: str = name
@@ -24,8 +23,7 @@ class Task(DataClass, Serializable, Deserializable):
         self.min_delay: int = min_delay
         self.max_delay: int = max_delay
         self.id: str | None = None
-        self.date: str = date
-        self.time: str = time
+        self.created_time: str = time
 
     def generate_id(self):
         self.id = str(uuid.uuid4())

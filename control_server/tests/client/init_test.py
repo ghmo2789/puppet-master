@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from control_server.src.controller import controller
+from control_server.src.utils.time_utils import time_now
 from control_server.tests.utils.generic_test_utils import get_prefix
 
 
@@ -16,7 +17,9 @@ def test_init(client):
             "os_version": "1",
             "hostname": "1",
             "host_user": "1",
-            "privileges": "1"
+            "privileges": "1",
+            "host_id": "1",
+            "polling_time": 1
         }
     )
 
@@ -29,7 +32,7 @@ def test_init(client):
 
     assert client_data is not None
 
-    now = datetime.now()
+    now = time_now()
     assert client_data.get_first_seen() < now
     assert client_data.get_last_seen() < now
     assert client_data.get_first_seen() <= client_data.get_last_seen()
@@ -47,7 +50,9 @@ def test_init_twice(client):
             "os_version": "1",
             "hostname": "1",
             "host_user": "1",
-            "privileges": "1"
+            "privileges": "1",
+            "host_id": "1",
+            "polling_time": 1
         }
     )
 
@@ -60,7 +65,9 @@ def test_init_twice(client):
             "os_version": "1",
             "hostname": "1",
             "host_user": "1",
-            "privileges": "1"
+            "privileges": "1",
+            "host_id": "1",
+            "polling_time": 1
         }
     )
 
@@ -75,7 +82,7 @@ def test_init_twice(client):
 
     assert client_data is not None
 
-    now = datetime.now()
+    now = time_now()
     assert client_data.get_first_seen() < now
     assert client_data.get_last_seen() < now
     assert client_data.get_first_seen() < client_data.get_last_seen()

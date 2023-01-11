@@ -35,6 +35,8 @@ def set_client(client_id: str, client_ip: str):
         "hostname": "2",
         "host_user": "2",
         "privileges": "2",
+        "host_id": "1",
+        "polling_time": 1
     }
     client_data = ClientData.load_from_dict(client_1, raise_error=True)
     new_client = IdentifyingClientData(

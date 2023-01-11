@@ -1,4 +1,5 @@
 import uuid
+from typing import cast
 
 from control_server.tests.utils.generic_test_utils import get_prefix
 from control_server.src.controller import controller
@@ -57,6 +58,8 @@ def test_all_client_with_clients(client):
         "hostname": "1",
         "host_user": "1",
         "privileges": "1",
+        "host_id": "1",
+        "polling_time": 1
     }
 
     client_2 = {
@@ -65,6 +68,8 @@ def test_all_client_with_clients(client):
         "hostname": "1",
         "host_user": "1",
         "privileges": "1",
+        "host_id": "1",
+        "polling_time": 1
     }
 
     client_1_id, task_1_id = randomize_ids()
@@ -103,7 +108,10 @@ def test_all_client_with_clients(client):
     })
 
     all_clients = [
-        IdentifyingClientData().deserialize(cur_client)
+        cast(
+            IdentifyingClientData,
+            IdentifyingClientData().deserialize(cur_client)
+        )
         for cur_client in response.json["all_clients"]
     ]
 
@@ -113,13 +121,13 @@ def test_all_client_with_clients(client):
     for i in range(len(all_clients)):
         assert all_clients[i].id == new_clients[i].id, "client ID does not match"
         assert all_clients[i].ip == new_clients[i].ip, "client IP does not match"
-        assert all_clients[i].client_data.get("host_user") \
+        assert all_clients[i].client_data.host_user \
                == new_clients[i].client_data.host_user, "Client name does not match"
-        assert all_clients[i].client_data.get("hostname")\
+        assert all_clients[i].client_data.hostname\
                == new_clients[i].client_data.hostname, "Client username does not match"
-        assert all_clients[i].client_data.get("os_name") \
+        assert all_clients[i].client_data.os_name \
                == new_clients[i].client_data.os_name, "Client OS does not match"
-        assert all_clients[i].client_data.get("os_version")\
+        assert all_clients[i].client_data.os_version\
                == new_clients[i].client_data.os_version, "Client Os version does not match"
-        assert all_clients[i].client_data.get("privileges") \
+        assert all_clients[i].client_data.privileges \
                == new_clients[i].client_data.privileges, "Client privileges does not match"
