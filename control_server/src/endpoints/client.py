@@ -19,6 +19,7 @@ from control_server.src.data.task_status import TaskStatus
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.src.utils.client_utils import seen_client
 from control_server.src.utils.request_utils import get_ip
+from control_server.src.utils.time_utils import time_now, time_now_str
 
 
 def init():
@@ -35,7 +36,7 @@ def init():
 
     # Generate a client id from the client data
     client_ip = get_ip(request)
-    now = datetime.now().isoformat()
+    now = time_now_str()
     identifying_client_data = IdentifyingClientData(
         client_data=data,
         ip=client_ip,
@@ -154,9 +155,12 @@ def task_response():
     if not client_response.load_from(
             lambda prop:
             request.json[prop] if prop in request.json else None,
-            raise_error=False
+            raise_error=False,
+            ignore_props={"time"}
     ):
         return "", 400
+
+    client_response.time = time_now_str()
 
     task_key = {
         "_id.client_id": client_id.authorization,

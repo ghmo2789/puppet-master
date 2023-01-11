@@ -7,7 +7,8 @@ from control_server.src.data.client_task import ClientTask
 from control_server.src.database.database_collection import DatabaseCollection
 from control_server.src.data.task_status import TaskStatus
 from control_server.src.data.client_data import ClientData
-from control_server.src.data.identifying_client_data import IdentifyingClientData
+from control_server.src.data.identifying_client_data import \
+    IdentifyingClientData
 from control_server.src import router
 
 
@@ -23,8 +24,10 @@ def randomize_ids() -> (str, str):
     return client_id, task_id
 
 
-def set_client_and_task(client_id: str, task_id: str, db_collection: DatabaseCollection,
-                        task_status: TaskStatus):
+def set_client_and_task(
+        client_id: str, task_id: str, db_collection: DatabaseCollection,
+        task_status: TaskStatus
+):
     """
     Helper function for setting a client and task in the database
     """
@@ -50,7 +53,10 @@ def set_client_and_task(client_id: str, task_id: str, db_collection: DatabaseCol
         "hostname": "2",
         "host_user": "2",
         "privileges": "2",
+        "host_id": "1",
+        "polling_time": 1
     }
+
     data = ClientData.load_from_dict(client_1, raise_error=True)
     new_client = IdentifyingClientData(
         client_data=data,
@@ -77,9 +83,11 @@ def test_get_task_invalid_authorization(client):
     :param client:
     :return:
     """
-    response = client.get(f"{get_prefix()}/admin/task", headers={
+    response = client.get(
+        f"{get_prefix()}/admin/task", headers={
 
-    })
+        }
+    )
 
     assert response.status_code == 401, "Received a non-401 status code"
 
@@ -91,11 +99,13 @@ def test_get_task_wrong_client_id(client):
     :return:
     """
     wrong_client_id = "1234"
-    response = client.get(f"{get_prefix()}/admin/task", headers={
-        "Authorization": controller.settings.admin_key
-    }, query_string={
-        "id": wrong_client_id
-    })
+    response = client.get(
+        f"{get_prefix()}/admin/task", headers={
+            "Authorization": controller.settings.admin_key
+        }, query_string={
+            "id": wrong_client_id
+        }
+    )
 
     assert response.status_code == 404, "Received a non-404 status code"
 
@@ -108,14 +118,16 @@ def test_get_task_wrong_task_id(client):
     """
     wrong_client_id = "1234"
     wrong_task_id = "1234"
-    response = client.get(f"{get_prefix()}/admin/task",
-                          headers={
-                              "Authorization": controller.settings.admin_key
-                          },
-                          query_string={
-                              "id": wrong_client_id,
-                              "task_id": wrong_task_id
-                          })
+    response = client.get(
+        f"{get_prefix()}/admin/task",
+        headers={
+            "Authorization": controller.settings.admin_key
+        },
+        query_string={
+            "id": wrong_client_id,
+            "task_id": wrong_task_id
+        }
+    )
 
     assert response.status_code == 404, "Received a non-404 status code"
 
@@ -128,32 +140,38 @@ def test_get_task_pending_tasks(client):
     """
     client_id, task_id = randomize_ids()
 
-    no_task_response = client.get(f"{get_prefix()}/admin/task",
-                                  headers={
-                                      "Authorization": controller.settings.admin_key
-                                  },
-                                  query_string={
-                                      "id": client_id,
-                                      "task_id": task_id
-                                  })
+    no_task_response = client.get(
+        f"{get_prefix()}/admin/task",
+        headers={
+            "Authorization": controller.settings.admin_key
+        },
+        query_string={
+            "id": client_id,
+            "task_id": task_id
+        }
+    )
 
     assert no_task_response.status_code == 404, "Received a non-404 status code"
 
     # Insert a client and task in the DB
-    set_client_and_task(client_id=client_id,
-                        task_id=task_id,
-                        db_collection=DatabaseCollection.CLIENT_TASKS,
-                        task_status=TaskStatus.PENDING)
+    set_client_and_task(
+        client_id=client_id,
+        task_id=task_id,
+        db_collection=DatabaseCollection.CLIENT_TASKS,
+        task_status=TaskStatus.PENDING
+    )
 
     response = \
-        client.get(f"{get_prefix()}/admin/task",
-                   headers={
-                       "Authorization": controller.settings.admin_key
-                   },
-                   query_string={
-                       "id": client_id,
-                       "task_id": task_id
-                   })
+        client.get(
+            f"{get_prefix()}/admin/task",
+            headers={
+                "Authorization": controller.settings.admin_key
+            },
+            query_string={
+                "id": client_id,
+                "task_id": task_id
+            }
+        )
 
     pending_tasks = response.json.get("pending_tasks")
     sent_tasks = response.json.get("sent_tasks")
@@ -162,9 +180,13 @@ def test_get_task_pending_tasks(client):
 
     assert len(sent_tasks) == 1, "Incorrect number of sent tasks"
     assert len(pending_tasks) == 1, "Incorrect number of pending tasks"
-    assert pending_client_task.id.get('client_id') == client_id, "Client ID does not match"
-    assert pending_client_task.get_task_id() == task_id, "Task ID does not match"
-    assert pending_client_task.status == TaskStatus.DONE, "Task status does not match"
+    assert pending_client_task.id.get(
+        'client_id'
+    ) == client_id, "Client ID does not match"
+    assert pending_client_task.get_task_id() == task_id, "Task ID does not " \
+                                                         "match"
+    assert pending_client_task.status == TaskStatus.DONE, "Task status does " \
+                                                          "not match"
     assert pending_client_task.status_code == 0, "Status code does not match"
 
 
@@ -177,20 +199,24 @@ def test_get_task_sent_tasks(client):
     client_id, task_id = randomize_ids()
 
     # Insert a client and task in the DB
-    set_client_and_task(client_id=client_id,
-                        task_id=task_id,
-                        db_collection=DatabaseCollection.CLIENT_DONE_TASKS,
-                        task_status=TaskStatus.DONE)
+    set_client_and_task(
+        client_id=client_id,
+        task_id=task_id,
+        db_collection=DatabaseCollection.CLIENT_DONE_TASKS,
+        task_status=TaskStatus.DONE
+    )
 
     response = \
-        client.get(f"{get_prefix()}/admin/task",
-                   headers={
-                       "Authorization": controller.settings.admin_key
-                   },
-                   query_string={
-                       "id": client_id,
-                       "task_id": task_id
-                   })
+        client.get(
+            f"{get_prefix()}/admin/task",
+            headers={
+                "Authorization": controller.settings.admin_key
+            },
+            query_string={
+                "id": client_id,
+                "task_id": task_id
+            }
+        )
 
     pending_task = response.json.get("pending_tasks")
     sent_tasks = response.json.get("sent_tasks")[0]
@@ -199,8 +225,10 @@ def test_get_task_sent_tasks(client):
 
     assert len(sent_tasks) == 1, "Incorrect number of sent tasks"
     assert len(pending_task) == 0, "Incorrect number of pending tasks"
-    assert sent_client_task.id.get('client_id') == client_id, "Client ID does not match"
+    assert sent_client_task.id.get(
+        'client_id'
+    ) == client_id, "Client ID does not match"
     assert sent_client_task.get_task_id() == task_id, "Task ID does not match"
-    assert sent_client_task.status == TaskStatus.DONE, "Task status does not match"
+    assert sent_client_task.status == TaskStatus.DONE, "Task status does not " \
+                                                       "match"
     assert sent_client_task.status_code == 0, "Status code does not match"
-

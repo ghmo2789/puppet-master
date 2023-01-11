@@ -17,6 +17,7 @@ from control_server.src.middleware.messages.generic_message import \
     GenericMessage
 from control_server.src.middleware.udp_control_listener import \
     UdpControlListener
+from control_server.src.utils.time_utils import time_now
 
 
 class ForwardingUdpControlListener(UdpControlListener):
@@ -213,7 +214,7 @@ class ForwardingUdpControlListener(UdpControlListener):
         :return: None
         """
         time = datetime.strftime(
-            datetime.now(),
+            time_now(),
             '%d-%b-%Y %H:%M:%S'
         )
         method = HttpMethod.from_int(

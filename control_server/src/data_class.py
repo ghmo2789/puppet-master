@@ -3,6 +3,20 @@ from typing import Any, Callable
 from abc import ABC
 
 
+def _is_filtered(
+        prop_name: str,
+        prop_filter: Callable[[str], bool] = None,
+        ignore_props: set[str] = None
+):
+    if prop_filter is not None and not prop_filter(prop_name):
+        return False
+
+    if ignore_props is not None and prop_name in ignore_props:
+        return False
+
+    return True
+
+
 class DataClass(ABC):
     """
     Abstract class that provides functionality to load settings, currently
@@ -21,7 +35,8 @@ class DataClass(ABC):
         outputs = []
         for property_name in self.get_properties():
             outputs.append(
-                f"{property_name}: {str(getattr(self, property_name))}")
+                f"{property_name}: {str(getattr(self, property_name))}"
+            )
 
         return ", ".join(outputs)
 
@@ -37,7 +52,8 @@ class DataClass(ABC):
     def _load_from_dict(
             instance: DataClass,
             data_dict: dict,
-            raise_error: bool = True):
+            raise_error: bool = True
+    ):
         """
         Load data from a dictionary, and set the properties of the class
         accordingly.
@@ -48,8 +64,8 @@ class DataClass(ABC):
         :return: Whether the data was loaded successfully.
         """
         return instance.load_from(
-                lambda prop: data_dict[prop] if prop in data_dict else None,
-                raise_error=raise_error
+            lambda prop: data_dict[prop] if prop in data_dict else None,
+            raise_error=raise_error
         )
 
     @staticmethod
@@ -79,7 +95,8 @@ class DataClass(ABC):
             self,
             data_reader: Callable[[str, type], Any],
             validate_types: bool = False,
-            raise_error: bool = True
+            raise_error: bool = True,
+            prop_filter: Callable[[str], bool] = None
     ):
         """
         Load data from a data reader, and set the properties of the class
@@ -91,9 +108,14 @@ class DataClass(ABC):
         :param raise_error: Whether to raise an error if a property is missing,
         or if types mismatch. Useful to prevent errors from generating when
         handling web requests
+        :param prop_filter: A function that takes a property name and returns
+        whether the property should be loaded.
         :return: Whether the data was loaded successfully.
         """
         for property_name, property_type in self.get_properties():
+            if prop_filter is not None and not prop_filter(property_name):
+                continue
+
             prop_value = data_reader(property_name, property_type)
 
             if prop_value is None:
@@ -106,8 +128,10 @@ class DataClass(ABC):
                 if raise_error:
                     raise TypeError(
                         f'Property mismatch: setting "{property_name}" ' +
-                        f'is of type "{type(prop_value)}" but "{property_type}" '
-                        f'was expected.')
+                        f'is of type "{type(prop_value)}" but "'
+                        f'{property_type}" '
+                        f'was expected.'
+                    )
 
                 return False
 
@@ -143,18 +167,28 @@ class DataClass(ABC):
     def load_from(
             self,
             data_reader: Callable[[str], Any],
-            raise_error: bool = True
+            raise_error: bool = True,
+            prop_filter: Callable[[str], bool] = None,
+            ignore_props: set[str] = None
     ):
         """
         Load data from a data reader that only utilizes property name, and set
         the properties of the class accordingly.
+        :param ignore_props: A set of properties to ignore.
         :param data_reader: The data reader to use. The data reader should
         only have one argument: the property name.
         :param raise_error: Whether to raise an error if a property is missing.
+        :param prop_filter: A function that takes a property name and returns
+        whether the property should be loaded.
         :return: Whether the data was loaded successfully.
         """
         return self._load_data(
             (lambda prop, prop_type: data_reader(prop)),
             validate_types=False,
-            raise_error=raise_error
+            raise_error=raise_error,
+            prop_filter=lambda prop_name: _is_filtered(
+                prop_name,
+                prop_filter=prop_filter,
+                ignore_props=ignore_props
+            )
         )

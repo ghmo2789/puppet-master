@@ -48,6 +48,8 @@ def test_client(client):
         "hostname": "1",
         "host_user": "1",
         "privileges": "1",
+        "host_id": "1",
+        "polling_time": 1
     }
     client_id = str(uuid.uuid4())
     client_ip = str(uuid.uuid4())

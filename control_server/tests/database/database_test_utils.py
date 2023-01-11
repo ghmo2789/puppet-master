@@ -29,7 +29,9 @@ class DatabaseTestData:
             "os_version": "test os 1.0",
             "hostname": "host",
             "host_user": "user",
-            "privileges": "admin"
+            "privileges": "admin",
+            "host_id": "1",
+            "polling_time": 1
         }
 
         self.sample_ip: str = "1.1.1.1"
