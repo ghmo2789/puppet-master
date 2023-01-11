@@ -18,6 +18,17 @@
   height: 440px;
 }
 
+.task-info {
+  max-width: 100px; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
+
+.task-info:hover {
+  overflow: visible;
+  overflow-wrap: break-word;
+}
+
 .website-info-box {
   float: left;
   height: 400px;
@@ -94,4 +105,32 @@
 #client-table-container {
   margin-top: 0;
   padding-top: 0!important;
+}
+
+.status-online {
+  color: #00cc00;
+}
+
+.status-offline {
+  color: red;
+}
+
+.status-pending {
+  color: yellow;
+}
+
+.status-in-progress {
+  color: orange;
+}
+
+.status-done {
+  color: #00cc00;
+}
+
+.status-aborted {
+  color: #4d79ff;
+}
+
+.status-error {
+  color: red;
 }

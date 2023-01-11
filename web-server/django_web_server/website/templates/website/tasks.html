@@ -39,53 +39,50 @@
     <div class="w3-container table-wrapper-scroll-y w3-padding-16" style="height:700px; overflow: auto"> 
         <table class="table table-dark table-striped table-hover mb-0">
             <tr style="background-color: black;"> 
-              <td><input type="checkbox" name="select_all" value="1" id="master_checkbox" onclick="select_all()"></td>
               <td>Task ID</td>
               <td>Client IP</td>
               <td>Start Time</td>
               <td>Status</td>
               <td>Task Type</td>
               <td>Task Info</td>
-              <td class="w3-center">Task Output</td>
+              <td class="w3-center">Output</td>
+              <td class="w3-center"></td>
             </tr>
             <form method="post" >
             {% csrf_token %}
             {% for i in tasks.qs%}
-            <tr id="{{i.task_id}}" style="cursor: pointer">
-                <td><input type="checkbox" name="select" value="{{i.id}}" id="{{i.id}}" style="cursor: pointer" onclick="event.stopPropagation();"></td> 
+            <tr>
                 <td>{{i.id}}</td>
                 <td>{{i.client_id.ip}}</td>
                 <td>{{i.start_time_datetime.date}} {{i.start_time_str}}</td>
-                {% if i.status == 'Pending' %}
-                  <td style='color: yellow' id="status:{{i.task_id}}">pending</td>
+                {% if i.status == 'pending' %}
+                  <td class="status-pending" id="status:{{i.task_id}}">pending</td>
                 {% elif i.status == 'in progress' %}
-                  <td style='color: orange' id="status:{{i.task_id}}">{{i.status}}</td>
+                  <td class="status-in-progress" id="status:{{i.task_id}}">{{i.status}}</td>
                 {% elif i.status == 'done' %}
-                  <td style='color: green' id="status:{{i.task_id}}">{{i.status}}</td>
+                  <td class="status-done" id="status:{{i.task_id}}">{{i.status}}</td>
                 {% elif i.status == 'aborted' %}
-                  <td style='color: purple' id="status:{{i.task_id}}">{{i.status}}</td>
+                  <td class="status-aborted" id="status:{{i.task_id}}">{{i.status}}</td>
                 {% elif i.status == 'error' %}
-                  <td style='color: red' id="status:{{i.task_id}}">{{i.status}}</td>
+                  <td class="status-error" id="status:{{i.task_id}}">{{i.status}}</td>
                 {% else %}
                   <td id="status:{{i.task_id}}">{{i.status}}</td>
                 {% endif %}
                 <td>{{i.task_type}}</td>
-                <td>{{i.task_info}}</td>
+                <td class="task-info">{{i.task_info}}</td>
                 <td class="w3-center">
                   <b class="w3-button w3-circle w3-black" id="{{i.task_id}}_button" onclick="event.stopPropagation();" hidden>
                     i
                   </b>
                 </td>
+                <td class="w3-center">
+                  <button style="font-size: 1em" class="w3-button w3-black" name="abort" type="submit" value="{{i.id}}" id="{{i.id}}_kill" onclick="event.stopPropagation();" hidden>
+                    X
+                  </button>
+                </td>
             </tr>
             {% endfor %}
         </table>
-      </div>
-
-      <!-- Kill task selection -->
-      <div class="w3-container w3-padding-16" id="submit" style="position: absolute; right: 10; bottom: 10; width: 500" hidden>
-        <div class="w3-container w3-center w3-half" style="float: right;">
-          <input class ="w3-button w3-block w3-black", type="submit", value="Kill Task" id="send_kill"> 
-        </div>
       </div>
       </form>
 
@@ -110,54 +107,11 @@
         if("{{i.status}}" == "done" || "{{i.status}}" == "error") {
           output_button.hidden = false;
         }
+        if("{{i.status}}" == "pending" || "{{i.status}}" == "in progress") {
+          document.getElementById("{{i.id}}_kill").hidden = false; 
+        }
+        document.getElementById("{{i.id}}_kill").addEventListener("click", sendAlert);
       {% endfor %}
-
-      // Event listeners
-      for(let i = 0; i < data.length; i++) {
-        document.getElementById(data[i]).addEventListener("click", toggleSubmit)
-        document.getElementById(div_ids[i]).addEventListener("click", () => {checkboxDiv(data[i])});
-        document.getElementById(div_ids[i]).addEventListener("click", toggleSubmit);
-      }
-
-      toggleSubmit();
-
-      function checkboxDiv(id){
-          let checkbox = document.getElementById(id).checked;
-          if(checkbox){
-            document.getElementById(id).checked = false;
-          } else {
-            document.getElementById(id).checked = true; 
-          }
-        }
-
-      function toggleSubmit(){
-        submit_element = document.getElementById("submit") 
-        checked = false; 
-        for(let i = 0; i < data.length; i++) {
-          if(document.getElementById(data[i]).checked) {
-            checked = true;
-          }
-        }
-        if(checked){
-          submit_element.hidden = false;
-        } else {
-          submit_element.hidden = true; 
-        }
-      }
-  
-      function select_all(){
-        if(document.getElementById("master_checkbox").checked) {
-          for(let i = 0; i < data.length; i++) {
-            document.getElementById(data[i]).checked = true; 
-          }
-          toggleSubmit();
-        } else {
-          for(let i = 0; i < data.length; i++) {
-            document.getElementById(data[i]).checked = false; 
-          }
-          toggleSubmit();
-        }
-      }
 
       const csrf_token = '{{ csrf_token }}';
 
@@ -186,7 +140,10 @@
                     document.getElementById("output_p").innerHTML = output;
                   });
       }
-                  
+      
+      function sendAlert(){
+        alert("Abort command sent");
+      }
 
       
       
@@ -210,9 +167,9 @@
                       // Update status and color
                       var status_element = document.getElementById(elem_id);
                       status_element.innerHTML = new_status;
-                      color_map = {'ending': 'yellow', 'in progress': 'orange', 'done': 'green', 'aborted': 'purple', 'error': 'red'};
-                      new_color = color_map[new_status];
-                      status_element.style.color = new_color;
+                      color_class_map = {'pending': 'status-pending', 'in progress': 'status-in-progress', 'done': 'status-done', 'aborted': 'status-aborted', 'error': 'status-error'};
+                      new_class = color_class_map[new_status];
+                      status_element.className = new_class;
                       // Notis window
                       var alert_text = 'Task ' + our_id + ' is now ' + new_status;
                       var notis = document.getElementById('notis')
@@ -221,6 +178,9 @@
                       document.getElementById('notis').style.visibility = "visible";
                       if(new_status == "done") {
                         document.getElementById(task_id + "_button").hidden = false; 
+                        document.getElementById(our_id + "_kill").hidden = true; 
+                      } else if (new_status == "aborted") {
+                        document.getElementById(our_id + "_kill").hidden = true;
                       }
                       setTimeout(function(){
                         document.getElementById('notis').style.visibility = "hidden"
