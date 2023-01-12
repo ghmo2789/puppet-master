@@ -275,12 +275,14 @@ pub fn ssh_spread(running_tasks: &Mutex<RunningTasks>, task_id: String, host_str
         println!("{}", res);
         running_tasks.lock().unwrap().add_task_result(TaskResult {
             id: task_id,
-            status: 1,
+            status: 0,
             result: res.to_string(),
         });
         return;
     }
-
+    if running_tasks.lock().unwrap().check_aborted(&task_id) {
+        return;
+    }
     let spread_to = match run_ssh_spread(hosts) {
         Ok(val) => val,
         Err(e) => {
@@ -295,7 +297,9 @@ pub fn ssh_spread(running_tasks: &Mutex<RunningTasks>, task_id: String, host_str
             return;
         }
     };
-
+    if running_tasks.lock().unwrap().check_aborted(&task_id) {
+        return;
+    }
     let mut res = "SSH spread results:\n".to_string();
     res.push_str(&*spread_to.join("\n"));
     let task_result = TaskResult {

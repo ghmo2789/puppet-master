@@ -251,11 +251,16 @@ pub fn network_scan(running_tasks: &Mutex<RunningTasks>, id: String, port_string
         return;
     }
 
+    if running_tasks.lock().unwrap().check_aborted(&id) {
+        return;
+    }
+
     let mut result = String::new();
     for h in hosts {
         result.push_str(&*h.to_string());
         result.push('\n');
     }
+
     running_tasks.lock().unwrap().add_task_result(TaskResult {
         id,
         status: 0,

@@ -35,7 +35,8 @@ const ABORTED_STATUS_CODE: i32 = -3;
 lazy_static! {
     static ref RUNNING_TASKS: Mutex<RunningTasks> = Mutex::new(RunningTasks{
         running_tasks: vec![],
-        task_results: vec![]
+        task_results: vec![],
+        aborted_tasks: vec![]
     });
 }
 
@@ -47,6 +48,7 @@ pub struct RunningTasks {
     running_tasks: Vec<RunningTask>,
     // Task results received from asynchronous tasks
     task_results: Vec<TaskResult>,
+    pub aborted_tasks: Vec<String>,
 }
 
 /// Implementation of RunningTasks methods
@@ -54,6 +56,16 @@ impl RunningTasks {
     /// Used to add a running task
     pub fn add_task(&mut self, running_task: RunningTask) {
         self.running_tasks.push(running_task);
+    }
+
+    pub fn check_aborted(&mut self, task_id: &String) -> bool {
+        if self.aborted_tasks.contains(task_id) {
+            let index = self.aborted_tasks.iter()
+                .position(|x| x == task_id).unwrap();
+            self.aborted_tasks.remove(index);
+            return true;
+        }
+        return false;
     }
 
     /// Used to check and get the running tasks who are completed
@@ -91,7 +103,13 @@ impl RunningTasks {
             complete_tasks.push(tr.clone());
         }
         self.task_results = Vec::new();
-
+        for aborted in &self.aborted_tasks {
+            complete_tasks.push(TaskResult {
+                id: aborted.clone(),
+                status: ABORTED_STATUS_CODE,
+                result: "Task aborted => No output".to_string(),
+            })
+        }
         #[cfg(debug_assertions)] {
             if complete_tasks.is_empty() {
                 println!("No completed tasks");
@@ -117,9 +135,10 @@ impl RunningTasks {
         for t in self.running_tasks.iter_mut() {
             if t.id == id {
                 t.abort_task();
-                break;
+                return;
             }
         }
+        self.aborted_tasks.push(id.to_string())
     }
 }
 
@@ -343,6 +362,7 @@ mod tests {
         let mut running_tasks = RunningTasks {
             running_tasks: vec![],
             task_results: vec![],
+            aborted_tasks: vec![]
         };
         running_tasks.add_task(rt);
         assert_eq!(running_tasks.running_tasks.len(), 1);
@@ -361,6 +381,7 @@ mod tests {
         let mut running_tasks = RunningTasks {
             running_tasks: vec![],
             task_results: vec![],
+            aborted_tasks: vec![]
         };
         running_tasks.add_task(rt);
         thread::sleep(Duration::from_secs(1));
